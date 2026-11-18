@@ -18,8 +18,9 @@ Prata + Manrope, волосяные линии. Весь интерфейс на
   в localStorage браузера;
 - демо-вход организатора открывает `/organizer` без пароля.
 
-Целевая архитектура — Next.js 16 + PostgreSQL 17 + Drizzle ORM на собственном бэкенде,
-без Supabase и других BaaS. Подробнее: `docs/ARCHITECTURE.md`.
+Целевая архитектура — **Next.js UI + Go API + PostgreSQL 17** (D-017), без BaaS.
+Пароли только как Argon2id-хэш; TLS на границе. Один клуб. Подробнее:
+`docs/ARCHITECTURE.md`, этапы — внешний `ROADMAP` / `docs/plans/`.
 
 ---
 
@@ -70,7 +71,7 @@ src/
   lib/
     data/              слой доступа к данным (сейчас — mock, позже — БД)
     mock/              демонстрационные данные
-    accounts.ts        демо-хранилище аккаунтов и подтверждений
+    api/auth.ts          HTTP-клиент auth и заявок (Go API)
     domain.ts          категории, типы турниров, статусы
     types.ts           доменные типы
     bracket.ts         генератор сеток

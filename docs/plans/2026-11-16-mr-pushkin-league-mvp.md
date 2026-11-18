@@ -1,29 +1,35 @@
 # План разработки лиги Mr. Pushkin
 
-**Ревизия 3 от 18.11.2026.** Предыдущая версия предполагала Supabase; после решения о собственном бэкенде, Raspberry Pi 5 и роли superadmin план переработан. Из области проекта убраны детские и юношеские соревнования: лига ведёт только взрослые турниры.
+**Ревизия 4 от 18.11.2026.** Ревизия 3 предполагала бэкенд внутри Next.js + Drizzle.
+Ревизия 4 (D-017): **отдельный API на Go**, UI на Next.js, PostgreSQL 17, безопасность
+канала и паролей раньше доменных фич. Один клуб (D-018). Детские/юношеские
+соревнования вне продукта.
 
 **Связанные документы:**
-- `docs/ARCHITECTURE.md` — стек, безопасность, деплой, бэкапы, переезд на Selectel.
-- `docs/RATING.md` — формула очков и Elo, примеры, спорные места.
-- `docs/plans/2026-11-16-mr-pushkin-league-mvp.md` — этот файл.
+- `docs/ARCHITECTURE.md` — стек Go+Next, crypto, деплой, бэкапы.
+- `docs/DECISIONS.md` — D-017, D-018 и журнал.
+- `docs/RATING.md` — формула очков (на согласовании).
+- `../mr-pushkin-league-ai/ROADMAP.md` — актуальные этапы.
 
-**Цель:** превратить утверждённый UI-прототип в продакшн-приложение на собственном бэкенде: публичный сайт, кабинет игрока, кабинет организатора, супер-админка, регистрация на турниры, сетки, матчи и рейтинг.
+**Цель:** превратить UI-прототип в продакшн: публичный сайт, кабинеты, Go API с
+безопасной авторизацией, турниры, сетки, матчи и рейтинг.
 
 **Ключевые решения:**
-- Next.js 16 + PostgreSQL 17 + Drizzle ORM, без Supabase и других BaaS.
-- Своя авторизация: email + пароль, Argon2id, серверные сессии, TOTP для владельца и superadmin.
-- Роли: игрок → организатор → владелец → superadmin (разработчик).
-- Деплой: Docker Compose на Raspberry Pi 5 / 8 ГБ + внешний nginx и DuckDNS (см. `docs/DEPLOY.md`); позже Selectel без изменения кода.
-- Онлайн-оплата не входит. Парные заявки входят. Организатор настраивает регламент и сетку вручную или автоматически.
-- Иконки — Lucide. Фото на старте — с сайта клуба, позже заменяются.
+- UI: Next.js 16. API: Go 1.23+ (chi, pgx, sqlc, goose). Без Supabase/BaaS.
+- Пароли: только Argon2id; проверка по хэшу, никогда plaintext/`==`.
+- Канал: TLS на nginx; Go и Postgres только на localhost / внутренней сети.
+- Секреты в БД: AES-256-GCM (`APP_ENCRYPTION_KEY`). Бэкапы: `age`.
+- Сессии в Postgres, токен в HttpOnly-cookie.
+- Роли: player → organizer → owner → superadmin.
+- Один клуб. Онлайн-оплаты нет. Парные заявки входят.
+- Деплой: Compose на Pi 5 + nginx + DuckDNS; позже Selectel.
 
 **Текущее состояние (ноябрь 2026):**
-- готовы дизайн-система и все публичные страницы;
-- готовы кабинет игрока и кабинет организатора;
-- реализован генератор сеток: олимпийская, круговая, группы + плей-офф, двойное выбывание, bye, третье место;
-- все данные — мок-данные; бэкенда, БД, авторизации и миграций нет;
-- добавлены фотографии клуба в `public/images/club`, Lucide уже используется в навигации;
-- `npm run typecheck` проходит, публичные и органайзерские маршруты отвечают 200.
+- готовы дизайн-система, публичный сайт, кабинеты, генератор сеток (в UI);
+- данные — mock; Go API и Postgres ещё не внедрены;
+- регистрация — localStorage (временный прототип);
+- UI задеплоен на Pi за Basic Auth / секретный путь;
+- `npm run typecheck` проходит.
 
 ---
 
@@ -106,58 +112,42 @@
 
 ```text
 Браузер
-  → Caddy (TLS, лимиты, статика)
-    → Next.js 16 (UI + server actions + route handlers)
-      → сервисы и RBAC
-        → PostgreSQL 17 (Drizzle)
-        → /data/uploads (sharp: WebP 320/640/1280)
-        → SMTP-провайдер
+  → nginx (TLS 1.2+/1.3, лимиты, статика)
+    → Next.js 16 (только UI)          :3010
+    → Go API (auth, RBAC, домен)      :3020
+         → PostgreSQL 17 (pgx/sqlc/goose)
+         → /data/uploads
+         → SMTP
 ```
 
 **Принципы:**
 
-- **Слой доступа.** Компоненты не ходят в БД. Только `src/server/services` и `src/server/actions`.
-- **Права на сервере.** Каждый action: `requireUser()` → `requireRole()`/`can()` → Zod → транзакция → аудит.
-- **Транзакции.** Заявка, вместимость, лист ожидания, счёт, пересчёт — атомарно.
-- **Секреты только на сервере.** Service-ключи, SMTP, TOTP-ключ — в env, не в `NEXT_PUBLIC_*`.
-- **Файлы.** Публичные фото отдаёт Caddy, приватные документы — route handler с проверкой.
-- **Время.** В БД UTC, интерфейс Europe/Moscow.
-- **Идемпотентность.** Повторный счёт и пересчёт не создают дублей.
+- **Разделение.** UI не ходит в Postgres. Вся мутация и auth — в Go.
+- **Безопасность сначала.** TLS снаружи → Argon2id → сессии → AES-GCM секреты → потом фичи.
+- **Пароли.** Только хэш; verify constant-time; запрещён plaintext/`==`.
+- **Права на сервере.** Middleware + RBAC на каждом защищённом маршруте.
+- **Транзакции.** Заявка, вместимость, счёт, пересчёт — атомарно в Go/SQL.
+- **Секреты только в env.** Не в `NEXT_PUBLIC_*`, не в git.
+- **Время.** БД UTC, UI Europe/Moscow.
 
-**Зависимости:** удалить `@supabase/*`; добавить `drizzle-orm`, `drizzle-kit`, `pg`, `@node-rs/argon2`, `otpauth`, `nodemailer`, `sharp`, `vitest`, `@playwright/test`. Lucide уже установлен.
+**Зависимости API (Go):** chi, pgx, sqlc, goose, `golang.org/x/crypto`.
+**UI:** Lucide уже есть; HTTP-клиент к `/api` вместо localStorage auth.
 
 ---
 
 ## 4. Структура проекта
 
 ```text
-src/
-  app/
-    (public)/
-    (auth)/                  # вход, регистрация, сброс
-    cabinet/
-    organizer/
-    superadmin/
-    api/health/
-    api/files/[...path]/
-  components/
-    ui/ domain/ organizer/ superadmin/
-  server/
-    db/                      # client, schema, migrations
-    auth/                    # password, session, rbac, totp, tokens
-    services/                # tournaments, registrations, brackets, matches, ratings, content, files, audit, mail
-    actions/                 # server actions
-    validation/              # zod
-    jobs/                    # cron: рейтинг, письма
-  lib/
-    bracket.ts               # готов
-    rating.ts                # после согласования формулы
-    types.ts
-supabase/                    # удалить
+src/                         # Next.js UI
+  app/ (public) (auth) cabinet organizer superadmin
+  components/ lib/
+server/                      # Go API
+  cmd/api/
+  internal/crypto auth http domain db config
+  migrations/ sql/
 deploy/
-  Dockerfile compose.yml Caddyfile backup.sh restore.md
-tests/
-  unit/ integration/ e2e/
+compose.yml                  # web + api + db
+tests/                       # go test + playwright
 ```
 
 ---
@@ -301,43 +291,44 @@ tests/
 
 ---
 
-### Этап 1. Инфраструктура и база — 5 дней
+### Этап 1. Безопасный фундамент (Go + Postgres + crypto) — 5–7 дней
 
-- [ ] Удалить Supabase-пакеты и `supabase/`.
-- [ ] Добавить Drizzle, `pg`, env-схему, `src/server/db/client.ts`.
-- [ ] Написать `schema.ts` и миграции `0001–0009`.
-- [ ] Ограничения: уникальность заявок, вместимость, каскады, индексы.
-- [ ] Триггеры `updated_at` и append-only аудита.
-- [ ] `seed.ts`: 18 игроков, 16 турниров, 28 матчей, контент.
-- [ ] Docker Compose: web, db, migrate, caddy, backup, duckdns.
-- [ ] `output: "standalone"`, healthcheck `/api/health`.
-- [ ] CI: typecheck, lint, unit, build, `npm audit`.
-- [ ] Локальный запуск: `docker compose up`, миграции, сид.
+Приоритет: канал и криптография. Доменные сущности турниров сюда не входят.
 
-**Файлы:** `src/server/db/*`, `src/server/db/migrations/*`, `deploy/*`, `.env.example`, `.github/workflows/ci.yml`.
+- [ ] PostgreSQL 17 в Compose; порт наружу не публиковать.
+- [ ] Каркас `server/`: Go 1.23+, chi, config из env, `GET /api/health`.
+- [ ] nginx: `/api/` → Go `127.0.0.1:3020` рядом с UI.
+- [ ] `internal/crypto`: secure random; SHA-256 токенов; Argon2id hash + verify
+      (запрет plaintext/`==`); AES-256-GCM roundtrip.
+- [ ] `APP_ENCRYPTION_KEY`, `DATABASE_URL` только в env / `.env.example`.
+- [ ] goose: миграции users/sessions (минимум); sqlc + pgx pool.
+- [ ] Unit-тесты crypto: верный пароль проходит, неверный — нет; ciphertext ↔ plaintext.
+- [ ] Compose: `web` + `api` + `db` (+ migrate). Обновить DEPLOY/ARCHITECTURE.
 
-**Приёмка:** `docker compose up` на Mac и Pi поднимает приложение; миграции идемпотентны; health-check зелёный; гость читает сид.
+**Файлы:** `server/**`, `compose.yml`, `deploy/nginx/**`, `.env.example`, docs.
+
+**Приёмка:** health API зелёный; Postgres недоступен снаружи; тесты crypto зелёные;
+нет кода сравнения пароля строкой.
 
 ---
 
-### Этап 2. Авторизация, роли, superadmin — 6 дней
+### Этап 2. Авторизация и аккаунты — 6–8 дней
 
-- [ ] Argon2id, политика паролей, проверка утечек.
-- [ ] Регистрация, подтверждение email, вход, выход, сброс пароля.
-- [ ] Сессии в Postgres, HttpOnly-cookie, список активных сессий.
-- [ ] Rate limit и блокировка после неудачных попыток.
-- [ ] RBAC: `requireUser`, `requireRole`, `can`, deny by default.
-- [ ] TOTP для owner/superadmin, резервные коды.
-- [ ] CLI создания superadmin и owner.
-- [ ] Middleware для `/cabinet`, `/organizer`, `/superadmin`.
-- [ ] Кабинет игрока на реальном пользователе.
-- [ ] Страница профиля: имя, город, телефон, фото.
-- [ ] Загрузка аватара через sharp.
-- [ ] E2E: регистрация → подтверждение → вход → кабинет → выход.
+- [ ] Register / login / logout / me в Go.
+- [ ] Argon2id при регистрации; verify только по хэшу при входе.
+- [ ] Сессии: cookie HttpOnly+Secure+SameSite; в БД hash токена.
+- [ ] pending → approved/rejected; вход до approved запрещён.
+- [ ] Confirm email + outbox; approve/reject организатором + audit.
+- [ ] Rate limit login/register; CLI seed organizer/owner.
+- [ ] UI формы → `/api/auth/*`; удалить localStorage `accounts.ts`.
+- [ ] Базовый RBAC middleware (полные TOTP/superadmin UI — этап усиления).
+- [ ] E2E: регистрация → blocked login → approve → login → logout.
 
-**Файлы:** `src/server/auth/*`, `src/server/actions/auth.ts`, `src/app/(auth)/*`, `src/app/cabinet/*`, `src/middleware.ts`.
+**Файлы:** `server/internal/auth/**`, `server/internal/http/**`, `src/components/domain/AuthForms.tsx`,
+`src/app/organizer/applications/**`, `src/lib/accounts.ts` (удаление).
 
-**Приёмка:** игрок видит только себя; организатор не входит в `/superadmin`; без сессии — редирект; 2FA обязательна для админских ролей; последний owner не удаляется.
+**Приёмка:** пароль нигде не хранится и не сравнивается plaintext; сессия отзывная;
+организатор подтверждает заявку; UI больше не пишет аккаунты в localStorage.
 
 ---
 
@@ -360,7 +351,7 @@ tests/
 
 ### Этап 4. Турниры и регистрация — 9 дней
 
-- [ ] CRUD турниров на server actions.
+- [ ] CRUD турниров через Go API.
 - [ ] Черновик → анонс → открытие/закрытие регистрации → завершение.
 - [ ] Обложка, slug, проверка уникальности.
 - [ ] Версии регламента и пресеты.
@@ -566,7 +557,7 @@ tests/
 | День | Что делаем | Результат |
 |---|---|---|
 | 1 | Kickoff, формула, роли, доступы, decision log | согласованный бриф |
-| 2 | Pi: ОС, Docker, UFW, SSH; репозиторий, env, Drizzle | пустое приложение на staging |
+| 2 | Pi: ОС, Docker, UFW, SSH; env; Go API + Postgres foundation | health API + crypto tests |
 | 3 | Миграции `0001–0004`: auth, игроки, турниры, заявки | схема поднимается |
 | 4 | Миграции `0005–0009`, ограничения, триггеры, сид | данные и аудит работают |
 | 5 | Health-check, CI, деплой, демо схемы и сида | демо: БД, staging, health |

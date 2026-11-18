@@ -35,7 +35,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 - данные — `src/lib/mock`, доступ — через `src/lib/data`;
 - БД, серверной авторизации и загрузки файлов нет;
-- регистрация и подтверждение аккаунтов хранятся в localStorage (`src/lib/accounts.ts`);
+- регистрация и подтверждение аккаунтов — через Go API (`src/lib/api/auth.ts`, см. `docs/LOCAL_API.md`);
 - действия организатора не сохраняются;
 - сборка уже умеет `output: "standalone"` и секретный `basePath`.
 
@@ -47,16 +47,18 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Next.js 16 (App Router), React 19, TypeScript, Tailwind 4.
 - Иконки — только `lucide-react`.
 - Шрифты — Prata (заголовки) и Manrope (текст) через `next/font/google`.
-- Целевая БД — PostgreSQL 17 + Drizzle ORM, своя авторизация (Argon2id, серверные сессии).
+- Целевая архитектура (D-017): **UI — Next.js**, **API — Go**, **БД — PostgreSQL 17**
+  (pgx + sqlc + goose). Авторизация только на Go: Argon2id (проверка по хэшу, не `==`),
+  серверные сессии, AES-256-GCM для секретов в БД. Один клуб (D-018).
 
 ```bash
 npm install
 npm run dev        # http://localhost:3000
 npm run typecheck  # обязательно перед завершением задачи
-npm run build      # обязательно, если меняли маршруты, конфиг или серверный код
+npm run build      # обязательно, если меняли маршруты, конфиг или UI-серверный код
 ```
 
-Node.js 22, см. `.nvmrc`.
+Node.js 22, см. `.nvmrc`. Go API (когда появится): `server/`, тесты `go test ./...`.
 
 ## 4. Карта репозитория
 
@@ -66,18 +68,18 @@ src/app/(auth)/       вход и регистрация
 src/app/organizer/    кабинет организатора
 src/app/cabinet/      кабинет игрока
 src/components/       ui, domain, organizer, layout
-src/lib/data/         единственный слой доступа к данным
+src/lib/data/         слой доступа UI (сейчас mock; позже HTTP к Go)
 src/lib/mock/         демо-данные
 src/lib/domain.ts     категории, типы, статусы, клубные константы
 src/lib/types.ts      доменные типы
-src/lib/accounts.ts   демо-аккаунты и подтверждение
+src/lib/api/auth.ts   HTTP-клиент auth и заявок организатора
+server/               Go API (целевое; этап 2+)
 deploy/               nginx и деплой на Pi
 docs/                 продукт, архитектура, дизайн, рейтинг, решения
 ```
 
-Правило: страницы и компоненты не обращаются к данным напрямую, только через
-`src/lib/data`. Не создавайте второй слой доступа и не импортируйте `src/lib/mock`
-в страницы.
+Правило: страницы не импортируют `src/lib/mock` напрямую и не ходят в Postgres.
+Данные UI — через `src/lib/data` или `/api` Go. Бизнес-правила и пароли — только в Go.
 
 ## 5. Жёсткие продуктовые правила
 

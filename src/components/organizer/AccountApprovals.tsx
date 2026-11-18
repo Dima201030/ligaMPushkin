@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Check, Clock3, Mail, UserCheck, X } from "lucide-react";
-import type { CategorySlug } from "@/lib/types";
 import {
-  approveAccount,
-  listAccounts,
-  rejectAccount,
-  type LeagueAccount,
-} from "@/lib/accounts";
+  approveOrganizerApplication,
+  listOrganizerApplications,
+  rejectOrganizerApplication,
+  type LeagueApplication,
+} from "@/lib/api/auth";
+import type { CategorySlug } from "@/lib/types";
 import { CATEGORIES, CATEGORY_BY_SLUG } from "@/lib/domain";
 import { cn, timeAgo } from "@/lib/utils";
 import { Avatar } from "@/components/ui/Avatar";
@@ -20,34 +20,44 @@ interface Draft {
   level: CategorySlug;
 }
 
-const STATUS_BADGE: Record<LeagueAccount["status"], string> = {
+const STATUS_BADGE: Record<LeagueApplication["status"], string> = {
   pending: "badge-warning",
   approved: "badge-positive",
   rejected: "badge-negative",
 };
 
-const STATUS_LABEL: Record<LeagueAccount["status"], string> = {
+const STATUS_LABEL: Record<LeagueApplication["status"], string> = {
   pending: "На проверке",
   approved: "Подтверждён",
   rejected: "Отклонён",
 };
 
 export function AccountApprovals() {
-  const [accounts, setAccounts] = useState<LeagueAccount[]>([]);
+  const [accounts, setAccounts] = useState<LeagueApplication[]>([]);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [notice, setNotice] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
-  function refresh() {
-    setAccounts(listAccounts());
-  }
-
-  useEffect(() => {
-    refresh();
-    setLoaded(true);
+  const refresh = useCallback(async () => {
+    setLoadState("loading");
+    setLoadError(null);
+    try {
+      const list = await listOrganizerApplications();
+      setAccounts(list);
+      setLoadState("ready");
+    } catch {
+      setLoadState("error");
+      setLoadError("Не удалось загрузить заявки. Проверьте, что API лиги запущен и вы вошли как организатор.");
+    }
   }, []);
 
-  function draftFor(account: LeagueAccount): Draft {
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  function draftFor(account: LeagueApplication): Draft {
     return (
       drafts[account.id] ?? {
         firstName: account.firstName,
@@ -57,41 +67,55 @@ export function AccountApprovals() {
     );
   }
 
-  function updateDraft(account: LeagueAccount, patch: Partial<Draft>) {
+  function updateDraft(account: LeagueApplication, patch: Partial<Draft>) {
     setDrafts((current) => ({
       ...current,
       [account.id]: { ...draftFor(account), ...patch },
     }));
   }
 
-  function approve(account: LeagueAccount) {
+  async function approve(account: LeagueApplication) {
     const draft = draftFor(account);
     if (!draft.firstName.trim() || !draft.lastName.trim()) {
       setNotice("Имя и фамилия не могут быть пустыми — проверьте данные перед подтверждением.");
       return;
     }
 
-    const updated = approveAccount(account.id, draft);
-    if (!updated) return;
-
-    setDrafts((current) => {
-      const next = { ...current };
-      delete next[account.id];
-      return next;
-    });
-    refresh();
-    setNotice(
-      `Аккаунт ${updated.firstName} ${updated.lastName} подтверждён. Игрок может войти в кабинет с указанным при регистрации паролем.`,
-    );
+    setBusyId(account.id);
+    setNotice(null);
+    try {
+      await approveOrganizerApplication(account.id, draft);
+      setDrafts((current) => {
+        const next = { ...current };
+        delete next[account.id];
+        return next;
+      });
+      await refresh();
+      setNotice(
+        `Аккаунт ${draft.firstName} ${draft.lastName} подтверждён. Игрок может войти в кабинет с указанным при регистрации паролем.`,
+      );
+    } catch {
+      setNotice("Не удалось подтвердить заявку. Повторите попытку или проверьте сессию организатора.");
+    } finally {
+      setBusyId(null);
+    }
   }
 
-  function reject(account: LeagueAccount) {
+  async function reject(account: LeagueApplication) {
     const name = `${account.firstName} ${account.lastName}`;
     if (!window.confirm(`Отклонить заявку ${name}? Игрок не сможет войти в лигу.`)) return;
 
-    rejectAccount(account.id);
-    refresh();
-    setNotice(`Заявка ${name} отклонена. Игрок увидит статус при попытке входа.`);
+    setBusyId(account.id);
+    setNotice(null);
+    try {
+      await rejectOrganizerApplication(account.id);
+      await refresh();
+      setNotice(`Заявка ${name} отклонена. Игрок увидит статус при попытке входа.`);
+    } catch {
+      setNotice("Не удалось отклонить заявку. Повторите попытку или проверьте сессию организатора.");
+    } finally {
+      setBusyId(null);
+    }
   }
 
   const pending = accounts.filter((account) => account.status === "pending");
@@ -100,8 +124,21 @@ export function AccountApprovals() {
     .sort((a, b) => +new Date(b.reviewedAt ?? b.submittedAt) - +new Date(a.reviewedAt ?? a.submittedAt))
     .slice(0, 8);
 
-  if (!loaded) {
+  if (loadState === "loading") {
     return <p className="py-6 text-sm text-ink-muted">Загружаем заявки…</p>;
+  }
+
+  if (loadState === "error") {
+    return (
+      <div className="space-y-4 py-6">
+        <p role="alert" className="text-sm text-negative">
+          {loadError}
+        </p>
+        <button type="button" className="btn btn-secondary btn-sm" onClick={() => void refresh()}>
+          Повторить
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -126,6 +163,7 @@ export function AccountApprovals() {
           <ul className="divide-y divide-divider">
             {pending.map((account) => {
               const draft = draftFor(account);
+              const disabled = busyId === account.id;
               return (
                 <li key={account.id} className="py-5">
                   <div className="flex flex-wrap items-start gap-4">
@@ -156,7 +194,8 @@ export function AccountApprovals() {
                       <button
                         type="button"
                         className="btn btn-primary btn-sm"
-                        onClick={() => approve(account)}
+                        disabled={disabled}
+                        onClick={() => void approve(account)}
                       >
                         <Check className="size-3.5" aria-hidden="true" />
                         Подтвердить
@@ -164,7 +203,8 @@ export function AccountApprovals() {
                       <button
                         type="button"
                         className="btn btn-secondary btn-sm text-negative"
-                        onClick={() => reject(account)}
+                        disabled={disabled}
+                        onClick={() => void reject(account)}
                       >
                         <X className="size-3.5" aria-hidden="true" />
                         Отклонить
@@ -215,7 +255,7 @@ export function AccountApprovals() {
         )}
       </section>
 
-      {notice && <DemoNote>{notice} Демо-режим: данные хранятся в этом браузере.</DemoNote>}
+      {notice && <DemoNote>{notice}</DemoNote>}
 
       <section>
         <div className="border-b border-line pb-3">
@@ -252,11 +292,6 @@ export function AccountApprovals() {
           </ul>
         )}
       </section>
-
-      <DemoNote>
-        Демо-режим: подтверждение хранится в localStorage этого браузера. После подключения
-        бэкенда заявки попадут в PostgreSQL, а решение администратора — в журнал действий.
-      </DemoNote>
     </div>
   );
 }

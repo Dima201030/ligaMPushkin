@@ -13,12 +13,8 @@ import {
   ShieldCheck,
   UserCheck,
 } from "lucide-react";
+import { loginAccount, registerAccount } from "@/lib/api/auth";
 import { CATEGORIES } from "@/lib/domain";
-import {
-  createAccount,
-  findAccountByEmail,
-  hashPassword,
-} from "@/lib/accounts";
 
 type LoginState =
   | { kind: "idle" }
@@ -46,36 +42,33 @@ export function LoginForm() {
     setChecking(true);
     setState({ kind: "idle" });
 
-    const account = findAccountByEmail(email);
-    if (!account) {
+    try {
+      const result = await loginAccount(email, password);
       setChecking(false);
-      setState({ kind: "error", message: "Неверный email или пароль" });
-      return;
-    }
 
-    const name = `${account.firstName} ${account.lastName}`;
+      if (result.ok) {
+        router.push("/cabinet");
+        return;
+      }
 
-    if (account.status === "pending") {
+      if (result.kind === "pending" && result.name) {
+        setState({ kind: "pending", name: result.name });
+        return;
+      }
+
+      if (result.kind === "rejected" && result.name) {
+        setState({ kind: "rejected", name: result.name });
+        return;
+      }
+
+      setState({
+        kind: "error",
+        message: result.message || "Неверный email или пароль",
+      });
+    } catch {
       setChecking(false);
-      setState({ kind: "pending", name });
-      return;
+      setState({ kind: "error", message: "Не удалось связаться с сервером лиги" });
     }
-
-    if (account.status === "rejected") {
-      setChecking(false);
-      setState({ kind: "rejected", name });
-      return;
-    }
-
-    const passwordHash = await hashPassword(email, password);
-    setChecking(false);
-
-    if (passwordHash !== account.passwordHash) {
-      setState({ kind: "error", message: "Неверный email или пароль" });
-      return;
-    }
-
-    router.push("/cabinet");
   }
 
   return (
@@ -247,25 +240,29 @@ export function RegisterForm() {
     setSubmitting(true);
     setError(null);
 
-    const passwordHash = await hashPassword(email, password);
-    const result = createAccount({
-      firstName,
-      lastName,
-      email,
-      phone,
-      level: level as (typeof CATEGORIES)[number]["slug"],
-      passwordHash,
-    });
+    try {
+      const result = await registerAccount({
+        firstName,
+        lastName,
+        email,
+        phone,
+        password,
+        level: level as (typeof CATEGORIES)[number]["slug"],
+      });
 
-    setSubmitting(false);
+      setSubmitting(false);
 
-    if (!result.ok) {
-      setError(result.error);
-      return;
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+
+      setApplicantName(`${result.user.firstName} ${result.user.lastName}`);
+      setStep("done");
+    } catch {
+      setSubmitting(false);
+      setError("Не удалось связаться с сервером лиги");
     }
-
-    setApplicantName(`${result.account.firstName} ${result.account.lastName}`);
-    setStep("done");
   }
 
   if (step === "done") {
@@ -285,7 +282,7 @@ export function RegisterForm() {
             <span className="grid size-5 shrink-0 place-items-center rounded-full bg-positive-soft text-positive">
               <Check className="size-3" aria-hidden="true" />
             </span>
-            Регистрация завершена — данные сохранены.
+            Регистрация завершена — заявка в базе лиги.
           </li>
           <li className="flex gap-3">
             <span className="grid size-5 shrink-0 place-items-center rounded-full bg-warning-soft text-warning">
@@ -305,10 +302,6 @@ export function RegisterForm() {
           <Link href="/login" className="btn btn-primary">Перейти ко входу</Link>
           <Link href="/tournaments" className="btn btn-secondary">Смотреть турниры</Link>
         </div>
-        <p className="mt-4 text-center text-[0.65rem] leading-relaxed text-ink-faint">
-          Демо-режим: заявка хранится в этом браузере. После подключения бэкенда она попадёт
-          в базу лиги и будет видна всем организаторам.
-        </p>
       </div>
     );
   }
