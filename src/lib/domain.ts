@@ -120,6 +120,7 @@ export const MATCH_STATUS_LABEL: Record<MatchStatus, string> = {
   completed: "Завершён",
   cancelled: "Отменён",
   walkover: "Техническая победа",
+  bye: "Пропуск",
 };
 
 export const RATING_RULES = [

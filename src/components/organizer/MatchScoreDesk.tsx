@@ -1,10 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { AlertCircle, CheckCircle2, ClipboardEdit, Filter, RefreshCw, Search, Zap } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  ClipboardEdit,
+  Filter,
+  RefreshCw,
+  Search,
+  Zap,
+} from "lucide-react";
 import type { Match } from "@/lib/types";
 import { playerById } from "@/lib/mock/players";
 import { cn, formatDateShort, formatTime } from "@/lib/utils";
+import { ApiError } from "@/lib/api/client";
+import { parseScoreDraft, submitScore, updateSchedule, walkover } from "@/lib/api/matches";
 import { MatchRow } from "@/components/domain/MatchRow";
 import { DemoNote } from "./OrganizerUI";
 
@@ -17,71 +27,139 @@ const TABS: { value: Tab; label: string }[] = [
   { value: "completed", label: "С завершённым счётом" },
 ];
 
-function fullName(playerId: string) {
-  const player = playerById.get(playerId);
-  return player ? `${player.firstName} ${player.lastName}` : "Соперник";
+function sideName(side: Match["side1"], fallback: string) {
+  if (side.label) return side.label;
+  if (side.playerIds[0]) {
+    const player = playerById.get(side.playerIds[0]);
+    if (player) return `${player.firstName} ${player.lastName}`;
+  }
+  return fallback;
 }
 
 export function MatchScoreDesk({ matches }: { matches: Match[] }) {
+  const [items, setItems] = useState(matches);
   const [tab, setTab] = useState<Tab>("all");
   const [query, setQuery] = useState("");
   const [tournament, setTournament] = useState("all");
   const [editing, setEditing] = useState<string | null>(null);
   const [scoreDraft, setScoreDraft] = useState("");
   const [winner, setWinner] = useState<"1" | "2">("1");
-  const [overrides, setOverrides] = useState<Record<string, Partial<Match>>>({});
   const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setItems(matches);
+  }, [matches]);
 
   const tournamentOptions = useMemo(() => {
     const unique = new Map<string, string>();
-    matches.forEach((match) => unique.set(match.tournamentId, match.tournamentTitle));
+    items.forEach((match) => unique.set(match.tournamentId, match.tournamentTitle));
     return Array.from(unique.entries());
-  }, [matches]);
+  }, [items]);
 
-  const merged = matches.map((match) => ({ ...match, ...overrides[match.id] }));
-
-  const filtered = merged.filter((match) => {
+  const filtered = items.filter((match) => {
     const needle = query.trim().toLowerCase();
-    const names = [...match.side1.playerIds, ...match.side2.playerIds].map(fullName).join(" ");
+    const names = [match.side1.label, match.side2.label, ...match.side1.playerIds, ...match.side2.playerIds]
+      .filter(Boolean)
+      .join(" ");
+    const isCompleted = match.status === "completed" || match.status === "walkover";
     return (
-      (tab === "all" || match.status === tab) &&
+      (tab === "all" ||
+        (tab === "completed" ? isCompleted : match.status === tab)) &&
       (tournament === "all" || match.tournamentId === tournament) &&
       (needle ? `${match.tournamentTitle} ${match.stage} ${names}`.toLowerCase().includes(needle) : true)
     );
   });
 
-  const liveCount = merged.filter((match) => match.status === "live").length;
-  const scheduledCount = merged.filter((match) => match.status === "scheduled").length;
-  const missing = merged.filter((match) => match.status === "completed" && !match.score).length;
+  const liveCount = items.filter((match) => match.status === "live").length;
+  const scheduledCount = items.filter((match) => match.status === "scheduled").length;
+  const missing = items.filter((match) => match.status === "completed" && !match.score).length;
+
+  function replaceMatch(next: Match) {
+    setItems((current) => current.map((item) => (item.id === next.id ? next : item)));
+  }
 
   function openEditor(match: Match) {
     setEditing(match.id);
     setScoreDraft(match.score ?? "");
     setWinner(match.winner === 2 ? "2" : "1");
     setNotice(null);
+    setError(null);
   }
 
-  function save(match: Match) {
-    const score = scoreDraft.trim();
-    if (!score) {
-      setNotice("Введите счёт матча, например 6:4, 3:6, 10:7.");
+  async function save(match: Match) {
+    const sets = parseScoreDraft(scoreDraft);
+    if (!sets) {
+      setError("Введите счёт матча, например 6:4, 3:6, 10:7.");
+      setNotice(null);
       return;
     }
-    setOverrides((current) => ({
-      ...current,
-      [match.id]: { score, winner: Number(winner) as 1 | 2, status: "completed" },
-    }));
-    setEditing(null);
-    setNotice(
-      `Счёт «${score}» сохранён для матча ${match.stage}. Победа присуждена ${fullName(
-        winner === "1" ? match.side1.playerIds[0] : match.side2.playerIds[0],
-      )}.`,
-    );
+    if (match.version === undefined) {
+      setError("Не удалось определить версию матча. Обновите страницу.");
+      return;
+    }
+    setBusyId(match.id);
+    setError(null);
+    setNotice(null);
+    try {
+      const updated = await submitScore(match.id, { sets, version: match.version });
+      replaceMatch(updated);
+      setEditing(null);
+      setNotice(
+        `Счёт «${updated.score ?? scoreDraft.trim()}» сохранён для матча ${match.stage}. Победа: ${sideName(
+          updated.winner === 2 ? updated.side2 : updated.side1,
+          updated.winner === 2 ? "сторона 2" : "сторона 1",
+        )}.`,
+      );
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Не удалось сохранить счёт");
+    } finally {
+      setBusyId(null);
+    }
   }
 
-  function markLive(match: Match) {
-    setOverrides((current) => ({ ...current, [match.id]: { status: "live" } }));
-    setNotice(`Матч ${match.stage} переведён в статус «Идёт». Обновляйте счёт по ходу игры.`);
+  async function awardWalkover(match: Match) {
+    if (match.version === undefined) {
+      setError("Не удалось определить версию матча. Обновите страницу.");
+      return;
+    }
+    setBusyId(match.id);
+    setError(null);
+    setNotice(null);
+    try {
+      const updated = await walkover(match.id, {
+        winnerSide: Number(winner) as 1 | 2,
+        version: match.version,
+      });
+      replaceMatch(updated);
+      setEditing(null);
+      setNotice(
+        `Техническая победа присуждена: ${sideName(
+          winner === "1" ? match.side1 : match.side2,
+          winner === "1" ? "сторона 1" : "сторона 2",
+        )}.`,
+      );
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Не удалось зафиксировать тех. победу");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function markLive(match: Match) {
+    setBusyId(match.id);
+    setError(null);
+    setNotice(null);
+    try {
+      const updated = await updateSchedule(match.id, { markLive: true });
+      replaceMatch(updated);
+      setNotice(`Матч ${match.stage} переведён в статус «Идёт».`);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Не удалось начать матч");
+    } finally {
+      setBusyId(null);
+    }
   }
 
   return (
@@ -91,7 +169,11 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
           <div className="no-scrollbar flex flex-1 flex-wrap gap-x-5 gap-y-2 overflow-x-auto">
             {TABS.map((item) => {
               const count =
-                item.value === "all" ? merged.length : merged.filter((match) => match.status === item.value).length;
+                item.value === "all"
+                  ? items.length
+                  : item.value === "completed"
+                    ? items.filter((match) => match.status === "completed" || match.status === "walkover").length
+                    : items.filter((match) => match.status === item.value).length;
               return (
                 <button
                   key={item.value}
@@ -174,7 +256,7 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
             <div key={match.id} className="border-y border-line">
               <div className="flex items-center justify-between gap-3 border-b border-line py-2">
                 <div className="flex min-w-0 items-center gap-2 text-[0.64rem] text-ink-muted">
-                  <span className="font-mono text-[0.6rem] uppercase tracking-[0.08em] text-ink-soft">{match.id.toUpperCase()}</span>
+                  <span className="font-mono text-[0.6rem] uppercase tracking-[0.08em] text-ink-soft">{match.id.slice(0, 8).toUpperCase()}</span>
                   <span className="truncate">{match.tournamentTitle}</span>
                   <span className="text-ink-faint">·</span>
                   <span>{formatDateShort(match.scheduledAt)}, {formatTime(match.scheduledAt)}</span>
@@ -184,20 +266,23 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
                     <button
                       type="button"
                       className="btn btn-ghost btn-sm text-[0.66rem]"
+                      disabled={busyId === match.id}
                       onClick={() => markLive(match)}
                     >
                       <Zap className="size-3" aria-hidden="true" />
                       Начать
                     </button>
                   )}
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-sm text-[0.66rem]"
-                    onClick={() => (editing === match.id ? setEditing(null) : openEditor(match))}
-                  >
-                    <ClipboardEdit className="size-3.5" aria-hidden="true" />
-                    {editing === match.id ? "Свернуть" : match.score ? "Исправить счёт" : "Внести счёт"}
-                  </button>
+                  {match.status !== "bye" && match.status !== "cancelled" && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm text-[0.66rem]"
+                      onClick={() => (editing === match.id ? setEditing(null) : openEditor(match))}
+                    >
+                      <ClipboardEdit className="size-3.5" aria-hidden="true" />
+                      {editing === match.id ? "Свернуть" : match.score ? "Исправить счёт" : "Внести счёт"}
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -213,22 +298,37 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
                         placeholder="6:4, 3:6, 10:7"
                         value={scoreDraft}
                         onChange={(event) => setScoreDraft(event.target.value)}
+                        disabled={busyId === match.id}
                       />
                     </label>
                     <label className="block">
-                      <span className="field-label">Победитель</span>
+                      <span className="field-label">Победитель (для тех. победы)</span>
                       <select
                         className="field"
                         value={winner}
                         onChange={(event) => setWinner(event.target.value as "1" | "2")}
+                        disabled={busyId === match.id}
                       >
-                        <option value="1">{match.side1.playerIds.length ? fullName(match.side1.playerIds[0]) : "Сторона 1"}</option>
-                        <option value="2">{match.side2.playerIds.length ? fullName(match.side2.playerIds[0]) : "Сторона 2"}</option>
+                        <option value="1">{sideName(match.side1, "Сторона 1")}</option>
+                        <option value="2">{sideName(match.side2, "Сторона 2")}</option>
                       </select>
                     </label>
-                    <div className="flex gap-2">
-                      <button type="button" className="btn btn-primary" onClick={() => save(match)}>
-                        Сохранить
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        disabled={busyId === match.id}
+                        onClick={() => save(match)}
+                      >
+                        {busyId === match.id ? "Сохраняем…" : "Сохранить"}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        disabled={busyId === match.id}
+                        onClick={() => awardWalkover(match)}
+                      >
+                        Тех. победа
                       </button>
                       <button type="button" className="btn btn-secondary" onClick={() => setEditing(null)}>
                         Отмена
@@ -236,8 +336,8 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
                     </div>
                   </div>
                   <p className="mt-2 text-[0.64rem] text-ink-muted">
-                    Формат счёта: сеты через запятую. Для тай-брейка укажите очки, например 10:7. После сохранения
-                    результат попадёт в рейтинг.
+                    Формат счёта: сеты через запятую (6:4, 6:3). Победитель определяется по сетам автоматически.
+                    Техническая победа — без сетов, по выбранной стороне.
                   </p>
                 </div>
               )}
@@ -246,11 +346,19 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
         </div>
       )}
 
-      {notice && (
+      {error && (
+        <DemoNote>
+          <span className="inline-flex items-start gap-1.5 text-negative">
+            <AlertCircle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+            <span>{error}</span>
+          </span>
+        </DemoNote>
+      )}
+      {notice && !error && (
         <DemoNote>
           <span className="inline-flex items-start gap-1.5">
             <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-            <span>{notice} Демо-режим: данные не сохраняются.</span>
+            <span>{notice}</span>
           </span>
         </DemoNote>
       )}

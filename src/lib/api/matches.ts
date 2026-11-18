@@ -1,0 +1,386 @@
+import type { Match, MatchSide, MatchStatus, TournamentFormat, TournamentType } from "@/lib/types";
+import { ApiError, apiRequest, type ApiErrorBody } from "./client";
+
+interface ApiPlayerBrief {
+  id: string;
+  first_name: string;
+  last_name: string;
+  level: string;
+}
+
+interface ApiMatchSide {
+  side: number;
+  player_id?: string | null;
+  partner_id?: string | null;
+  seed?: number | null;
+  label?: string | null;
+  is_bye?: boolean;
+  player?: ApiPlayerBrief | null;
+  partner?: ApiPlayerBrief | null;
+}
+
+export interface ApiMatch {
+  id: string;
+  tournament_id: string;
+  tournament_slug?: string;
+  tournament_title?: string;
+  tournament_type?: string;
+  bracket_key: string;
+  stage: string;
+  round_index: number;
+  position: number;
+  round_label: string;
+  scheduled_at?: string | null;
+  court?: string | null;
+  status: string;
+  score_sets?: number[][] | null;
+  score_text?: string | null;
+  winner_side?: number | null;
+  next_match_id?: string | null;
+  next_slot?: number | null;
+  is_bye: boolean;
+  version: number;
+  side1: ApiMatchSide;
+  side2: ApiMatchSide;
+}
+
+export interface BracketMeta {
+  status: string;
+  version: number;
+  publishedAt?: string;
+  thirdPlace: boolean;
+  format: TournamentFormat | string;
+  matchCount: number;
+}
+
+export interface BracketDrawSummary {
+  entriesCount: number;
+  bracketSize: number;
+  byes: number;
+  matchCount: number;
+}
+
+function mapBracketMeta(raw: {
+  status: string;
+  version?: number;
+  published_at?: string | null;
+  third_place?: boolean;
+  format: string;
+  match_count?: number;
+}): BracketMeta {
+  return {
+    status: raw.status,
+    version: raw.version ?? 0,
+    publishedAt: raw.published_at ?? undefined,
+    thirdPlace: Boolean(raw.third_place),
+    format: raw.format,
+    matchCount: raw.match_count ?? 0,
+  };
+}
+
+function sideLabel(side: ApiMatchSide): string | undefined {
+  if (side.is_bye) return "Пропуск";
+  if (side.label) return side.label;
+  const names: string[] = [];
+  if (side.player) {
+    names.push(`${side.player.last_name} ${side.player.first_name.charAt(0)}.`);
+  }
+  if (side.partner) {
+    names.push(`${side.partner.last_name} ${side.partner.first_name.charAt(0)}.`);
+  }
+  return names.length ? names.join(" / ") : undefined;
+}
+
+function mapSide(side: ApiMatchSide): MatchSide {
+  const playerIds = [side.player_id, side.partner_id].filter((id): id is string => Boolean(id));
+  return {
+    playerIds,
+    seed: side.seed ?? undefined,
+    label: sideLabel(side),
+  };
+}
+
+export function mapMatch(raw: ApiMatch, fallbackTitle = "Турнир"): Match {
+  const type = (raw.tournament_type ?? "singles") as TournamentType;
+  const status = (raw.status === "bye" ? "bye" : raw.status) as MatchStatus;
+  return {
+    id: raw.id,
+    tournamentId: raw.tournament_id,
+    tournamentSlug: raw.tournament_slug,
+    tournamentTitle: raw.tournament_title ?? fallbackTitle,
+    type,
+    stage: raw.round_label || raw.stage,
+    round: raw.stage || `R${raw.round_index}`,
+    scheduledAt: raw.scheduled_at ?? new Date().toISOString(),
+    court: raw.court ?? undefined,
+    status,
+    side1: mapSide(raw.side1),
+    side2: mapSide(raw.side2),
+    score: raw.score_text ?? undefined,
+    winner: raw.winner_side === 1 || raw.winner_side === 2 ? (raw.winner_side as 1 | 2) : null,
+    isDoubles: ["doubles", "mixed", "teams"].includes(type),
+    version: raw.version,
+  };
+}
+
+async function throwIfNotOk(response: Response, data: ApiErrorBody | undefined, fallback: string) {
+  if (response.ok) return;
+  throw new ApiError(response.status, data?.code, data?.message ?? fallback);
+}
+
+function serverOpts(opts?: { cookie?: string; absolute?: boolean }) {
+  return {
+    absolute: opts?.absolute ?? true,
+    headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
+  } as const;
+}
+
+export async function fetchTournamentBracket(
+  slug: string,
+  opts?: { cookie?: string; absolute?: boolean },
+): Promise<{ bracket: BracketMeta; matches: Match[] }> {
+  const { response, data } = await apiRequest<{
+    bracket: {
+      status: string;
+      version: number;
+      published_at?: string | null;
+      third_place: boolean;
+      format: string;
+      match_count?: number;
+    };
+    matches: ApiMatch[];
+  }>(`/tournaments/${encodeURIComponent(slug)}/bracket`, serverOpts(opts));
+  await throwIfNotOk(response, data as ApiErrorBody | undefined, "Не удалось загрузить сетку");
+  const title = data?.matches?.[0]?.tournament_title;
+  return {
+    bracket: data?.bracket
+      ? mapBracketMeta(data.bracket)
+      : { status: "none", version: 0, thirdPlace: false, format: "olympic", matchCount: 0 },
+    matches: (data?.matches ?? []).map((item) => mapMatch(item, title)),
+  };
+}
+
+export async function fetchTournamentMatches(
+  slug: string,
+  opts?: { cookie?: string; absolute?: boolean },
+): Promise<Match[]> {
+  const { response, data } = await apiRequest<{ matches: ApiMatch[] }>(
+    `/tournaments/${encodeURIComponent(slug)}/matches`,
+    serverOpts(opts),
+  );
+  await throwIfNotOk(response, data as ApiErrorBody | undefined, "Не удалось загрузить матчи");
+  return (data?.matches ?? []).map((item) => mapMatch(item));
+}
+
+export async function fetchOrganizerBracket(
+  tournamentId: string,
+  opts?: { cookie?: string; absolute?: boolean },
+): Promise<{ bracket: BracketMeta; matches: Match[] }> {
+  const { response, data } = await apiRequest<{
+    bracket: {
+      status: string;
+      version: number;
+      published_at?: string | null;
+      third_place: boolean;
+      format: string;
+      match_count?: number;
+    };
+    matches: ApiMatch[];
+  }>(`/organizer/tournaments/${encodeURIComponent(tournamentId)}/bracket`, serverOpts(opts));
+  await throwIfNotOk(response, data as ApiErrorBody | undefined, "Не удалось загрузить сетку");
+  const title = data?.matches?.[0]?.tournament_title;
+  return {
+    bracket: data?.bracket
+      ? mapBracketMeta(data.bracket)
+      : { status: "none", version: 0, thirdPlace: false, format: "olympic", matchCount: 0 },
+    matches: (data?.matches ?? []).map((item) => mapMatch(item, title)),
+  };
+}
+
+export async function fetchOrganizerTournamentMatches(
+  tournamentId: string,
+  opts?: { cookie?: string; absolute?: boolean },
+): Promise<Match[]> {
+  const { response, data } = await apiRequest<{ matches: ApiMatch[] }>(
+    `/organizer/tournaments/${encodeURIComponent(tournamentId)}/matches`,
+    serverOpts(opts),
+  );
+  await throwIfNotOk(response, data as ApiErrorBody | undefined, "Не удалось загрузить матчи");
+  return (data?.matches ?? []).map((item) => mapMatch(item));
+}
+
+export async function fetchOrganizerMatches(opts?: { cookie?: string; absolute?: boolean }): Promise<Match[]> {
+  const { response, data } = await apiRequest<{ matches: ApiMatch[] }>("/organizer/matches", serverOpts(opts));
+  await throwIfNotOk(response, data as ApiErrorBody | undefined, "Не удалось загрузить матчи");
+  return (data?.matches ?? []).map((item) => mapMatch(item));
+}
+
+export type GenerateBracketInput = {
+  thirdPlace?: boolean;
+  groupSize?: number;
+  qualifiersPerGroup?: number;
+  seeding?: "seed" | "rating" | "random";
+  randomSeed?: number;
+};
+
+export async function generateBracket(
+  tournamentId: string,
+  input: GenerateBracketInput = {},
+): Promise<{ bracket: BracketMeta; draw?: BracketDrawSummary; matches: Match[] }> {
+  const { response, data } = await apiRequest<{
+    bracket: {
+      status: string;
+      version: number;
+      published_at?: string | null;
+      third_place: boolean;
+      format: string;
+      match_count?: number;
+    };
+    draw?: {
+      entries_count: number;
+      bracket_size: number;
+      byes: number;
+      match_count: number;
+    };
+    matches: ApiMatch[];
+  } & ApiErrorBody>(`/organizer/tournaments/${encodeURIComponent(tournamentId)}/bracket/generate`, {
+    method: "POST",
+    body: JSON.stringify({
+      third_place: input.thirdPlace,
+      group_size: input.groupSize,
+      qualifiers_per_group: input.qualifiersPerGroup,
+      seeding: input.seeding,
+      random_seed: input.randomSeed,
+    }),
+  });
+  if (!response.ok) {
+    throw new ApiError(response.status, data?.code, data?.message ?? "Не удалось сгенерировать сетку");
+  }
+  const title = data?.matches?.[0]?.tournament_title;
+  return {
+    bracket: data?.bracket
+      ? mapBracketMeta(data.bracket)
+      : { status: "draft", version: 0, thirdPlace: Boolean(input.thirdPlace), format: "olympic", matchCount: 0 },
+    draw: data?.draw
+      ? {
+          entriesCount: data.draw.entries_count,
+          bracketSize: data.draw.bracket_size,
+          byes: data.draw.byes,
+          matchCount: data.draw.match_count,
+        }
+      : undefined,
+    matches: (data?.matches ?? []).map((item) => mapMatch(item, title)),
+  };
+}
+
+export async function publishBracket(tournamentId: string): Promise<BracketMeta> {
+  const { response, data } = await apiRequest<{
+    bracket: {
+      status: string;
+      version: number;
+      published_at?: string | null;
+      third_place: boolean;
+      format: string;
+      match_count?: number;
+    };
+  } & ApiErrorBody>(`/organizer/tournaments/${encodeURIComponent(tournamentId)}/bracket/publish`, {
+    method: "POST",
+  });
+  if (!response.ok) {
+    throw new ApiError(response.status, data?.code, data?.message ?? "Не удалось опубликовать сетку");
+  }
+  return data?.bracket
+    ? mapBracketMeta(data.bracket)
+    : { status: "published", version: 0, thirdPlace: false, format: "olympic", matchCount: 0 };
+}
+
+export async function submitScore(
+  matchId: string,
+  input: { sets: number[][]; version: number },
+): Promise<Match> {
+  const { response, data } = await apiRequest<{ match: ApiMatch } & ApiErrorBody>(
+    `/organizer/matches/${encodeURIComponent(matchId)}/score`,
+    {
+      method: "POST",
+      body: JSON.stringify({ sets: input.sets, version: input.version }),
+    },
+  );
+  if (!response.ok || !data?.match) {
+    throw new ApiError(response.status, data?.code, data?.message ?? "Не удалось сохранить счёт");
+  }
+  return mapMatch(data.match);
+}
+
+export async function walkover(
+  matchId: string,
+  input: { winnerSide: 1 | 2; reason?: string; version: number },
+): Promise<Match> {
+  const { response, data } = await apiRequest<{ match: ApiMatch } & ApiErrorBody>(
+    `/organizer/matches/${encodeURIComponent(matchId)}/walkover`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        winner_side: input.winnerSide,
+        reason: input.reason,
+        version: input.version,
+      }),
+    },
+  );
+  if (!response.ok || !data?.match) {
+    throw new ApiError(response.status, data?.code, data?.message ?? "Не удалось зафиксировать тех. победу");
+  }
+  return mapMatch(data.match);
+}
+
+export async function cancelMatch(
+  matchId: string,
+  input: { reason?: string; version: number },
+): Promise<Match> {
+  const { response, data } = await apiRequest<{ match: ApiMatch } & ApiErrorBody>(
+    `/organizer/matches/${encodeURIComponent(matchId)}/cancel`,
+    {
+      method: "POST",
+      body: JSON.stringify({ reason: input.reason, version: input.version }),
+    },
+  );
+  if (!response.ok || !data?.match) {
+    throw new ApiError(response.status, data?.code, data?.message ?? "Не удалось отменить матч");
+  }
+  return mapMatch(data.match);
+}
+
+export async function updateSchedule(
+  matchId: string,
+  input: { scheduledAt?: string; court?: string; markLive?: boolean },
+): Promise<Match> {
+  const { response, data } = await apiRequest<{ match: ApiMatch } & ApiErrorBody>(
+    `/organizer/matches/${encodeURIComponent(matchId)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        scheduled_at: input.scheduledAt,
+        court: input.court,
+        mark_live: input.markLive,
+      }),
+    },
+  );
+  if (!response.ok || !data?.match) {
+    throw new ApiError(response.status, data?.code, data?.message ?? "Не удалось обновить матч");
+  }
+  return mapMatch(data.match);
+}
+
+/** Parse UI score text like "6:4, 3:6, 10:7" into [[6,4],[3,6],[10,7]]. */
+export function parseScoreDraft(input: string): number[][] | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  const parts = trimmed.split(/[,;]+/).map((part) => part.trim()).filter(Boolean);
+  if (!parts.length) return null;
+  const sets: number[][] = [];
+  for (const part of parts) {
+    const match = part.match(/^(\d+)\s*[:\-–]\s*(\d+)$/);
+    if (!match) return null;
+    sets.push([Number(match[1]), Number(match[2])]);
+  }
+  return sets;
+}
