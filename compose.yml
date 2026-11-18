@@ -1,0 +1,25 @@
+services:
+  web:
+    build:
+      context: .
+      args:
+        NEXT_BASE_PATH: ${NEXT_BASE_PATH:-}
+    image: mr-pushkin-league-web:latest
+    container_name: mr-pushkin-league-web
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      TZ: Europe/Moscow
+    ports:
+      - "127.0.0.1:3010:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000${NEXT_BASE_PATH:-}/ >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
