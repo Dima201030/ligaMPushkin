@@ -1,7 +1,7 @@
 import type { CategorySlug } from "@/lib/types";
+import { ApiError, apiRequest, parseJson, serverApiURL } from "./client";
 
-const API_BASE =
-  (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/$/, "");
+export { ApiError };
 
 export type AccountStatus = "pending" | "approved" | "rejected";
 
@@ -64,47 +64,11 @@ interface ApiErrorBody {
   message?: string;
 }
 
-export class ApiError extends Error {
-  constructor(
-    readonly status: number,
-    readonly code: string | undefined,
-    message: string,
-  ) {
-    super(message);
-    this.name = "ApiError";
-  }
-}
-
-function apiPath(path: string): string {
-  const suffix = path.startsWith("/") ? path : `/${path}`;
-  return `${API_BASE}/api${suffix}`;
-}
-
-async function parseJson<T>(response: Response): Promise<T | undefined> {
-  const text = await response.text();
-  if (!text) return undefined;
-  try {
-    return JSON.parse(text) as T;
-  } catch {
-    return undefined;
-  }
-}
-
 async function request<T>(
   path: string,
   init?: RequestInit,
 ): Promise<{ response: Response; data: T | undefined }> {
-  const response = await fetch(apiPath(path), {
-    credentials: "include",
-    ...init,
-    headers: {
-      Accept: "application/json",
-      ...(init?.body ? { "Content-Type": "application/json" } : {}),
-      ...init?.headers,
-    },
-  });
-  const data = await parseJson<T>(response);
-  return { response, data };
+  return apiRequest<T>(path, init);
 }
 
 function mapUser(raw: ApiUser): LeagueUser {
@@ -246,6 +210,26 @@ export async function logoutAccount(): Promise<void> {
 }
 
 export async function fetchCurrentUser(): Promise<LeagueUser | null> {
+  // Browser: same-origin /api. RSC: absolute API + forwarded cookies.
+  if (typeof window === "undefined") {
+    try {
+      const { cookies } = await import("next/headers");
+      const jar = await cookies();
+      const cookie = jar.getAll().map((item) => `${item.name}=${item.value}`).join("; ");
+      const response = await fetch(serverApiURL("/auth/me"), {
+        headers: {
+          Accept: "application/json",
+          ...(cookie ? { Cookie: cookie } : {}),
+        },
+        cache: "no-store",
+      });
+      const data = await parseJson<{ user: ApiUser }>(response);
+      if (!response.ok || !data?.user) return null;
+      return mapUser(data.user);
+    } catch {
+      return null;
+    }
+  }
   const { response, data } = await request<{ user: ApiUser }>("/auth/me");
   if (!response.ok || !data?.user) return null;
   return mapUser(data.user);

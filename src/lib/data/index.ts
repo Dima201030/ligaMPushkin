@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import type {
   CategorySlug,
   ClubEvent,
@@ -8,6 +9,12 @@ import type {
   TournamentStatus,
   TournamentType,
 } from "@/lib/types";
+import {
+  fetchOrganizerTournament,
+  fetchOrganizerTournaments,
+  fetchTournamentBySlug,
+  fetchTournaments,
+} from "@/lib/api/tournaments";
 import { latestNews, newsBySlug, events } from "@/lib/mock/news";
 import { getPlayerMatches, getTournamentMatches } from "@/lib/mock/matches";
 import {
@@ -42,6 +49,17 @@ export interface TournamentFilters {
   query?: string;
 }
 
+async function requestCookieHeader(): Promise<string | undefined> {
+  try {
+    const jar = await cookies();
+    const all = jar.getAll();
+    if (!all.length) return undefined;
+    return all.map((item) => `${item.name}=${item.value}`).join("; ");
+  } catch {
+    return undefined;
+  }
+}
+
 export async function getHomeData() {
   return {
     upcoming: upcomingTournaments.filter((tournament) => tournament.status !== "live").slice(0, 3),
@@ -61,50 +79,104 @@ export async function getHomeData() {
 }
 
 export async function listTournaments(filters: TournamentFilters = {}) {
-  const { status = "upcoming", category, type, year, query } = filters;
-  let result = [...tournaments];
-
-  if (status === "upcoming") {
-    result = result.filter((item) =>
-      ["registration_soon", "registration_open", "registration_closed", "scheduled", "live"].includes(item.status),
+  const cookie = await requestCookieHeader();
+  try {
+    return await fetchTournaments(
+      {
+        status: filters.status ?? "upcoming",
+        category: filters.category,
+        type: filters.type,
+        year: filters.year,
+        query: filters.query,
+      },
+      { cookie },
     );
-  } else if (status !== "all") {
-    result = result.filter((item) => item.status === status);
+  } catch {
+    return [];
   }
-
-  if (category) result = result.filter((item) => item.category === category);
-  if (type) result = result.filter((item) => item.type === type);
-  if (year) result = result.filter((item) => item.season === year);
-  if (query) {
-    const needle = query.toLowerCase();
-    result = result.filter((item) => item.title.toLowerCase().includes(needle));
-  }
-
-  return result.sort((a, b) => {
-    if (status === "completed") return +new Date(b.startsAt) - +new Date(a.startsAt);
-    return +new Date(a.startsAt) - +new Date(b.startsAt);
-  });
 }
 
 export async function getTournamentBySlug(slug: string): Promise<Tournament | null> {
-  return getTournament(slug) ?? null;
+  const cookie = await requestCookieHeader();
+  try {
+    const page = await fetchTournamentBySlug(slug, { cookie });
+    return page?.tournament ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function getTournamentPage(slug: string) {
-  const tournament = getTournament(slug);
-  if (!tournament) return null;
-  return {
-    tournament: tournament as Tournament,
-    matches: getTournamentMatches(tournament.id),
-    participants: tournament.participants.map((registration) => ({
-      ...registration,
-      player: playerById.get(registration.playerId),
-      partner: registration.partnerId ? playerById.get(registration.partnerId) : undefined,
-    })),
-    similar: completedTournaments
+  const cookie = await requestCookieHeader();
+  try {
+    const page = await fetchTournamentBySlug(slug, { cookie });
+    if (!page) return null;
+    const { tournament, registrations } = page;
+    const similar = (await fetchTournaments({ status: "upcoming" }, { cookie }))
       .filter((item) => item.id !== tournament.id && item.category === tournament.category)
-      .slice(0, 3),
-  };
+      .slice(0, 3);
+    return {
+      tournament,
+      matches: getTournamentMatches(tournament.id),
+      participants: registrations.map((registration) => ({
+        playerId: registration.playerId,
+        partnerId: registration.partnerId,
+        lookingForPartner: registration.lookingForPartner,
+        status: registration.status,
+        seed: registration.seed,
+        registeredAt: registration.registeredAt,
+        player: registration.player
+          ? {
+              id: registration.player.id,
+              slug: registration.player.slug,
+              firstName: registration.player.firstName,
+              lastName: registration.player.lastName,
+              gender: "male" as const,
+              birthYear: 1990,
+              city: "",
+              category: registration.player.category,
+              rating: registration.player.rating,
+              points: 0,
+              wins: 0,
+              losses: 0,
+              tournamentsCount: 0,
+              titlesCount: 0,
+              bestRank: 0,
+              trend: [],
+              bio: "",
+              memberSince: "",
+              status: "active" as const,
+            }
+          : undefined,
+        partner: registration.partner
+          ? {
+              id: registration.partner.id,
+              slug: registration.partner.slug,
+              firstName: registration.partner.firstName,
+              lastName: registration.partner.lastName,
+              gender: "male" as const,
+              birthYear: 1990,
+              city: "",
+              category: registration.partner.category,
+              rating: registration.partner.rating,
+              points: 0,
+              wins: 0,
+              losses: 0,
+              tournamentsCount: 0,
+              titlesCount: 0,
+              bestRank: 0,
+              trend: [],
+              bio: "",
+              memberSince: "",
+              status: "active" as const,
+            }
+          : undefined,
+      })),
+      similar,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function listPlayers(filters: { category?: CategorySlug; query?: string } = {}) {
@@ -236,45 +308,90 @@ function agoDays(days: number, hour = 10) {
 }
 
 export async function listOrganizerTournaments() {
-  return [...tournaments].sort((a, b) => {
-    const order: Record<TournamentStatus, number> = {
-      live: 0,
-      registration_open: 1,
-      registration_soon: 2,
-      registration_closed: 3,
-      scheduled: 4,
-      draft: 5,
-      completed: 6,
-      cancelled: 7,
-    };
-    const diff = order[a.status] - order[b.status];
-    return diff !== 0 ? diff : +new Date(a.startsAt) - +new Date(b.startsAt);
-  });
+  const cookie = await requestCookieHeader();
+  try {
+    return await fetchOrganizerTournaments({ cookie });
+  } catch {
+    return [];
+  }
 }
 
 export async function getOrganizerTournament(id: string) {
-  const tournament = tournamentById.get(id);
-  if (!tournament) return null;
-
-  const participants = tournament.participants.map((registration) => ({
-    ...registration,
-    player: playerById.get(registration.playerId)!,
-    partner: registration.partnerId ? playerById.get(registration.partnerId) : undefined,
-  }));
-
-  return {
-    tournament: tournament as Tournament,
-    participants,
-    matches: getTournamentMatches(tournament.id),
-    confirmed: participants.filter((item) => item.status === "confirmed").length,
-    pending: participants.filter((item) => item.status === "pending").length,
-    waitlist: participants.filter((item) => item.status === "waitlist").length,
-    revenue: participants.filter((item) => item.status === "confirmed").length * tournament.entryFee,
-    winners: (tournament.winners ?? []).map((winner) => ({
-      ...winner,
-      players: winner.playerIds.map((playerId) => playerById.get(playerId)).filter(Boolean),
-    })),
-  };
+  const cookie = await requestCookieHeader();
+  try {
+    const data = await fetchOrganizerTournament(id, { cookie });
+    if (!data) return null;
+    const { tournament, registrations, counts } = data;
+    const participants = registrations.map((registration) => ({
+      playerId: registration.playerId,
+      partnerId: registration.partnerId,
+      lookingForPartner: registration.lookingForPartner,
+      status: registration.status,
+      seed: registration.seed,
+      registeredAt: registration.registeredAt,
+      player: {
+        id: registration.player?.id ?? registration.playerId,
+        slug: registration.player?.slug ?? registration.playerId,
+        firstName: registration.player?.firstName ?? "",
+        lastName: registration.player?.lastName ?? "",
+        gender: "male" as const,
+        birthYear: 1990,
+        city: "",
+        category: (registration.player?.category ?? "challenger") as CategorySlug,
+        rating: registration.player?.rating ?? 0,
+        points: 0,
+        wins: 0,
+        losses: 0,
+        tournamentsCount: 0,
+        titlesCount: 0,
+        bestRank: 0,
+        trend: [],
+        bio: "",
+        memberSince: "",
+        status: "active" as const,
+      },
+      partner: registration.partner
+        ? {
+            id: registration.partner.id,
+            slug: registration.partner.slug,
+            firstName: registration.partner.firstName,
+            lastName: registration.partner.lastName,
+            gender: "male" as const,
+            birthYear: 1990,
+            city: "",
+            category: registration.partner.category,
+            rating: registration.partner.rating,
+            points: 0,
+            wins: 0,
+            losses: 0,
+            tournamentsCount: 0,
+            titlesCount: 0,
+            bestRank: 0,
+            trend: [],
+            bio: "",
+            memberSince: "",
+            status: "active" as const,
+          }
+        : undefined,
+    }));
+    return {
+      tournament,
+      participants,
+      matches: getTournamentMatches(tournament.id),
+      confirmed: counts.confirmed,
+      pending: counts.pending,
+      waitlist: counts.waitlist,
+      revenue: counts.confirmed * tournament.entryFee,
+      winners: (tournament.winners ?? []).map((winner) => ({
+        ...winner,
+        players: winner.playerIds
+          .map((playerId) => participants.find((item) => item.playerId === playerId)?.player)
+          .filter(Boolean),
+      })),
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function getMatchDesk() {

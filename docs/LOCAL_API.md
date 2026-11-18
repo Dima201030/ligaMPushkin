@@ -19,6 +19,10 @@
 
 Клиент собирает URL как `` `${NEXT_PUBLIC_BASE_PATH}/api/...` `` — с префиксом на Pi и без него локально.
 
+Турниры (этап 4): публичные `GET /api/tournaments`, `GET /api/tournaments/{slug}`;
+заявки `POST/DELETE …/registrations`; organizer CRUD под `/api/organizer/tournaments`.
+UI-экраны календаря, карточки и organizer tournaments читают API (не mock).
+
 ## Деплой на Pi
 
 - UI в Docker: **127.0.0.1:3010**, префикс `NEXT_BASE_PATH`.
