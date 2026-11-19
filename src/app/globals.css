@@ -260,10 +260,15 @@
     white-space: nowrap;
     cursor: pointer;
     transition:
-      background var(--dur-fast) ease,
-      border-color var(--dur-fast) ease,
-      color var(--dur-fast) ease,
-      transform var(--dur-fast) ease;
+      background var(--dur-fast) var(--ease-out),
+      border-color var(--dur-fast) var(--ease-out),
+      color var(--dur-fast) var(--ease-out),
+      transform var(--dur-fast) var(--ease-out),
+      letter-spacing var(--dur-fast) var(--ease-out);
+  }
+
+  .btn:hover {
+    letter-spacing: 0.14em;
   }
 
   .btn:active {
@@ -487,12 +492,41 @@
     font-weight: 600;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    transition: gap var(--dur-fast) ease, opacity var(--dur-fast) ease;
+    transition:
+      gap var(--dur-fast) var(--ease-out),
+      opacity var(--dur-fast) var(--ease-out);
   }
 
   .link-arrow:hover {
     gap: 11px;
     opacity: 0.65;
+  }
+
+  .nav-link {
+    position: relative;
+    transition: color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
+  }
+
+  .nav-link::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -0.45em;
+    width: 100%;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform var(--dur) var(--ease-out);
+  }
+
+  .nav-link:hover::after,
+  .nav-link[aria-current="page"]::after {
+    transform: scaleX(1);
+  }
+
+  .nav-link[aria-current="page"]::after {
+    transform-origin: center;
   }
 
   .stat-value {
@@ -610,6 +644,57 @@
   .hero-wordmark:hover .hero-ball {
     transform: rotate(-8deg) scale(1.04);
   }
+
+  /* ── Motion: section reveal ───────────────────────────── */
+
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(1.1rem);
+    transition:
+      opacity 700ms var(--ease-out),
+      transform 700ms var(--ease-out);
+    will-change: opacity, transform;
+  }
+
+  [data-reveal][data-revealed="true"] {
+    opacity: 1;
+    transform: none;
+    will-change: auto;
+  }
+
+  /* ── Motion: cursor tennis-ball shadow ────────────────── */
+
+  .cursor-ball {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 80;
+    width: 1.65rem;
+    height: 1.65rem;
+    margin: 0;
+    pointer-events: none;
+    opacity: 0;
+    filter: drop-shadow(0 10px 14px rgba(35, 37, 15, 0.22));
+    transition: opacity 220ms var(--ease-out);
+    will-change: transform;
+  }
+
+  .cursor-ball[data-visible="true"] {
+    opacity: 0.78;
+  }
+
+  .cursor-ball__glyph {
+    display: block;
+    width: 100%;
+    height: 100%;
+    filter: none;
+    transition: none;
+  }
+
+  .cursor-ball__glyph.hero-ball {
+    width: 100%;
+    height: 100%;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -619,6 +704,21 @@
     scroll-behavior: auto !important;
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .cursor-ball {
+    display: none !important;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .cursor-ball {
+    display: none !important;
   }
 }
 

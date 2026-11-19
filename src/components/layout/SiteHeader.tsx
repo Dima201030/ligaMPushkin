@@ -50,18 +50,11 @@ export function SiteHeader() {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative text-[0.66rem] font-medium uppercase tracking-[0.16em] transition-opacity hover:opacity-100",
-                  active ? "text-ink opacity-100" : "text-ink-muted opacity-90",
+                  "nav-link text-[0.66rem] font-medium uppercase tracking-[0.16em]",
+                  active ? "text-ink" : "text-ink-muted hover:text-ink",
                 )}
               >
                 {item.label}
-                <span
-                  className={cn(
-                    "absolute -bottom-2 left-0 h-px w-full bg-ink transition-opacity",
-                    active ? "opacity-100" : "opacity-0",
-                  )}
-                  aria-hidden="true"
-                />
               </Link>
             );
           })}

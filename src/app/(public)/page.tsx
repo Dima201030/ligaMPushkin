@@ -36,7 +36,11 @@ export default async function HomePage() {
   return (
     <>
       {/* ── 00 · Обложка ─────────────────────────────────────── */}
-      <section className="page-shell flex min-h-[calc(100svh-96px)] flex-col justify-between pb-8 pt-2 md:min-h-[calc(100svh-112px)] md:pb-12">
+      <section
+        data-reveal
+        data-revealed="true"
+        className="page-shell flex min-h-[calc(100svh-96px)] flex-col justify-between pb-8 pt-2 md:min-h-[calc(100svh-112px)] md:pb-12"
+      >
         <div className="flex flex-1 flex-col items-center justify-center py-12 md:py-16">
           <h1 className="hero-wordmark">
             <span>лига</span>
@@ -76,7 +80,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── 01 · Календарь ───────────────────────────────────── */}
-      <section className="page-shell section">
+      <section data-reveal className="page-shell section">
         <div className="flex items-baseline justify-between gap-4 border-b border-line pb-3">
           <p className="text-[0.62rem] uppercase tracking-[0.18em] text-ink-muted">
             01 / Календарь
@@ -141,7 +145,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── 02 · Клуб ────────────────────────────────────────── */}
-      <section className="page-shell section pt-0">
+      <section data-reveal className="page-shell section pt-0">
         <div className="flex items-baseline justify-between gap-4 border-b border-line pb-3">
           <p className="text-[0.62rem] uppercase tracking-[0.18em] text-ink-muted">02 / Клуб</p>
           <Link
@@ -204,7 +208,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── 03 · Рейтинг ─────────────────────────────────────── */}
-      <section className="page-shell section pt-0">
+      <section data-reveal className="page-shell section pt-0">
         <div className="flex items-baseline justify-between gap-4 border-b border-line pb-3">
           <p className="text-[0.62rem] uppercase tracking-[0.18em] text-ink-muted">
             03 / Рейтинг
@@ -258,7 +262,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── 04 · Журнал ──────────────────────────────────────── */}
-      <section className="page-shell section pt-0">
+      <section data-reveal className="page-shell section pt-0">
         <div className="flex items-baseline justify-between gap-4 border-b border-line pb-3">
           <p className="text-[0.62rem] uppercase tracking-[0.18em] text-ink-muted">
             04 / Журнал
@@ -302,7 +306,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── 05 · Присоединиться ──────────────────────────────── */}
-      <section className="page-shell section pt-0">
+      <section data-reveal className="page-shell section pt-0">
         <div className="border-t border-line pt-10 md:pt-14">
           <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
             <div>
