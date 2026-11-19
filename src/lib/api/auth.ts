@@ -1,5 +1,6 @@
 import type { CategorySlug } from "@/lib/types";
 import { ApiError, apiRequest, parseJson, serverApiURL } from "./client";
+// apiRequest used for /auth/me/* cabinet helpers
 
 export { ApiError };
 
@@ -17,6 +18,43 @@ export interface LeagueUser {
   phone?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface LeagueProfile {
+  slug: string;
+  city: string;
+  bio: string;
+  avatarUrl?: string;
+  status: string;
+  rating: number;
+  points: number;
+  singlesPoints: number;
+  doublesPoints: number;
+  matchesPlayed: number;
+  wins: number;
+  losses: number;
+  memberSince?: string;
+}
+
+export interface MeSession {
+  user: LeagueUser;
+  profile: LeagueProfile | null;
+}
+
+export interface MyRegistration {
+  id: string;
+  tournamentId: string;
+  tournamentSlug: string;
+  tournamentTitle: string;
+  tournamentStartsAt: string;
+  tournamentEntryFee: number;
+  tournamentStatus: string;
+  status: "pending" | "confirmed" | "waitlist" | "cancelled" | "rejected";
+  lookingForPartner: boolean;
+  partnerId?: string;
+  partnerName?: string;
+  seed?: number;
+  registeredAt: string;
 }
 
 export interface LeagueApplication {
@@ -209,8 +247,41 @@ export async function logoutAccount(): Promise<void> {
   await request("/auth/logout", { method: "POST" });
 }
 
-export async function fetchCurrentUser(): Promise<LeagueUser | null> {
-  // Browser: same-origin /api. RSC: absolute API + forwarded cookies.
+interface ApiProfile {
+  slug: string;
+  city: string;
+  bio: string;
+  avatar_url?: string | null;
+  status: string;
+  rating: number;
+  points: number;
+  singles_points: number;
+  doubles_points: number;
+  matches_played: number;
+  wins: number;
+  losses: number;
+  member_since?: string;
+}
+
+function mapProfile(raw: ApiProfile): LeagueProfile {
+  return {
+    slug: raw.slug,
+    city: raw.city,
+    bio: raw.bio,
+    avatarUrl: raw.avatar_url ?? undefined,
+    status: raw.status,
+    rating: raw.rating,
+    points: raw.points,
+    singlesPoints: raw.singles_points,
+    doublesPoints: raw.doubles_points,
+    matchesPlayed: raw.matches_played,
+    wins: raw.wins,
+    losses: raw.losses,
+    memberSince: raw.member_since,
+  };
+}
+
+export async function fetchSession(): Promise<MeSession | null> {
   if (typeof window === "undefined") {
     try {
       const { cookies } = await import("next/headers");
@@ -223,16 +294,84 @@ export async function fetchCurrentUser(): Promise<LeagueUser | null> {
         },
         cache: "no-store",
       });
-      const data = await parseJson<{ user: ApiUser }>(response);
+      const data = await parseJson<{ user: ApiUser; profile?: ApiProfile }>(response);
       if (!response.ok || !data?.user) return null;
-      return mapUser(data.user);
+      return {
+        user: mapUser(data.user),
+        profile: data.profile ? mapProfile(data.profile) : null,
+      };
     } catch {
       return null;
     }
   }
-  const { response, data } = await request<{ user: ApiUser }>("/auth/me");
+  const { response, data } = await request<{ user: ApiUser; profile?: ApiProfile }>("/auth/me");
   if (!response.ok || !data?.user) return null;
-  return mapUser(data.user);
+  return {
+    user: mapUser(data.user),
+    profile: data.profile ? mapProfile(data.profile) : null,
+  };
+}
+
+export async function fetchCurrentUser(): Promise<LeagueUser | null> {
+  const session = await fetchSession();
+  return session?.user ?? null;
+}
+
+export async function fetchMyRegistrations(): Promise<MyRegistration[]> {
+  const cookieHeader = await serverCookieHeader();
+  const { response, data } = await apiRequest<{
+    registrations: Array<{
+      id: string;
+      tournament_id: string;
+      tournament_slug: string;
+      tournament_title: string;
+      tournament_starts_at: string;
+      tournament_entry_fee: number;
+      tournament_status: string;
+      status: string;
+      looking_for_partner: boolean;
+      partner_id?: string | null;
+      partner_name?: string | null;
+      seed?: number | null;
+      registered_at: string;
+    }>;
+  }>("/auth/me/registrations", {
+    absolute: typeof window === "undefined",
+    headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+  });
+  if (!response.ok) return [];
+  return (data?.registrations ?? []).map((row) => ({
+    id: row.id,
+    tournamentId: row.tournament_id,
+    tournamentSlug: row.tournament_slug,
+    tournamentTitle: row.tournament_title,
+    tournamentStartsAt: row.tournament_starts_at,
+    tournamentEntryFee: row.tournament_entry_fee,
+    tournamentStatus: row.tournament_status,
+    status: row.status as MyRegistration["status"],
+    lookingForPartner: row.looking_for_partner,
+    partnerId: row.partner_id ?? undefined,
+    partnerName: row.partner_name ?? undefined,
+    seed: row.seed ?? undefined,
+    registeredAt: row.registered_at,
+  }));
+}
+
+async function serverCookieHeader(): Promise<string | undefined> {
+  if (typeof window !== "undefined") return undefined;
+  try {
+    const { cookies } = await import("next/headers");
+    const jar = await cookies();
+    const all = jar.getAll();
+    if (!all.length) return undefined;
+    return all.map((item) => `${item.name}=${item.value}`).join("; ");
+  } catch {
+    return undefined;
+  }
+}
+
+export function isOrganizerRole(role: string): boolean {
+  return role === "organizer" || role === "owner" || role === "superadmin";
 }
 
 export async function listOrganizerApplications(): Promise<LeagueApplication[]> {

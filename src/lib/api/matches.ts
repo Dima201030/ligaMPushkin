@@ -332,6 +332,58 @@ export async function walkover(
   return mapMatch(data.match);
 }
 
+export async function retireMatch(
+  matchId: string,
+  input: { winnerSide: 1 | 2; sets?: number[][]; reason?: string; version: number },
+): Promise<Match> {
+  const { response, data } = await apiRequest<{ match: ApiMatch } & ApiErrorBody>(
+    `/organizer/matches/${encodeURIComponent(matchId)}/retire`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        winner_side: input.winnerSide,
+        sets: input.sets,
+        reason: input.reason,
+        version: input.version,
+      }),
+    },
+  );
+  if (!response.ok || !data?.match) {
+    throw new ApiError(response.status, data?.code, data?.message ?? "Не удалось зафиксировать отказ");
+  }
+  return mapMatch(data.match);
+}
+
+export async function disqualifyMatch(
+  matchId: string,
+  input: { winnerSide: 1 | 2; reason?: string; version: number },
+): Promise<Match> {
+  const { response, data } = await apiRequest<{ match: ApiMatch } & ApiErrorBody>(
+    `/organizer/matches/${encodeURIComponent(matchId)}/disqualify`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        winner_side: input.winnerSide,
+        reason: input.reason,
+        version: input.version,
+      }),
+    },
+  );
+  if (!response.ok || !data?.match) {
+    throw new ApiError(response.status, data?.code, data?.message ?? "Не удалось дисквалифицировать");
+  }
+  return mapMatch(data.match);
+}
+
+export async function fetchMyMatches(opts?: { cookie?: string }): Promise<Match[]> {
+  const { response, data } = await apiRequest<{ matches: ApiMatch[] }>("/auth/me/matches", {
+    absolute: true,
+    headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
+  });
+  if (!response.ok) return [];
+  return (data?.matches ?? []).map((item) => mapMatch(item));
+}
+
 export async function cancelMatch(
   matchId: string,
   input: { reason?: string; version: number },

@@ -13,7 +13,14 @@ import {
 import type { Match } from "@/lib/types";
 import { cn, formatDateShort, formatTime } from "@/lib/utils";
 import { ApiError } from "@/lib/api/client";
-import { parseScoreDraft, submitScore, updateSchedule, walkover } from "@/lib/api/matches";
+import {
+  disqualifyMatch,
+  parseScoreDraft,
+  retireMatch,
+  submitScore,
+  updateSchedule,
+  walkover,
+} from "@/lib/api/matches";
 import { MatchRow } from "@/components/domain/MatchRow";
 import { DemoNote } from "./OrganizerUI";
 
@@ -138,6 +145,58 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
       );
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось зафиксировать тех. победу");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function awardRetire(match: Match) {
+    if (match.version === undefined) {
+      setError("Не удалось определить версию матча. Обновите страницу.");
+      return;
+    }
+    const sets = scoreDraft.trim() ? parseScoreDraft(scoreDraft) : undefined;
+    if (scoreDraft.trim() && !sets) {
+      setError("Некорректный формат счёта для отказа. Пример: 6:4, 2:3");
+      return;
+    }
+    setBusyId(match.id);
+    setError(null);
+    setNotice(null);
+    try {
+      const updated = await retireMatch(match.id, {
+        winnerSide: Number(winner) as 1 | 2,
+        sets: sets ?? undefined,
+        version: match.version,
+      });
+      replaceMatch(updated);
+      setEditing(null);
+      setNotice("Отказ зафиксирован. Победа присуждена выбранной стороне.");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Не удалось зафиксировать отказ");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function awardDq(match: Match) {
+    if (match.version === undefined) {
+      setError("Не удалось определить версию матча. Обновите страницу.");
+      return;
+    }
+    setBusyId(match.id);
+    setError(null);
+    setNotice(null);
+    try {
+      const updated = await disqualifyMatch(match.id, {
+        winnerSide: Number(winner) as 1 | 2,
+        version: match.version,
+      });
+      replaceMatch(updated);
+      setEditing(null);
+      setNotice("Дисквалификация зафиксирована.");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Не удалось дисквалифицировать");
     } finally {
       setBusyId(null);
     }
@@ -326,14 +385,30 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
                       >
                         Тех. победа
                       </button>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        disabled={busyId === match.id}
+                        onClick={() => awardRetire(match)}
+                      >
+                        Отказ
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        disabled={busyId === match.id}
+                        onClick={() => awardDq(match)}
+                      >
+                        DQ
+                      </button>
                       <button type="button" className="btn btn-secondary" onClick={() => setEditing(null)}>
                         Отмена
                       </button>
                     </div>
                   </div>
                   <p className="mt-2 text-[0.64rem] text-ink-muted">
-                    Формат счёта: сеты через запятую (6:4, 6:3). Победитель определяется по сетам автоматически.
-                    Техническая победа — без сетов, по выбранной стороне.
+                    Формат счёта: сеты через запятую (6:4, 6:3). Тех. победа — без сетов. Отказ — с частичным счётом
+                    (необязательно). DQ — дисквалификация проигравшей стороны.
                   </p>
                 </div>
               )}

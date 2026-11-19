@@ -212,16 +212,8 @@ export function ParticipantsManager({
   const waitlist = rows.filter((row) => row.status === "waitlist").length;
   const full = confirmed >= maxParticipants;
 
-  function setStatus(row: ManageParticipant, status: RegistrationStatus) {
-    setStatuses((current) => ({ ...current, [row.playerId]: status }));
-    const messages: Record<RegistrationStatus, string> = {
-      confirmed: `${row.firstName} ${row.lastName} переведён в основной состав.`,
-      pending: `${row.firstName} ${row.lastName} возвращён на подтверждение.`,
-      waitlist: `${row.firstName} ${row.lastName} переведён в лист ожидания.`,
-      rejected: `${row.firstName} ${row.lastName} — заявка отклонена, место освобождено.`,
-      cancelled: `Заявка ${row.firstName} ${row.lastName} отменена.`,
-    };
-    setNotice(messages[status]);
+  function setStatus(_row: ManageParticipant, _status: RegistrationStatus) {
+    setNotice("Смена статуса заявки организатором появится отдельным API. Сейчас статус задаётся при регистрации.");
   }
 
   return (

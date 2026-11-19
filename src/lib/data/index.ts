@@ -32,6 +32,10 @@ import {
   fetchPage,
   type CmsPage,
 } from "@/lib/api/content";
+import { fetchMyRegistrations, fetchSession } from "@/lib/api/auth";
+import { fetchMyMatches } from "@/lib/api/matches";
+import { fetchOrganizerEvents, fetchOrganizerNews } from "@/lib/api/organizer-content";
+import { fetchOrganizerPlayersList } from "@/lib/api/organizer-ratings";
 
 export interface TournamentFilters {
   status?: TournamentStatus | "upcoming" | "all";
@@ -364,19 +368,103 @@ export async function getArchiveYears() {
 }
 
 export async function getCabinetData() {
+  const session = await fetchSession();
+  if (!session) {
+    return { session: null, player: null, registrations: [], matches: [], upcoming: [], ranking: null, history: [] };
+  }
+  const cookie = await requestCookieHeader();
+  const [registrations, matches, rankings, ratingEvents] = await Promise.all([
+    fetchMyRegistrations().catch(() => []),
+    fetchMyMatches({ cookie }).catch(() => []),
+    fetchRankings({}, { cookie }).catch(() => null),
+    session.profile?.slug
+      ? apiRequestJson<{
+          events: Array<{
+            id: string;
+            reason: string;
+            points_delta: number;
+            rating_delta: number;
+            rating_after: number;
+            created_at: string;
+            kind: string;
+          }>;
+        }>(`/players/${encodeURIComponent(session.profile.slug)}/rating-events?limit=20`, cookie)
+      : Promise.resolve(null),
+  ]);
+
+  const profile = session.profile;
+  const player: Player | null = profile
+    ? {
+        id: session.user.id,
+        slug: profile.slug,
+        firstName: session.user.firstName,
+        lastName: session.user.lastName,
+        gender: "male",
+        birthYear: 0,
+        city: profile.city,
+        category: session.user.level,
+        rating: profile.rating,
+        points: profile.points,
+        wins: profile.wins,
+        losses: profile.losses,
+        tournamentsCount: 0,
+        titlesCount: 0,
+        bestRank: 0,
+        trend: [],
+        bio: profile.bio,
+        memberSince: profile.memberSince || "",
+        status: (profile.status as Player["status"]) || "active",
+        avatarUrl: profile.avatarUrl,
+      }
+    : null;
+
+  const ranking =
+    rankings?.rows.find((row) => row.playerId === session.user.id) ??
+    (player
+      ? {
+          position: 0,
+          previousPosition: 0,
+          playerId: player.id,
+          points: player.points,
+          rating: player.rating,
+          category: player.category,
+        }
+      : null);
+
+  const history = (ratingEvents?.events ?? []).map((event) => ({
+    id: event.id,
+    match: event.kind,
+    date: event.created_at,
+    delta: event.points_delta || Math.round(event.rating_delta),
+    after: event.rating_after,
+    reason: event.reason,
+  }));
+
   return {
-    player: null as Player | null,
-    registrations: [] as {
-      tournament: Tournament;
-      status: "confirmed" | "pending" | "waitlist";
-      partner?: Player;
-    }[],
-    matches: [] as Awaited<ReturnType<typeof fetchTournamentMatches>>,
-    upcoming: [] as Awaited<ReturnType<typeof fetchTournamentMatches>>,
-    ranking: null as RankingEntry | null,
-    titles: [] as { year: number; tournamentTitle: string; type: TournamentType; place: 1 | 2 | 3 }[],
-    history: [] as { id: string; match: string; date: string; delta: number; after: number; reason: string }[],
+    session,
+    player,
+    registrations,
+    matches,
+    upcoming: matches
+      .filter((match) => match.status === "scheduled" || match.status === "live")
+      .sort((a, b) => +new Date(a.scheduledAt) - +new Date(b.scheduledAt)),
+    ranking,
+    history,
   };
+}
+
+async function apiRequestJson<T>(path: string, cookie?: string): Promise<T | null> {
+  try {
+    const { apiRequest } = await import("@/lib/api/client");
+    const { response, data } = await apiRequest<T>(path, {
+      absolute: true,
+      headers: cookie ? { Cookie: cookie } : undefined,
+    });
+    if (!response.ok) return null;
+    return data ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function listOrganizerTournaments() {
@@ -524,8 +612,8 @@ export async function getContentDesk() {
   const cookie = await requestCookieHeader();
   try {
     const [news, events] = await Promise.all([
-      fetchNews({ limit: 100 }, { cookie }),
-      fetchEvents({ limit: 100 }, { cookie }),
+      fetchOrganizerNews({ cookie }),
+      fetchOrganizerEvents({ cookie }),
     ]);
     return { news, events };
   } catch {
@@ -645,8 +733,36 @@ export async function getOrganizerDashboard() {
 export async function listOrganizerPlayers(query?: string) {
   const cookie = await requestCookieHeader();
   try {
-    const players = await fetchPlayers({ query, limit: 200 }, { cookie });
-    return [...players].sort((a, b) => a.lastName.localeCompare(b.lastName, "ru"));
+    const rows = await fetchOrganizerPlayersList({ cookie });
+    const players: Player[] = rows.map((row) => ({
+      id: row.id,
+      slug: row.slug,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      gender: "male",
+      birthYear: 0,
+      city: row.city || "",
+      category: row.level as CategorySlug,
+      rating: row.rating,
+      points: row.points,
+      wins: row.wins,
+      losses: row.losses,
+      tournamentsCount: 0,
+      titlesCount: 0,
+      bestRank: 0,
+      trend: [],
+      bio: row.bio || "",
+      memberSince: row.member_since || "",
+      status: (row.status as Player["status"]) || "active",
+    }));
+    const normalized = query?.toLowerCase();
+    return players
+      .filter((player) =>
+        normalized
+          ? `${player.firstName} ${player.lastName} ${player.slug}`.toLowerCase().includes(normalized)
+          : true,
+      )
+      .sort((a, b) => a.lastName.localeCompare(b.lastName, "ru"));
   } catch {
     return [];
   }

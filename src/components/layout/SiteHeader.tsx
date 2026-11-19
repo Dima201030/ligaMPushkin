@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { CLUB } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 import { Logo } from "./Logo";
+import { SessionLinks } from "./SessionLinks";
 
 const NAV = [
   { href: "/tournaments", label: "Турниры" },
@@ -64,21 +65,11 @@ export function SiteHeader() {
           <span className="text-[0.66rem] uppercase tracking-[0.16em] text-ink-muted">
             Сезон {CLUB.season}
           </span>
-          <Link
-            href="/login"
-            className="text-[0.66rem] font-medium uppercase tracking-[0.16em] text-ink transition-opacity hover:opacity-60"
-          >
-            Войти
-          </Link>
+          <SessionLinks />
         </div>
 
         <div className="flex items-center gap-3 lg:hidden">
-          <Link
-            href="/cabinet"
-            className="text-[0.62rem] font-medium uppercase tracking-[0.16em] text-ink"
-          >
-            Кабинет
-          </Link>
+          <SessionLinks compact />
           <button
             type="button"
             onClick={() => setOpen(true)}
