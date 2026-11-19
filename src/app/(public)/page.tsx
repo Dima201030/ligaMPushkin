@@ -3,7 +3,7 @@ import { ArrowUpRight } from "lucide-react";
 import { getHomeData } from "@/lib/data";
 import { CATEGORY_BY_SLUG, CLUB, TYPE_BY_VALUE } from "@/lib/domain";
 import { formatNumber, formatTime, pluralizePlayers, weekday } from "@/lib/utils";
-import { TennisBall } from "@/components/ui/TennisBall";
+import { HeroWordmark } from "@/components/ui/HeroWordmark";
 
 const MONTHS_GENITIVE = [
   "января",
@@ -42,12 +42,8 @@ export default async function HomePage() {
         className="page-shell flex min-h-[calc(100svh-96px)] flex-col justify-between pb-8 pt-2 md:min-h-[calc(100svh-112px)] md:pb-12"
       >
         <div className="flex flex-1 flex-col items-center justify-center py-12 md:py-16">
-          <h1 className="hero-wordmark">
-            <span>лига</span>
-            <TennisBall />
-            <span>сильных</span>
-          </h1>
-          <p className="mt-7 text-center text-[0.6rem] uppercase leading-relaxed tracking-[0.18em] text-ink-muted md:mt-10">
+          <HeroWordmark />
+          <p className="hero-kicker mt-7 text-center text-[0.6rem] uppercase leading-relaxed tracking-[0.18em] text-ink-muted md:mt-10">
             Сезон {CLUB.season} · {pluralizePlayers(data.stats.players)} · {data.stats.courts} кортов
           </p>
         </div>

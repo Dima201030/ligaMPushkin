@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Glossy tennis ball — the one colourful object in an otherwise paper-and-ink
- * composition. Rendered as SVG so it stays crisp at display sizes.
+ * Marmalade / jelly tennis ball — translucent gummy body, wet specular,
+ * soft candy seams. The one colourful object in the paper-and-ink composition.
  */
 export function TennisBall({
   className,
@@ -13,115 +13,124 @@ export function TennisBall({
   idPrefix?: string;
 }) {
   const body = `${idPrefix}-body`;
+  const rim = `${idPrefix}-rim`;
+  const core = `${idPrefix}-core`;
   const seam = `${idPrefix}-seam`;
   const gloss = `${idPrefix}-gloss`;
-  const bounce = `${idPrefix}-bounce`;
   const shade = `${idPrefix}-shade`;
-  const soften = `${idPrefix}-soften`;
   const clip = `${idPrefix}-clip`;
 
   return (
-    <span className={cn("hero-ball", className)} aria-hidden="true">
-      <svg viewBox="0 0 200 200" className="size-full">
+    <span className={cn("hero-ball jelly-ball", className)} aria-hidden="true">
+      <svg viewBox="0 0 200 200" className="size-full overflow-visible">
         <defs>
-          <radialGradient id={body} cx="33%" cy="24%" r="86%">
-            <stop offset="0%" stopColor="#f7ff9d" />
-            <stop offset="26%" stopColor="#e8f45f" />
-            <stop offset="58%" stopColor="#cfe22f" />
-            <stop offset="86%" stopColor="#a7bc12" />
-            <stop offset="100%" stopColor="#7e930a" />
+          {/* Candy body: lighter translucent core, denser rim */}
+          <radialGradient id={body} cx="38%" cy="32%" r="78%">
+            <stop offset="0%" stopColor="#f8ff9a" stopOpacity="0.98" />
+            <stop offset="35%" stopColor="#e4f34a" stopOpacity="0.96" />
+            <stop offset="68%" stopColor="#c6db1c" stopOpacity="0.94" />
+            <stop offset="100%" stopColor="#8aa60a" stopOpacity="0.98" />
           </radialGradient>
-          <linearGradient id={seam} x1="0" y1="0" x2="0.35" y2="1">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.98" />
-            <stop offset="50%" stopColor="#f8fce2" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity="0.45" />
-          </linearGradient>
-          <radialGradient id={gloss} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
-            <stop offset="55%" stopColor="#ffffff" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-          </radialGradient>
-          <radialGradient id={bounce} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#f2ff8a" stopOpacity="0.55" />
+          <radialGradient id={core} cx="46%" cy="42%" r="42%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.42" />
+            <stop offset="55%" stopColor="#f2ff8a" stopOpacity="0.12" />
             <stop offset="100%" stopColor="#f2ff8a" stopOpacity="0" />
           </radialGradient>
-          <radialGradient id={shade} cx="74%" cy="80%" r="62%">
-            <stop offset="0%" stopColor="#4c5c05" stopOpacity="0.42" />
-            <stop offset="65%" stopColor="#4c5c05" stopOpacity="0.08" />
-            <stop offset="100%" stopColor="#4c5c05" stopOpacity="0" />
+          <radialGradient id={rim} cx="50%" cy="50%" r="50%">
+            <stop offset="62%" stopColor="#4d5f05" stopOpacity="0" />
+            <stop offset="86%" stopColor="#4d5f05" stopOpacity="0.18" />
+            <stop offset="100%" stopColor="#2f3a04" stopOpacity="0.38" />
           </radialGradient>
-          <filter id={soften} x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="0.9" />
-          </filter>
+          <radialGradient id={shade} cx="72%" cy="78%" r="58%">
+            <stop offset="0%" stopColor="#3f4d06" stopOpacity="0.35" />
+            <stop offset="70%" stopColor="#3f4d06" stopOpacity="0.06" />
+            <stop offset="100%" stopColor="#3f4d06" stopOpacity="0" />
+          </radialGradient>
+          <linearGradient id={seam} x1="0" y1="0" x2="0.2" y2="1">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+            <stop offset="45%" stopColor="#f7fce8" stopOpacity="0.75" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0.35" />
+          </linearGradient>
+          <radialGradient id={gloss} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
+            <stop offset="40%" stopColor="#ffffff" stopOpacity="0.55" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+          </radialGradient>
           <clipPath id={clip}>
-            <circle cx="100" cy="100" r="97" />
+            <circle cx="100" cy="100" r="96" />
           </clipPath>
         </defs>
 
+        {/* Soft contact shadow under the gummy */}
+        <ellipse cx="100" cy="178" rx="58" ry="12" fill="#23250f" opacity="0.14" />
+
         <g clipPath={`url(#${clip})`}>
-          <circle cx="100" cy="100" r="97" fill={`url(#${body})`} />
-          <circle cx="100" cy="100" r="97" fill={`url(#${shade})`} />
+          <circle cx="100" cy="100" r="96" fill={`url(#${body})`} />
+          <circle cx="100" cy="100" r="96" fill={`url(#${core})`} />
+          <circle cx="100" cy="100" r="96" fill={`url(#${shade})`} />
+          <circle cx="100" cy="100" r="96" fill={`url(#${rim})`} />
 
-          {/* seam indentation */}
+          {/* Candy seams */}
           <path
-            d="M20 44C64 62 76 116 44 162"
+            d="M22 46C66 64 78 116 46 162"
             fill="none"
-            stroke="#5d6c07"
-            strokeOpacity="0.28"
-            strokeWidth="8"
+            stroke="#5a6a08"
+            strokeOpacity="0.22"
+            strokeWidth="11"
             strokeLinecap="round"
-            filter={`url(#${soften})`}
           />
           <path
-            d="M180 44C136 62 124 116 156 162"
+            d="M178 46C134 64 122 116 154 162"
             fill="none"
-            stroke="#5d6c07"
-            strokeOpacity="0.28"
-            strokeWidth="8"
+            stroke="#5a6a08"
+            strokeOpacity="0.22"
+            strokeWidth="11"
             strokeLinecap="round"
-            filter={`url(#${soften})`}
           />
-
-          {/* seam felt */}
           <path
-            d="M20 44C64 62 76 116 44 162"
+            d="M22 46C66 64 78 116 46 162"
             fill="none"
             stroke={`url(#${seam})`}
-            strokeWidth="4.5"
+            strokeWidth="5"
             strokeLinecap="round"
           />
           <path
-            d="M180 44C136 62 124 116 156 162"
+            d="M178 46C134 64 122 116 154 162"
             fill="none"
             stroke={`url(#${seam})`}
-            strokeWidth="4.5"
+            strokeWidth="5"
             strokeLinecap="round"
           />
 
-          {/* bounce light from the paper */}
-          <ellipse cx="84" cy="178" rx="64" ry="26" fill={`url(#${bounce})`} />
-
-          {/* specular */}
+          {/* Wet specular — top-left, Melike-style */}
           <ellipse
-            cx="69"
-            cy="52"
-            rx="35"
-            ry="22"
+            cx="68"
+            cy="54"
+            rx="38"
+            ry="24"
             fill={`url(#${gloss})`}
-            transform="rotate(-30 69 52)"
+            transform="rotate(-32 68 54)"
           />
-          <ellipse cx="56" cy="42" rx="11" ry="6" fill="#ffffff" opacity="0.85" transform="rotate(-30 56 42)" />
-          <ellipse cx="131" cy="151" rx="24" ry="10" fill="#ffffff" opacity="0.16" transform="rotate(-20 131 151)" />
+          <ellipse
+            cx="56"
+            cy="44"
+            rx="12"
+            ry="7"
+            fill="#ffffff"
+            opacity="0.92"
+            transform="rotate(-32 56 44)"
+          />
 
-          {/* rim light */}
+          {/* Soft rim light */}
           <path
-            d="M22 92A80 80 0 0 1 96 21"
+            d="M28 98A78 78 0 0 1 98 28"
             fill="none"
             stroke="#ffffff"
             strokeOpacity="0.55"
-            strokeWidth="3"
+            strokeWidth="3.5"
             strokeLinecap="round"
           />
+          <ellipse cx="128" cy="148" rx="26" ry="11" fill="#ffffff" opacity="0.14" transform="rotate(-18 128 148)" />
         </g>
       </svg>
     </span>
