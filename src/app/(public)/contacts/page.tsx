@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Clock, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { getCmsPage } from "@/lib/data";
 import { CLUB } from "@/lib/domain";
 import { PageHeader } from "@/components/ui/Section";
 import { ContactForm } from "@/components/domain/ContactForm";
+import { CmsBody } from "@/components/domain/CmsBody";
 
 export const metadata: Metadata = {
   title: "Контакты",
@@ -14,12 +16,14 @@ const MAP_URL =
   "https://yandex.ru/maps/?text=" +
   encodeURIComponent("Санкт-Петербург, Пушкинский район, Волхонское шоссе, 79А");
 
-export default function ContactsPage() {
+export default async function ContactsPage() {
+  const page = await getCmsPage("contacts");
+
   return (
     <>
       <PageHeader
         eyebrow="Контакты"
-        title="Приезжайте в клуб"
+        title={page?.title === "Контакты" ? "Приезжайте в клуб" : page?.title || "Приезжайте в клуб"}
         description="Мы находимся в Пушкинском районе, в 900 метрах от Пулковского шоссе. Бронирование кортов — по телефону или на ресепшен."
         actions={
           <a href={MAP_URL} target="_blank" rel="noreferrer" className="btn btn-light">
@@ -30,6 +34,11 @@ export default function ContactsPage() {
       />
 
       <div className="page-shell section">
+        {page?.bodyMarkdown ? (
+          <div className="mb-8 border-b border-line pb-6">
+            <CmsBody markdown={page.bodyMarkdown} />
+          </div>
+        ) : null}
         <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <div>
             {[

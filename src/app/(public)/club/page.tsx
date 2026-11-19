@@ -11,8 +11,10 @@ import {
   Trophy,
   Wrench,
 } from "lucide-react";
+import { getCmsPage, listPlayers } from "@/lib/data";
 import { CLUB } from "@/lib/domain";
 import { PageHeader } from "@/components/ui/Section";
+import { CmsBody } from "@/components/domain/CmsBody";
 
 export const metadata: Metadata = {
   title: "О клубе",
@@ -30,12 +32,17 @@ const FEATURES = [
   { icon: Wrench, title: "Прокат инвентаря", text: "Ракетки, мячи и всё необходимое для первой игры." },
 ];
 
-export default function ClubPage() {
+export default async function ClubPage() {
+  const [page, players] = await Promise.all([getCmsPage("club"), listPlayers()]);
+  const intro =
+    page?.bodyMarkdown?.trim() ||
+    "Mr. Pushkin — клуб для тех, кто любит теннис без лишнего пафоса.";
+
   return (
     <>
       <PageHeader
         eyebrow="О клубе"
-        title="Теннисный клуб Mr. Pushkin"
+        title={page?.title ? `Теннисный клуб ${page.title === "Клуб" ? "Mr. Pushkin" : page.title}` : "Теннисный клуб Mr. Pushkin"}
         description="Место, где играют в теннис круглый год: 9 кортов, турниры и сообщество игроков Пушкинского района."
         actions={
           <>
@@ -54,14 +61,9 @@ export default function ClubPage() {
           <div>
             <p className="eyebrow">С 2014 года</p>
             <h2 className="mt-3">Большой теннис в Пушкине</h2>
-            <p className="mt-4 text-sm leading-relaxed text-ink-soft">
-              Mr. Pushkin — клуб для тех, кто любит теннис без лишнего пафоса. Здесь тренируются
-              взрослые игроки, проходят любительские турниры и встречи после работы.
-            </p>
-            <p className="mt-3 text-sm leading-relaxed text-ink-soft">
-              Лига клуба объединяет игроков разного уровня — от первых соревнований до финалов
-              сезона. Мы верим, что хорошая игра начинается с хорошей компании.
-            </p>
+            <div className="mt-4">
+              <CmsBody markdown={intro} />
+            </div>
             <dl className="mt-8 grid grid-cols-2 gap-6 border-t border-line pt-6 sm:grid-cols-3">
               <div>
                 <dt className="display text-3xl leading-none">9</dt>
@@ -72,7 +74,7 @@ export default function ClubPage() {
                 <dd className="stat-label mt-2">часы работы</dd>
               </div>
               <div>
-                <dt className="display text-3xl leading-none">318</dt>
+                <dt className="display text-3xl leading-none">{players.length || "—"}</dt>
                 <dd className="stat-label mt-2">игроков лиги</dd>
               </div>
             </dl>

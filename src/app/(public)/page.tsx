@@ -31,7 +31,6 @@ const INDEX_LINKS = [
 export default async function HomePage() {
   const data = await getHomeData();
   const next = data.heroTournament;
-  const nextDate = new Date(next.startsAt);
 
   return (
     <>
@@ -98,45 +97,51 @@ export default async function HomePage() {
         </div>
 
         <div className="mt-10 md:mt-14">
-          {data.upcoming.map((tournament) => {
-            const date = new Date(tournament.startsAt);
-            const filled = tournament.participants.filter((item) => item.status !== "cancelled").length;
-            return (
-              <Link
-                key={tournament.id}
-                href={`/tournaments/${tournament.slug}`}
-                className="group grid grid-cols-[3.6rem_1fr_auto] items-start gap-x-5 gap-y-3 border-t border-line py-6 transition-colors last:border-b last:border-line hover:bg-white/35 md:grid-cols-[7rem_1fr_10rem_auto] md:items-center md:gap-x-10 md:py-8"
-              >
-                <div className="flex items-baseline gap-2 md:block">
-                  <span className="display block text-[2.1rem] leading-none md:text-[3.4rem]">
-                    {String(date.getDate()).padStart(2, "0")}
-                  </span>
-                  <span className="text-[0.58rem] uppercase tracking-[0.14em] text-ink-muted md:mt-2 md:block">
-                    {MONTHS_GENITIVE[date.getMonth()]} · {weekday(date)}
-                  </span>
-                </div>
+          {data.upcoming.length === 0 ? (
+            <p className="border-t border-line py-10 text-sm text-ink-muted">
+              Ближайших турниров пока нет. Следите за анонсами в новостях.
+            </p>
+          ) : (
+            data.upcoming.map((tournament) => {
+              const date = new Date(tournament.startsAt);
+              const filled = tournament.participants.filter((item) => item.status !== "cancelled").length;
+              return (
+                <Link
+                  key={tournament.id}
+                  href={`/tournaments/${tournament.slug}`}
+                  className="group grid grid-cols-[3.6rem_1fr_auto] items-start gap-x-5 gap-y-3 border-t border-line py-6 transition-colors last:border-b last:border-line hover:bg-white/35 md:grid-cols-[7rem_1fr_10rem_auto] md:items-center md:gap-x-10 md:py-8"
+                >
+                  <div className="flex items-baseline gap-2 md:block">
+                    <span className="display block text-[2.1rem] leading-none md:text-[3.4rem]">
+                      {String(date.getDate()).padStart(2, "0")}
+                    </span>
+                    <span className="text-[0.58rem] uppercase tracking-[0.14em] text-ink-muted md:mt-2 md:block">
+                      {MONTHS_GENITIVE[date.getMonth()]} · {weekday(date)}
+                    </span>
+                  </div>
 
-                <div className="min-w-0">
-                  <h3 className="text-[1.05rem] font-medium leading-snug transition-opacity group-hover:opacity-60 md:text-[1.4rem]">
-                    {tournament.title}
-                  </h3>
-                  <p className="mt-1.5 text-[0.62rem] uppercase leading-relaxed tracking-[0.12em] text-ink-muted">
-                    {CATEGORY_BY_SLUG[tournament.category].name} ·{" "}
-                    {TYPE_BY_VALUE[tournament.type].label} · {formatTime(date)} ·{" "}
-                    {tournament.venue.name}
+                  <div className="min-w-0">
+                    <h3 className="text-[1.05rem] font-medium leading-snug transition-opacity group-hover:opacity-60 md:text-[1.4rem]">
+                      {tournament.title}
+                    </h3>
+                    <p className="mt-1.5 text-[0.62rem] uppercase leading-relaxed tracking-[0.12em] text-ink-muted">
+                      {CATEGORY_BY_SLUG[tournament.category].name} ·{" "}
+                      {TYPE_BY_VALUE[tournament.type].label} · {formatTime(date)} ·{" "}
+                      {tournament.venue.name}
+                    </p>
+                  </div>
+
+                  <p className="col-start-2 text-xs text-ink-muted md:col-start-auto md:text-right">
+                    {filled} / {tournament.maxParticipants} участников
                   </p>
-                </div>
 
-                <p className="col-start-2 text-xs text-ink-muted md:col-start-auto md:text-right">
-                  {filled} / {tournament.maxParticipants} участников
-                </p>
-
-                <span className="col-start-3 row-span-2 grid size-9 place-items-center self-center rounded-full border border-line text-ink-faint transition-colors group-hover:border-ink group-hover:text-ink md:col-start-auto md:row-span-1">
-                  <ArrowUpRight className="size-4" aria-hidden="true" />
-                </span>
-              </Link>
-            );
-          })}
+                  <span className="col-start-3 row-span-2 grid size-9 place-items-center self-center rounded-full border border-line text-ink-faint transition-colors group-hover:border-ink group-hover:text-ink md:col-start-auto md:row-span-1">
+                    <ArrowUpRight className="size-4" aria-hidden="true" />
+                  </span>
+                </Link>
+              );
+            })
+          )}
         </div>
       </section>
 
@@ -225,34 +230,42 @@ export default async function HomePage() {
               определяет посев в сетке.
             </p>
             <p className="mt-8 text-[0.62rem] uppercase leading-relaxed tracking-[0.14em] text-ink-faint">
-              Обновлено после турнира «{next.title}»
+              {next
+                ? `Ближайший турнир — «${next.title}»`
+                : "Рейтинг обновляется после каждого турнира"}
             </p>
           </div>
 
           <ol>
-            {data.top.slice(0, 5).map(({ position, points, player }) => (
-              <li key={player.id}>
-                <Link
-                  href={`/players/${player.slug}`}
-                  className="group grid grid-cols-[2.2rem_1fr_auto] items-baseline gap-x-4 border-t border-line py-4 transition-colors last:border-b last:border-line hover:bg-white/35 md:gap-x-6 md:py-5"
-                >
-                  <span className="display text-[1.15rem] leading-none text-ink-muted md:text-[1.4rem]">
-                    {String(position).padStart(2, "0")}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-[0.95rem] font-medium transition-opacity group-hover:opacity-60 md:text-base">
-                      {player.firstName} {player.lastName}
-                    </span>
-                    <span className="mt-0.5 block text-[0.58rem] uppercase tracking-[0.12em] text-ink-muted">
-                      {CATEGORY_BY_SLUG[player.category].name}
-                    </span>
-                  </span>
-                  <span className="display text-[1rem] tabular-nums md:text-[1.15rem]">
-                    {formatNumber(points)}
-                  </span>
-                </Link>
+            {data.top.length === 0 ? (
+              <li className="border-t border-line py-8 text-sm text-ink-muted">
+                В рейтинге пока никого нет.
               </li>
-            ))}
+            ) : (
+              data.top.slice(0, 5).map(({ position, points, player }) => (
+                <li key={player.id}>
+                  <Link
+                    href={`/players/${player.slug}`}
+                    className="group grid grid-cols-[2.2rem_1fr_auto] items-baseline gap-x-4 border-t border-line py-4 transition-colors last:border-b last:border-line hover:bg-white/35 md:gap-x-6 md:py-5"
+                  >
+                    <span className="display text-[1.15rem] leading-none text-ink-muted md:text-[1.4rem]">
+                      {String(position).padStart(2, "0")}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-[0.95rem] font-medium transition-opacity group-hover:opacity-60 md:text-base">
+                        {player.firstName} {player.lastName}
+                      </span>
+                      <span className="mt-0.5 block text-[0.58rem] uppercase tracking-[0.12em] text-ink-muted">
+                        {CATEGORY_BY_SLUG[player.category]?.name ?? player.category}
+                      </span>
+                    </span>
+                    <span className="display text-[1rem] tabular-nums md:text-[1.15rem]">
+                      {formatNumber(points)}
+                    </span>
+                  </Link>
+                </li>
+              ))
+            )}
           </ol>
         </div>
       </section>
@@ -272,32 +285,36 @@ export default async function HomePage() {
         </div>
 
         <div className="mt-10 grid gap-x-8 gap-y-10 md:grid-cols-3">
-          {data.news.map((post, index) => (
-            <Link
-              key={post.id}
-              href={`/news/${post.slug}`}
-              className="group flex flex-col"
-            >
-              <div className="overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={post.coverUrl}
-                  alt=""
-                  loading="lazy"
-                  className={`w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03] ${
-                    index === 0 ? "aspect-[4/3]" : "aspect-[4/3] md:aspect-[4/5]"
-                  }`}
-                />
-              </div>
-              <div className="mt-4 flex items-baseline justify-between gap-3 text-[0.58rem] uppercase tracking-[0.14em] text-ink-muted">
-                <span>{post.tag}</span>
-                <span>{post.readingTime} мин</span>
-              </div>
-              <h3 className="mt-2 max-w-[24ch] text-[1.05rem] font-medium leading-snug transition-opacity group-hover:opacity-60">
-                {post.title}
-              </h3>
-            </Link>
-          ))}
+          {data.news.length === 0 ? (
+            <p className="text-sm text-ink-muted md:col-span-3">Публикаций пока нет.</p>
+          ) : (
+            data.news.map((post, index) => (
+              <Link
+                key={post.id}
+                href={`/news/${post.slug}`}
+                className="group flex flex-col"
+              >
+                <div className="overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={post.coverUrl}
+                    alt=""
+                    loading="lazy"
+                    className={`w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03] ${
+                      index === 0 ? "aspect-[4/3]" : "aspect-[4/3] md:aspect-[4/5]"
+                    }`}
+                  />
+                </div>
+                <div className="mt-4 flex items-baseline justify-between gap-3 text-[0.58rem] uppercase tracking-[0.14em] text-ink-muted">
+                  <span>{post.tag}</span>
+                  <span>{post.readingTime} мин</span>
+                </div>
+                <h3 className="mt-2 max-w-[24ch] text-[1.05rem] font-medium leading-snug transition-opacity group-hover:opacity-60">
+                  {post.title}
+                </h3>
+              </Link>
+            ))
+          )}
         </div>
       </section>
 

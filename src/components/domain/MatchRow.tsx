@@ -1,29 +1,18 @@
 import Link from "next/link";
 import type { Match } from "@/lib/types";
-import { playerById } from "@/lib/mock/players";
-import { tournamentById } from "@/lib/mock/tournaments";
 import { cn, formatDateShort, formatTime } from "@/lib/utils";
 import { MatchStatusPill } from "@/components/ui/Badges";
 
 function sideLabel(side: Match["side1"]) {
   if (side.label) return side.label;
   if (!side.playerIds.length) return "Победитель пары матчей";
-  const names = side.playerIds.map((id) => {
-    const player = playerById.get(id);
-    return player ? `${player.lastName} ${player.firstName.charAt(0)}.` : id.slice(0, 8);
-  });
-  return names.join(" / ");
+  return side.playerIds.map((id) => id.slice(0, 8)).join(" / ");
 }
 
 function sideFullLabel(side: Match["side1"]) {
   if (side.label) return side.label;
   if (!side.playerIds.length) return "Победитель пары матчей";
-  return side.playerIds
-    .map((id) => {
-      const player = playerById.get(id);
-      return player ? `${player.firstName} ${player.lastName}` : id.slice(0, 8);
-    })
-    .join(" / ");
+  return side.playerIds.map((id) => id.slice(0, 8)).join(" / ");
 }
 
 function Side({
@@ -75,7 +64,7 @@ export function MatchRow({ match, showTournament = true }: { match: Match; showT
           {showTournament ? (
             <>
               <Link
-                href={`/tournaments/${match.tournamentSlug ?? tournamentById.get(match.tournamentId)?.slug ?? match.tournamentId}`}
+                href={`/tournaments/${match.tournamentSlug ?? match.tournamentId}`}
                 className="font-semibold text-ink-soft transition-colors hover:text-accent"
               >
                 {match.tournamentTitle}

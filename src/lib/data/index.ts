@@ -3,12 +3,14 @@ import type {
   CategorySlug,
   ClubEvent,
   NewsPost,
-  PlayerTitle,
+  Player,
   RankingEntry,
   Tournament,
   TournamentStatus,
   TournamentType,
+  Venue,
 } from "@/lib/types";
+import { CLUB } from "@/lib/domain";
 import {
   fetchOrganizerTournament,
   fetchOrganizerTournaments,
@@ -20,31 +22,16 @@ import {
   fetchOrganizerTournamentMatches,
   fetchTournamentMatches,
 } from "@/lib/api/matches";
-import { latestNews, newsBySlug, events } from "@/lib/mock/news";
-import { getPlayerMatches } from "@/lib/mock/matches";
+import { fetchPlayerBySlug, fetchPlayers } from "@/lib/api/players";
+import { fetchRankings } from "@/lib/api/rankings";
 import {
-  archiveTournaments,
-  completedTournaments,
-  getTournament,
-  tournamentById,
-  tournaments,
-  upcomingTournaments,
-} from "@/lib/mock/tournaments";
-import {
-  currentPlayer,
-  getPlayerBySlug,
-  playerById,
-  playerTitles,
-  players,
-} from "@/lib/mock/players";
-import {
-  auditLog,
-  getRankings,
-  ratingHistory,
-  recentRegistrations,
-  topPlayers,
-} from "@/lib/mock/ratings";
-import { liveMatches, recentResults, scheduledMatches } from "@/lib/mock/matches";
+  fetchEventBySlug,
+  fetchEvents,
+  fetchNews,
+  fetchNewsBySlug,
+  fetchPage,
+  type CmsPage,
+} from "@/lib/api/content";
 
 export interface TournamentFilters {
   status?: TournamentStatus | "upcoming" | "all";
@@ -53,6 +40,16 @@ export interface TournamentFilters {
   year?: number;
   query?: string;
 }
+
+export const CLUB_VENUES: Venue[] = [
+  {
+    id: "club-default",
+    name: "Mr. Pushkin",
+    address: CLUB.address,
+    courts: 9,
+    surface: "hard",
+  },
+];
 
 async function requestCookieHeader(): Promise<string | undefined> {
   try {
@@ -66,18 +63,31 @@ async function requestCookieHeader(): Promise<string | undefined> {
 }
 
 export async function getHomeData() {
+  const cookie = await requestCookieHeader();
+  const [upcoming, rankings, news, events, players, allTournaments] = await Promise.all([
+    fetchTournaments({ status: "upcoming" }, { cookie }).catch(() => [] as Tournament[]),
+    fetchRankings({}, { cookie }).catch(() => null),
+    fetchNews({ limit: 3 }, { cookie }).catch(() => [] as NewsPost[]),
+    fetchEvents({ limit: 4 }, { cookie }).catch(() => [] as ClubEvent[]),
+    fetchPlayers({ limit: 200 }, { cookie }).catch(() => [] as Player[]),
+    fetchTournaments({ status: "all" }, { cookie }).catch(() => [] as Tournament[]),
+  ]);
+
+  const openOrLive = upcoming.filter((tournament) => tournament.status !== "completed");
+  const heroTournament = openOrLive[0] ?? allTournaments[0] ?? null;
+
   return {
-    upcoming: upcomingTournaments.filter((tournament) => tournament.status !== "live").slice(0, 3),
-    heroTournament: upcomingTournaments[0] ?? completedTournaments[0],
-    live: liveMatches,
-    results: recentResults.slice(0, 5),
-    top: topPlayers,
-    news: latestNews.slice(0, 3),
+    upcoming: openOrLive.filter((tournament) => tournament.status !== "live").slice(0, 3),
+    heroTournament,
+    live: [] as Awaited<ReturnType<typeof fetchTournamentMatches>>,
+    results: [] as Awaited<ReturnType<typeof fetchTournamentMatches>>,
+    top: (rankings?.rows ?? []).slice(0, 5),
+    news: news.slice(0, 3),
     events: events.slice(0, 4),
     stats: {
-      players: 318,
-      tournaments: 28,
-      matches: 1460,
+      players: players.length || rankings?.totalPlayers || 0,
+      tournaments: allTournaments.length,
+      matches: 0,
       courts: 9,
     },
   };
@@ -143,7 +153,7 @@ export async function getTournamentPage(slug: string) {
               firstName: registration.player.firstName,
               lastName: registration.player.lastName,
               gender: "male" as const,
-              birthYear: 1990,
+              birthYear: 0,
               city: "",
               category: registration.player.category,
               rating: registration.player.rating,
@@ -166,7 +176,7 @@ export async function getTournamentPage(slug: string) {
               firstName: registration.partner.firstName,
               lastName: registration.partner.lastName,
               gender: "male" as const,
-              birthYear: 1990,
+              birthYear: 0,
               city: "",
               category: registration.partner.category,
               rating: registration.partner.rating,
@@ -191,131 +201,182 @@ export async function getTournamentPage(slug: string) {
 }
 
 export async function listPlayers(filters: { category?: CategorySlug; query?: string } = {}) {
-  const { category, query } = filters;
-  let result = [...players];
-  if (category) result = result.filter((item) => item.category === category);
-  if (query) {
-    const needle = query.toLowerCase();
-    result = result.filter((item) =>
-      `${item.firstName} ${item.lastName}`.toLowerCase().includes(needle),
+  const cookie = await requestCookieHeader();
+  try {
+    return await fetchPlayers(
+      { category: filters.category, query: filters.query, limit: 200 },
+      { cookie },
     );
+  } catch {
+    return [];
   }
-  return result.sort((a, b) => b.rating - a.rating);
 }
 
 export async function listPlayersWithRank() {
-  const rankings = getRankings();
-  return players
-    .map((player) => ({
-      player,
-      rank: rankings.find((entry) => entry.playerId === player.id)?.position ?? 0,
-    }))
-    .sort((a, b) => a.rank - b.rank);
+  const cookie = await requestCookieHeader();
+  try {
+    const [players, rankings] = await Promise.all([
+      fetchPlayers({ limit: 200 }, { cookie }),
+      fetchRankings({}, { cookie }),
+    ]);
+    const rankById = new Map(rankings.rows.map((row) => [row.playerId, row.position]));
+    return players
+      .map((player) => ({
+        player,
+        rank: rankById.get(player.id) ?? 0,
+      }))
+      .sort((a, b) => {
+        if (a.rank && b.rank) return a.rank - b.rank;
+        if (a.rank) return -1;
+        if (b.rank) return 1;
+        return b.player.rating - a.player.rating;
+      });
+  } catch {
+    return [];
+  }
 }
 
 export async function getPlayerProfile(slug: string) {
-  const player = getPlayerBySlug(slug);
-  if (!player) return null;
+  const cookie = await requestCookieHeader();
+  try {
+    const player = await fetchPlayerBySlug(slug, { cookie });
+    if (!player) return null;
 
-  const ranking = getRankings();
-  const categoryRanking = getRankings(player.category);
-  const rank = ranking.find((entry) => entry.playerId === player.id)?.position ?? 0;
-  const categoryRank =
-    categoryRanking.find((entry) => entry.playerId === player.id)?.position ?? 0;
+    const [globalRankings, categoryRankings] = await Promise.all([
+      fetchRankings({}, { cookie }),
+      fetchRankings({ category: player.category }, { cookie }),
+    ]);
+    const rank = globalRankings.rows.find((entry) => entry.playerId === player.id)?.position ?? 0;
+    const categoryRank =
+      categoryRankings.rows.find((entry) => entry.playerId === player.id)?.position ?? 0;
 
-  return {
-    player,
-    matches: getPlayerMatches(player.id),
-    titles: (playerTitles[player.id] ?? []) as PlayerTitle[],
-    rank,
-    categoryRank,
-    categoriesCount: getRankings().length,
-    categoryCount: categoryRanking.length,
-    form: player.trend.slice(-5).map((value, index, array) =>
-      index === 0 ? 0 : value - array[index - 1],
-    ),
-  };
+    return {
+      player,
+      matches: [] as Awaited<ReturnType<typeof fetchTournamentMatches>>,
+      titles: [] as { year: number; tournamentTitle: string; type: TournamentType; place: 1 | 2 | 3 }[],
+      rank,
+      categoryRank,
+      categoriesCount: globalRankings.totalPlayers,
+      categoryCount: categoryRankings.totalPlayers,
+      form: [] as number[],
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function getRankingPage(category?: CategorySlug) {
-  const ranking = getRankings(category);
-  return {
-    ranking: ranking as RankingEntry[],
-    rows: ranking.map((entry) => ({
-      ...entry,
-      player: playerById.get(entry.playerId)!,
-    })),
-    totalPlayers: getRankings().length,
-    season: 2026,
-  };
+  const cookie = await requestCookieHeader();
+  try {
+    const page = await fetchRankings({ category }, { cookie });
+    const total = category
+      ? page.totalPlayers
+      : (await fetchRankings({}, { cookie })).totalPlayers;
+    return {
+      ranking: page.ranking as RankingEntry[],
+      rows: page.rows,
+      totalPlayers: total,
+      season: page.season,
+    };
+  } catch {
+    return {
+      ranking: [] as RankingEntry[],
+      rows: [],
+      totalPlayers: 0,
+      season: new Date().getFullYear(),
+    };
+  }
 }
 
 export async function listNews(limit?: number) {
-  const result = [...latestNews];
-  return (limit ? result.slice(0, limit) : result) as NewsPost[];
+  const cookie = await requestCookieHeader();
+  try {
+    return await fetchNews({ limit: limit ?? 50 }, { cookie });
+  } catch {
+    return [] as NewsPost[];
+  }
 }
 
 export async function getNewsBySlug(slug: string): Promise<NewsPost | null> {
-  return newsBySlug.get(slug) ?? null;
+  const cookie = await requestCookieHeader();
+  try {
+    return await fetchNewsBySlug(slug, { cookie });
+  } catch {
+    return null;
+  }
 }
 
 export async function listEvents(): Promise<ClubEvent[]> {
-  return [...events].sort((a, b) => +new Date(a.startsAt) - +new Date(b.startsAt));
+  const cookie = await requestCookieHeader();
+  try {
+    const events = await fetchEvents({ limit: 100 }, { cookie });
+    return [...events].sort((a, b) => +new Date(a.startsAt) - +new Date(b.startsAt));
+  } catch {
+    return [];
+  }
 }
 
 export async function getEventBySlug(slug: string): Promise<ClubEvent | null> {
-  return events.find((event) => event.slug === slug) ?? null;
+  const cookie = await requestCookieHeader();
+  try {
+    return await fetchEventBySlug(slug, { cookie });
+  } catch {
+    return null;
+  }
 }
 
-export async function listArchive(filters: { year?: number; category?: CategorySlug; type?: TournamentType } = {}) {
-  const { year, category, type } = filters;
-  let result = [...archiveTournaments];
-  if (year) result = result.filter((item) => item.season === year);
-  if (category) result = result.filter((item) => item.category === category);
-  if (type) result = result.filter((item) => item.type === type);
-  return result;
+export async function getCmsPage(slug: string): Promise<CmsPage | null> {
+  const cookie = await requestCookieHeader();
+  try {
+    return await fetchPage(slug, { cookie });
+  } catch {
+    return null;
+  }
+}
+
+export async function listArchive(
+  filters: { year?: number; category?: CategorySlug; type?: TournamentType } = {},
+) {
+  const cookie = await requestCookieHeader();
+  try {
+    return await fetchTournaments(
+      {
+        status: "completed",
+        year: filters.year,
+        category: filters.category,
+        type: filters.type,
+      },
+      { cookie },
+    );
+  } catch {
+    return [];
+  }
 }
 
 export async function getArchiveYears() {
-  return Array.from(new Set(tournaments.map((item) => item.season))).sort((a, b) => b - a);
+  const cookie = await requestCookieHeader();
+  try {
+    const tournaments = await fetchTournaments({ status: "all" }, { cookie });
+    return Array.from(new Set(tournaments.map((item) => item.season))).sort((a, b) => b - a);
+  } catch {
+    return [];
+  }
 }
 
 export async function getCabinetData() {
-  const matches = getPlayerMatches(currentPlayer.id);
   return {
-    player: currentPlayer,
-    registrations: [
-      {
-        tournament: getTournament("novogodniy-parnyy-2026")!,
-        status: "confirmed" as const,
-        partner: playerById.get("p05")!,
-      },
-      {
-        tournament: getTournament("miks-vecher-noyabr")!,
-        status: "confirmed" as const,
-        partner: undefined,
-      },
-    ],
-    matches: matches.slice(0, 6),
-    upcoming: matches
-      .filter((match) => match.status === "scheduled" || match.status === "live")
-      .sort((a, b) => +new Date(a.scheduledAt) - +new Date(b.scheduledAt)),
-    ranking: getRankings().find((entry) => entry.playerId === currentPlayer.id)!,
-    titles: playerTitles[currentPlayer.id] ?? [],
-    history: [
-      { id: "h01", match: "Осенний Кубок · Финал", date: agoDays(7, 16), delta: 46, after: 1842, reason: "Победа, финал Masters" },
-      { id: "h02", match: "Осенний Кубок · Полуфинал", date: agoDays(8, 15), delta: 24, after: 1796, reason: "Победа, полуфинал Masters" },
-      { id: "h03", match: "Hard Cup · Финал", date: agoDays(26, 15), delta: 28, after: 1698, reason: "Победа, финал Challenger" },
-      { id: "h04", match: "Летний Кубок · Финал", date: agoDays(82, 16), delta: -32, after: 1670, reason: "Поражение, финал Masters" },
-    ],
+    player: null as Player | null,
+    registrations: [] as {
+      tournament: Tournament;
+      status: "confirmed" | "pending" | "waitlist";
+      partner?: Player;
+    }[],
+    matches: [] as Awaited<ReturnType<typeof fetchTournamentMatches>>,
+    upcoming: [] as Awaited<ReturnType<typeof fetchTournamentMatches>>,
+    ranking: null as RankingEntry | null,
+    titles: [] as { year: number; tournamentTitle: string; type: TournamentType; place: 1 | 2 | 3 }[],
+    history: [] as { id: string; match: string; date: string; delta: number; after: number; reason: string }[],
   };
-}
-
-function agoDays(days: number, hour = 10) {
-  const date = new Date();
-  date.setDate(date.getDate() - days);
-  date.setHours(hour, 0, 0, 0);
-  return date.toISOString();
 }
 
 export async function listOrganizerTournaments() {
@@ -346,7 +407,7 @@ export async function getOrganizerTournament(id: string) {
         firstName: registration.player?.firstName ?? "",
         lastName: registration.player?.lastName ?? "",
         gender: "male" as const,
-        birthYear: 1990,
+        birthYear: 0,
         city: "",
         category: (registration.player?.category ?? "challenger") as CategorySlug,
         rating: registration.player?.rating ?? 0,
@@ -368,7 +429,7 @@ export async function getOrganizerTournament(id: string) {
             firstName: registration.partner.firstName,
             lastName: registration.partner.lastName,
             gender: "male" as const,
-            birthYear: 1990,
+            birthYear: 0,
             city: "",
             category: registration.partner.category,
             rating: registration.partner.rating,
@@ -437,22 +498,39 @@ export async function getMatchDesk() {
 }
 
 export async function getRatingDesk() {
-  return {
-    ranking: getRankings().map((entry) => ({
-      ...entry,
-      player: playerById.get(entry.playerId)!,
-    })),
-    history: ratingHistory,
-    audit: auditLog,
-    players,
-  };
+  const cookie = await requestCookieHeader();
+  try {
+    const [rankings, players] = await Promise.all([
+      fetchRankings({}, { cookie }),
+      fetchPlayers({ limit: 200 }, { cookie }),
+    ]);
+    return {
+      ranking: rankings.rows,
+      history: [] as { id: string; match: string; date: string; before: number; delta: number; after: number; reason: string }[],
+      audit: [] as { id: string; actor: string; action: string; entity: string; createdAt: string }[],
+      players,
+    };
+  } catch {
+    return {
+      ranking: [],
+      history: [],
+      audit: [],
+      players: [] as Player[],
+    };
+  }
 }
 
 export async function getContentDesk() {
-  return {
-    news: latestNews,
-    events,
-  };
+  const cookie = await requestCookieHeader();
+  try {
+    const [news, events] = await Promise.all([
+      fetchNews({ limit: 100 }, { cookie }),
+      fetchEvents({ limit: 100 }, { cookie }),
+    ]);
+    return { news, events };
+  } catch {
+    return { news: [] as NewsPost[], events: [] as ClubEvent[] };
+  }
 }
 
 export async function getBracketSources() {
@@ -496,37 +574,80 @@ export async function getBracketSources() {
 }
 
 export async function getOrganizerDashboard() {
-  return {
-    stats: {
-      players: 318,
-      activeTournaments: 4,
-      upcoming: 11,
-      newRegistrations: 27,
-    },
-    registrations: recentRegistrations.map((entry) => ({
-      ...entry,
-      player: playerById.get(entry.playerId)!,
-    })),
-    tournaments: upcomingTournaments.slice(0, 5),
-    results: recentResults.slice(0, 5),
-    audit: auditLog,
-    ratingHistory,
-    players,
-    matches: [...liveMatches, ...scheduledMatches].slice(0, 8),
-    news: latestNews,
-    events,
-  };
+  const cookie = await requestCookieHeader();
+  try {
+    const [tournaments, players, rankings, news, events, matches] = await Promise.all([
+      fetchOrganizerTournaments({ cookie }),
+      fetchPlayers({ limit: 200 }, { cookie }),
+      fetchRankings({}, { cookie }),
+      fetchNews({ limit: 10 }, { cookie }),
+      fetchEvents({ limit: 10 }, { cookie }),
+      fetchOrganizerMatches({ cookie }),
+    ]);
+    const upcoming = tournaments
+      .filter((item) => item.status !== "completed" && item.status !== "cancelled")
+      .slice(0, 5);
+    return {
+      stats: {
+        players: players.length,
+        activeTournaments: tournaments.filter((item) => item.status === "live").length,
+        upcoming: upcoming.length,
+        newRegistrations: 0,
+      },
+      registrations: [] as {
+        id: string;
+        playerId: string;
+        tournamentSlug: string;
+        tournamentTitle: string;
+        status: "pending" | "confirmed" | "waitlist" | "cancelled" | "rejected";
+        createdAt: string;
+        player: Player;
+      }[],
+      tournaments: upcoming,
+      results: matches
+        .filter((match) => match.status === "completed" || match.status === "walkover")
+        .slice(0, 5),
+      audit: [] as { id: string; actor: string; action: string; entity: string; createdAt: string }[],
+      ratingHistory: [] as {
+        id: string;
+        match: string;
+        date: string;
+        before: number;
+        delta: number;
+        after: number;
+        reason: string;
+      }[],
+      players,
+      matches: matches
+        .filter((match) => match.status === "live" || match.status === "scheduled")
+        .slice(0, 8),
+      news,
+      events,
+      top: rankings.rows.slice(0, 5),
+    };
+  } catch {
+    return {
+      stats: { players: 0, activeTournaments: 0, upcoming: 0, newRegistrations: 0 },
+      registrations: [],
+      tournaments: [] as Tournament[],
+      results: [],
+      audit: [],
+      ratingHistory: [],
+      players: [] as Player[],
+      matches: [],
+      news: [] as NewsPost[],
+      events: [] as ClubEvent[],
+      top: [],
+    };
+  }
 }
 
 export async function listOrganizerPlayers(query?: string) {
-  const normalized = query?.toLowerCase();
-  return players
-    .filter((player) =>
-      normalized
-        ? `${player.firstName} ${player.lastName} ${player.slug}`.toLowerCase().includes(normalized)
-        : true,
-    )
-    .sort((a, b) => a.lastName.localeCompare(b.lastName, "ru"));
+  const cookie = await requestCookieHeader();
+  try {
+    const players = await fetchPlayers({ query, limit: 200 }, { cookie });
+    return [...players].sort((a, b) => a.lastName.localeCompare(b.lastName, "ru"));
+  } catch {
+    return [];
+  }
 }
-
-export { currentPlayer, getRankings, players, tournaments };

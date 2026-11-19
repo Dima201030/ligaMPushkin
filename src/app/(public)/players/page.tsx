@@ -12,7 +12,9 @@ export const metadata: Metadata = {
 
 export default async function PlayersPage() {
   const rows = await listPlayersWithRank();
-  const averageRating = Math.round(rows.reduce((sum, row) => sum + row.player.rating, 0) / rows.length);
+  const averageRating = rows.length
+    ? Math.round(rows.reduce((sum, row) => sum + row.player.rating, 0) / rows.length)
+    : 0;
 
   return (
     <>
@@ -27,7 +29,7 @@ export default async function PlayersPage() {
             <p className="mt-2 text-[0.66rem] text-white/45">в каталоге</p>
           </div>
           <div>
-            <p className="display text-[1.65rem] leading-none tabular-nums text-white">{formatNumber(318)}</p>
+            <p className="display text-[1.65rem] leading-none tabular-nums text-white">{formatNumber(rows.length)}</p>
             <p className="mt-2 text-[0.66rem] text-white/45">всего в лиге</p>
           </div>
           <div>
@@ -35,7 +37,7 @@ export default async function PlayersPage() {
             <p className="mt-2 text-[0.66rem] text-white/45">средний рейтинг</p>
           </div>
           <div>
-            <p className="display text-[1.65rem] leading-none tabular-nums text-white">7</p>
+            <p className="display text-[1.65rem] leading-none tabular-nums text-white">6</p>
             <p className="mt-2 text-[0.66rem] text-white/45">категорий</p>
           </div>
         </div>

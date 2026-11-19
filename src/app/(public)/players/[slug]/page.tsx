@@ -52,19 +52,27 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <CategoryBadge category={player.category} />
-                <span className="badge badge-neutral">В лиге с {new Date(player.memberSince).getFullYear()}</span>
+                {player.memberSince ? (
+                  <span className="badge badge-neutral">
+                    В лиге с {new Date(player.memberSince).getFullYear()}
+                  </span>
+                ) : null}
               </div>
               <h1 className="mt-3">{player.firstName} {player.lastName}</h1>
               <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-muted">
-                <span className="inline-flex items-center gap-1.5">
-                  <MapPin className="size-3.5" aria-hidden="true" />
-                  {player.city}
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <CalendarDays className="size-3.5" aria-hidden="true" />
-                  {player.birthYear} год рождения
-                </span>
-                <span>{category.name} · {category.note}</span>
+                {player.city ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <MapPin className="size-3.5" aria-hidden="true" />
+                    {player.city}
+                  </span>
+                ) : null}
+                {player.birthYear > 1900 ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <CalendarDays className="size-3.5" aria-hidden="true" />
+                    {player.birthYear} год рождения
+                  </span>
+                ) : null}
+                <span>{category?.name ?? player.category} · {category?.note ?? ""}</span>
               </p>
             </div>
             <div className="flex gap-8 border-t border-line pt-5 sm:border-l sm:border-t-0 sm:pl-8 sm:pt-0">

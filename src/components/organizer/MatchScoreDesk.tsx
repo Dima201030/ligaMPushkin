@@ -11,7 +11,6 @@ import {
   Zap,
 } from "lucide-react";
 import type { Match } from "@/lib/types";
-import { playerById } from "@/lib/mock/players";
 import { cn, formatDateShort, formatTime } from "@/lib/utils";
 import { ApiError } from "@/lib/api/client";
 import { parseScoreDraft, submitScore, updateSchedule, walkover } from "@/lib/api/matches";
@@ -29,10 +28,7 @@ const TABS: { value: Tab; label: string }[] = [
 
 function sideName(side: Match["side1"], fallback: string) {
   if (side.label) return side.label;
-  if (side.playerIds[0]) {
-    const player = playerById.get(side.playerIds[0]);
-    if (player) return `${player.firstName} ${player.lastName}`;
-  }
+  if (side.playerIds[0]) return side.playerIds[0].slice(0, 8);
   return fallback;
 }
 

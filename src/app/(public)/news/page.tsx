@@ -21,12 +21,22 @@ export default async function NewsPage() {
       />
 
       <div className="page-shell section">
-        <NewsCard post={featured} featured />
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {rest.map((post) => (
-            <NewsCard key={post.id} post={post} />
-          ))}
-        </div>
+        {!featured ? (
+          <p className="border-y border-line py-16 text-center text-sm text-ink-muted">
+            Публикаций пока нет.
+          </p>
+        ) : (
+          <>
+            <NewsCard post={featured} featured />
+            {rest.length > 0 ? (
+              <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {rest.map((post) => (
+                  <NewsCard key={post.id} post={post} />
+                ))}
+              </div>
+            ) : null}
+          </>
+        )}
       </div>
     </>
   );
