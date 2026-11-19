@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { TennisBall } from "@/components/ui/TennisBall";
 
-type Phase = "boot" | "intro" | "idle";
-
 /**
- * Melike-style hero: words split, jelly ball bursts with elastic overshoot,
- * then rests static. Hover fires a one-shot jelly jiggle (not a held pose).
+ * boot      — only Pushkin
+ * burst     — jelly flies out of Pushkin (long elastic)
+ * mr        — Mr. arrives on the left
+ * idle      — settled; hover = one-shot jiggle
  */
+type Phase = "boot" | "burst" | "mr" | "idle";
+
 export function HeroWordmark() {
   const [phase, setPhase] = useState<Phase>("boot");
   const [jiggle, setJiggle] = useState(false);
@@ -20,40 +22,43 @@ export function HeroWordmark() {
       return;
     }
 
-    let introTimer = 0;
-    let idleTimer = 0;
+    const timers = [
+      // Let Pushkin land, then birth the jelly from its center.
+      window.setTimeout(() => setPhase("burst"), 520),
+      // Give the ball a long burst/settle before bringing Mr. in.
+      window.setTimeout(() => setPhase("mr"), 520 + 1680),
+      window.setTimeout(() => setPhase("idle"), 520 + 1680 + 620),
+    ];
 
-    introTimer = window.setTimeout(() => setPhase("intro"), 40);
-    // Intro settles ~0.7s after start (text ~0.5s, ball spring ~0.55–0.6s).
-    idleTimer = window.setTimeout(() => setPhase("idle"), 780);
-
-    return () => {
-      window.clearTimeout(introTimer);
-      window.clearTimeout(idleTimer);
-    };
+    return () => timers.forEach((id) => window.clearTimeout(id));
   }, []);
 
+  const canJiggle = phase === "idle" || phase === "mr";
+
   return (
-    <h1 className="hero-wordmark" data-phase={phase}>
-      <span className="hero-word hero-word--left">лига</span>
+    <h1 className="hero-wordmark" data-phase={phase} aria-label="Mr. Pushkin">
+      <span className="hero-word hero-word--mr" aria-hidden="true">
+        Mr.
+      </span>
       <span
         className="hero-ball-slot"
         data-jiggle={jiggle ? "true" : undefined}
         onMouseEnter={() => {
-          if (phase !== "idle") return;
+          if (!canJiggle) return;
           if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
           if (window.matchMedia("(hover: hover) and (pointer: fine)").matches === false) return;
           setJiggle(false);
-          // Retrigger one-shot animation even on rapid re-entry.
           requestAnimationFrame(() => setJiggle(true));
         }}
         onAnimationEnd={(event) => {
           if (event.animationName === "jelly-jiggle") setJiggle(false);
         }}
       >
-        <TennisBall idPrefix="mp-hero-jelly" />
+        <TennisBall />
       </span>
-      <span className="hero-word hero-word--right">сильных</span>
+      <span className="hero-word hero-word--pushkin" aria-hidden="true">
+        Pushkin
+      </span>
     </h1>
   );
 }
