@@ -6,11 +6,12 @@ import { TennisBall } from "@/components/ui/TennisBall";
 type Phase = "boot" | "intro" | "idle";
 
 /**
- * Hero title with Melike-style intro: words split apart while a jelly ball
- * bursts from the center with elastic overshoot, then idles with a soft float.
+ * Melike-style hero: words split, jelly ball bursts with elastic overshoot,
+ * then rests static. Hover fires a one-shot jelly jiggle (not a held pose).
  */
 export function HeroWordmark() {
   const [phase, setPhase] = useState<Phase>("boot");
+  const [jiggle, setJiggle] = useState(false);
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -23,7 +24,8 @@ export function HeroWordmark() {
     let idleTimer = 0;
 
     introTimer = window.setTimeout(() => setPhase("intro"), 40);
-    idleTimer = window.setTimeout(() => setPhase("idle"), 1180);
+    // Intro settles ~0.7s after start (text ~0.5s, ball spring ~0.55–0.6s).
+    idleTimer = window.setTimeout(() => setPhase("idle"), 780);
 
     return () => {
       window.clearTimeout(introTimer);
@@ -34,7 +36,21 @@ export function HeroWordmark() {
   return (
     <h1 className="hero-wordmark" data-phase={phase}>
       <span className="hero-word hero-word--left">лига</span>
-      <span className="hero-ball-slot">
+      <span
+        className="hero-ball-slot"
+        data-jiggle={jiggle ? "true" : undefined}
+        onMouseEnter={() => {
+          if (phase !== "idle") return;
+          if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+          if (window.matchMedia("(hover: hover) and (pointer: fine)").matches === false) return;
+          setJiggle(false);
+          // Retrigger one-shot animation even on rapid re-entry.
+          requestAnimationFrame(() => setJiggle(true));
+        }}
+        onAnimationEnd={(event) => {
+          if (event.animationName === "jelly-jiggle") setJiggle(false);
+        }}
+      >
         <TennisBall idPrefix="mp-hero-jelly" />
       </span>
       <span className="hero-word hero-word--right">сильных</span>

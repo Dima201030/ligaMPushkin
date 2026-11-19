@@ -683,20 +683,26 @@
   .hero-wordmark[data-phase="intro"] .hero-word,
   .hero-wordmark[data-phase="idle"] .hero-word {
     transform: none;
-    transition: transform 980ms cubic-bezier(0.22, 1.45, 0.36, 1);
+    transition: transform 520ms cubic-bezier(0.22, 1.2, 0.36, 1);
   }
 
   .hero-wordmark[data-phase="intro"] .hero-ball-slot {
-    animation: jelly-burst 980ms cubic-bezier(0.22, 1.55, 0.36, 1) both;
+    /* Slight delay after text starts splitting — Melike timing. */
+    animation: jelly-burst 620ms cubic-bezier(0.22, 1.55, 0.36, 1) 90ms both;
   }
 
   .hero-wordmark[data-phase="idle"] .hero-ball-slot {
-    animation: jelly-float 3.8s ease-in-out infinite;
+    /* Rest static after intro — no continuous float. */
+    transform: none;
+  }
+
+  .hero-wordmark[data-phase="idle"] .hero-ball-slot[data-jiggle="true"] {
+    animation: jelly-jiggle 380ms cubic-bezier(0.22, 1.7, 0.36, 1) both;
   }
 
   .hero-wordmark[data-phase="idle"] ~ .hero-kicker {
     opacity: 1;
-    transition: opacity 520ms var(--ease-out) 80ms;
+    transition: opacity 420ms var(--ease-out) 40ms;
   }
 
   .hero-kicker {
@@ -706,14 +712,14 @@
   @keyframes jelly-burst {
     0% {
       opacity: 0;
-      transform: scale(0.12);
+      transform: scale(0.08);
     }
-    58% {
+    62% {
       opacity: 1;
-      transform: scale(1.22);
+      transform: scale(1.12);
     }
-    78% {
-      transform: scale(0.9);
+    82% {
+      transform: scale(0.94);
     }
     100% {
       opacity: 1;
@@ -721,27 +727,22 @@
     }
   }
 
-  @keyframes jelly-float {
-    0%,
+  /* One-shot hover jiggle: volume-conserving squish, then settle. */
+  @keyframes jelly-jiggle {
+    0% {
+      transform: scale(1, 1) rotate(0deg);
+    }
+    28% {
+      transform: scale(1.18, 0.88) rotate(-4deg);
+    }
+    55% {
+      transform: scale(0.92, 1.1) rotate(3deg);
+    }
+    78% {
+      transform: scale(1.04, 0.96) rotate(-1deg);
+    }
     100% {
-      transform: translate3d(0, 0, 0) rotate(0deg);
-    }
-    50% {
-      transform: translate3d(0, -0.055em, 0) rotate(1.5deg);
-    }
-  }
-
-  /* Hover / press: stiff jelly squish */
-  @media (hover: hover) and (pointer: fine) {
-    .hero-wordmark[data-phase="idle"] .hero-ball-slot:hover {
-      animation: none;
-      transform: translate3d(0, -0.02em, 0) rotate(-7deg) scale(1.08, 0.9);
-      transition: transform 220ms cubic-bezier(0.22, 1.6, 0.36, 1);
-    }
-
-    .hero-wordmark[data-phase="idle"] .hero-ball-slot:active {
-      transform: translate3d(0, 0.03em, 0) scale(1.14, 0.82);
-      transition-duration: 110ms;
+      transform: scale(1, 1) rotate(0deg);
     }
   }
 
