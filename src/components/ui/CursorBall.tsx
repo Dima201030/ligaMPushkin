@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { TennisBall } from "@/components/ui/TennisBall";
 
 /**
- * Soft tennis-ball “shadow” that trails the pointer on fine pointers only.
- * Disabled for touch / coarse pointers and prefers-reduced-motion.
+ * Tiny tennis-ball shadow glued to the pointer tip.
+ * Fine pointers only; off for touch / coarse / prefers-reduced-motion.
  */
 export function CursorBall() {
   const ballRef = useRef<HTMLDivElement>(null);
@@ -48,15 +47,21 @@ export function CursorBall() {
     const el = ballRef.current;
     if (!el) return;
 
+    const SIZE = 11;
+    const HALF = SIZE / 2;
+    // Sit just under the tip — not a trailing decoration.
+    const OFFSET_Y = 3;
+
     const tick = () => {
       const dx = target.current.x - current.current.x;
       const dy = target.current.y - current.current.y;
-      current.current.x += dx * 0.18;
-      current.current.y += dy * 0.18;
+      // Snappy follow — barely any lag.
+      current.current.x += dx * 0.62;
+      current.current.y += dy * 0.62;
 
       el.style.transform = `translate3d(${current.current.x}px, ${current.current.y}px, 0)`;
 
-      if (Math.abs(dx) > 0.08 || Math.abs(dy) > 0.08) {
+      if (Math.abs(dx) > 0.05 || Math.abs(dy) > 0.05) {
         raf.current = requestAnimationFrame(tick);
       } else {
         raf.current = null;
@@ -64,9 +69,8 @@ export function CursorBall() {
     };
 
     const onMove = (event: PointerEvent) => {
-      // Sit slightly below the tip — a soft shadow under the cursor.
-      target.current.x = event.clientX + 14;
-      target.current.y = event.clientY + 18;
+      target.current.x = event.clientX - HALF;
+      target.current.y = event.clientY + OFFSET_Y;
 
       if (!shown.current) {
         shown.current = true;
@@ -100,7 +104,31 @@ export function CursorBall() {
 
   return (
     <div ref={ballRef} className="cursor-ball" aria-hidden="true" data-visible="false">
-      <TennisBall idPrefix="mp-cursor-ball" className="cursor-ball__glyph" />
+      {/* Soft ink silhouette — not the glossy hero ball. */}
+      <svg viewBox="0 0 24 24" className="cursor-ball__glyph" focusable="false">
+        <defs>
+          <filter id="mp-cursor-soft" x="-35%" y="-35%" width="170%" height="170%">
+            <feGaussianBlur stdDeviation="0.55" />
+          </filter>
+        </defs>
+        <circle cx="12" cy="12" r="9.2" fill="#2a2c14" filter="url(#mp-cursor-soft)" />
+        <path
+          d="M5.2 7.2C9.2 9 10.4 14.2 7.4 18.6"
+          fill="none"
+          stroke="#eaece5"
+          strokeOpacity="0.28"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+        />
+        <path
+          d="M18.8 7.2C14.8 9 13.6 14.2 16.6 18.6"
+          fill="none"
+          stroke="#eaece5"
+          strokeOpacity="0.28"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+        />
+      </svg>
     </div>
   );
 }
