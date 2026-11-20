@@ -14,6 +14,7 @@ import {
   Newspaper,
   Trophy,
   UserCheck,
+  UserPlus,
   Users,
   X,
 } from "lucide-react";
@@ -36,6 +37,7 @@ const GROUPS = [
     label: "Лига",
     items: [
       { href: "/organizer/clubs", label: "Клубы", icon: Building2 },
+      { href: "/organizer/members", label: "Участники", icon: UserPlus },
       { href: "/organizer/players", label: "Игроки", icon: Users },
       { href: "/organizer/ratings", label: "Рейтинг", icon: BarChart3 },
       { href: "/organizer/content", label: "Контент", icon: Newspaper },
@@ -46,6 +48,7 @@ const GROUPS = [
 const BADGES: Record<string, string> = {
   "/organizer/applications": "new",
   "/organizer/clubs": "new",
+  "/organizer/members": "new",
   "/organizer/bracket": "new",
 };
 
