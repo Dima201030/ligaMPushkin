@@ -8,7 +8,7 @@ import type { Tournament } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Турниры",
-  description: "Расписание турниров лиги Mr. Pushkin: одиночные, парные, микст и кубки.",
+  description: "Расписание турниров Pairly: одиночные, парные, микст и кубки.",
 };
 
 export default async function TournamentsPage() {

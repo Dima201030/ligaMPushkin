@@ -13,6 +13,7 @@ import {
   Save,
 } from "lucide-react";
 import type { CategorySlug, Surface, TournamentFormat, TournamentType, Venue } from "@/lib/types";
+import { createOrganizerTournament } from "@/lib/api/tournaments";
 import {
   CATEGORIES,
   FORMATS,
@@ -23,7 +24,7 @@ import {
 } from "@/lib/domain";
 import { cn, formatDate, formatMoney, formatTime } from "@/lib/utils";
 import { CategoryBadge } from "@/components/ui/Badges";
-import { DemoNote, MiniLabel, Panel } from "./OrganizerUI";
+import { MiniLabel, Panel } from "./OrganizerUI";
 
 interface FormState {
   title: string;
@@ -86,6 +87,10 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
   });
   const [submitted, setSubmitted] = useState(false);
   const [attempted, setAttempted] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [createdId, setCreatedId] = useState<string | null>(null);
+  const [createdSlug, setCreatedSlug] = useState<string | null>(null);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -131,10 +136,39 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
   ];
   const ready = checklist.filter((item) => item.done).length;
 
-  function submit(event: React.FormEvent) {
+  async function submit(event: React.FormEvent) {
     event.preventDefault();
     setAttempted(true);
-    if (isValid) setSubmitted(true);
+    setSubmitError(null);
+    if (!isValid) return;
+    const venue = venues.find((item) => item.id === form.venueId);
+    setBusy(true);
+    const result = await createOrganizerTournament({
+      title: form.title.trim(),
+      description: form.description.trim(),
+      type: form.type,
+      category: form.category,
+      surface: form.surface,
+      format: form.format,
+      status: form.publish,
+      startsAt: new Date(form.startsAt).toISOString(),
+      registrationClosesAt: new Date(form.registrationClosesAt).toISOString(),
+      venueName: venue?.name,
+      venueAddress: venue?.address,
+      venueCourts: venue?.courts,
+      venueSurface: venue?.surface ?? form.surface,
+      entryFee: Number(form.entryFee) || 0,
+      maxParticipants: Number(form.maxParticipants) || 16,
+      regulations: form.regulations.trim(),
+    });
+    setBusy(false);
+    if (!result.ok) {
+      setSubmitError(result.error);
+      return;
+    }
+    setCreatedId(result.tournament.id);
+    setCreatedSlug(result.tournament.slug);
+    setSubmitted(true);
   }
 
   if (submitted) {
@@ -187,25 +221,35 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
           </div>
 
           <div className="mt-6 flex flex-wrap gap-2">
-            <Link href="/organizer/tournaments" className="btn btn-primary">
-              К списку турниров
-              <ArrowRight className="size-4" aria-hidden="true" />
-            </Link>
-            <Link href="/organizer/bracket" className="btn btn-secondary">
-              Генератор сеток
-            </Link>
+            {createdId ? (
+              <Link href={`/organizer/tournaments/${createdId}`} className="btn btn-primary">
+                Открыть карточку
+                <ArrowRight className="size-4" aria-hidden="true" />
+              </Link>
+            ) : (
+              <Link href="/organizer/tournaments" className="btn btn-primary">
+                К списку турниров
+                <ArrowRight className="size-4" aria-hidden="true" />
+              </Link>
+            )}
+            {createdSlug && (
+              <Link href={`/tournaments/${createdSlug}`} className="btn btn-secondary">
+                Публичная страница
+              </Link>
+            )}
             <button
               type="button"
               className="btn btn-ghost"
               onClick={() => {
                 setSubmitted(false);
                 setAttempted(false);
+                setCreatedId(null);
+                setCreatedSlug(null);
               }}
             >
               Создать ещё один
             </button>
           </div>
-          <p className="mt-4 text-[0.64rem] text-ink-faint">Демо-режим: турнир не сохранён в базе.</p>
         </div>
 
         <aside className="space-y-8">
@@ -456,25 +500,34 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
               Проверьте выделенные поля: {Object.values(errors).length} замечаний.
             </p>
           )}
+          {submitError && (
+            <p role="alert" className="mt-4 flex items-start gap-2 border border-negative/30 px-3 py-2 text-[0.7rem] text-negative">
+              <AlertCircle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+              {submitError}
+            </p>
+          )}
 
           <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-line pt-4">
-            <button type="submit" className="btn btn-primary">
+            <button type="submit" className="btn btn-primary" disabled={busy}>
               {form.publish === "draft" ? (
                 <>
                   <Save className="size-4" aria-hidden="true" />
-                  Сохранить черновик
+                  {busy ? "Сохранение…" : "Сохранить черновик"}
                 </>
               ) : (
                 <>
                   <Rocket className="size-4" aria-hidden="true" />
-                  {form.publish === "registration_open" ? "Опубликовать и открыть регистрацию" : "Опубликовать анонс"}
+                  {busy
+                    ? "Публикация…"
+                    : form.publish === "registration_open"
+                      ? "Опубликовать и открыть регистрацию"
+                      : "Опубликовать анонс"}
                 </>
               )}
             </button>
             <Link href="/organizer/tournaments" className="btn btn-secondary">
               Отмена
             </Link>
-            <span className="ml-auto text-[0.64rem] text-ink-faint">Демо-режим: форма не отправляет данные</span>
           </div>
         </Panel>
       </div>
@@ -540,10 +593,6 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
             </ul>
           </Panel>
 
-          <DemoNote>
-            Публикация, проверка дат и сохранение турнира будут подключены к серверу через server actions. Сейчас это
-            интерактивный прототип.
-          </DemoNote>
         </div>
       </aside>
     </form>

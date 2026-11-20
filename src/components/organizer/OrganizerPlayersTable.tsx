@@ -7,6 +7,7 @@ import type { CategorySlug, Player } from "@/lib/types";
 import { CATEGORIES, CATEGORY_BY_SLUG } from "@/lib/domain";
 import { cn, formatDateShort, winRate } from "@/lib/utils";
 import { Avatar } from "@/components/ui/Avatar";
+import { updateOrganizerPlayer } from "@/lib/api/organizer-ratings";
 import { DemoNote } from "./OrganizerUI";
 
 type Sort = "rating" | "name" | "points" | "matches";
@@ -17,6 +18,7 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
   const [sort, setSort] = useState<Sort>("rating");
   const [categories, setCategories] = useState<Record<string, CategorySlug>>({});
   const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const rows = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -38,10 +40,16 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
       });
   }, [players, categories, query, category, sort]);
 
-  function changeCategory(player: Player, next: CategorySlug) {
+  async function changeCategory(player: Player, next: CategorySlug) {
+    setError(null);
+    const result = await updateOrganizerPlayer(player.id, { level: next });
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
     setCategories((current) => ({ ...current, [player.id]: next }));
     setNotice(
-      `${player.firstName} ${player.lastName} переведён в категорию ${CATEGORY_BY_SLUG[next].name}. Рейтинг и история матчей сохраняются.`,
+      `${player.firstName} ${player.lastName} переведён в категорию ${CATEGORY_BY_SLUG[next].name}.`,
     );
   }
 
@@ -80,14 +88,10 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
           <option value="matches">По числу матчей</option>
           <option value="name">По фамилии</option>
         </select>
-        <button
-          type="button"
-          className="btn btn-secondary btn-sm ml-auto"
-          onClick={() => setNotice("Форма добавления игрока появится после подключения бэкенда и таблицы players.")}
-        >
+        <Link href="/organizer/applications" className="btn btn-secondary btn-sm ml-auto">
           <Plus className="size-3.5" aria-hidden="true" />
-          Добавить игрока
-        </button>
+          Заявки игроков
+        </Link>
       </div>
 
       <p className="text-[0.62rem] uppercase tracking-[0.14em] text-ink-muted">
@@ -204,6 +208,7 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
         })}
       </div>
 
+      {error && <DemoNote>{error}</DemoNote>}
       {notice && (
         <DemoNote>
           <span className="inline-flex items-start gap-1.5">

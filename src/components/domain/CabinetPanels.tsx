@@ -2,39 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Bell, Check, Pencil, X } from "lucide-react";
+import { Bell, Check } from "lucide-react";
 import { cn, formatDate, formatDateShort, formatDayMonth } from "@/lib/utils";
 import { REGISTRATION_STATUS_LABEL } from "@/lib/domain";
 import type { RegistrationStatus } from "@/lib/types";
-
-export function EditProfileButton() {
-  const [notice, setNotice] = useState(false);
-
-  return (
-    <div className="relative">
-      <button type="button" className="btn btn-on-dark" onClick={() => setNotice((value) => !value)}>
-        <Pencil className="size-3.5" aria-hidden="true" />
-        Редактировать профиль
-      </button>
-      {notice && (
-        <p
-          role="status"
-          className="absolute right-0 top-full z-20 mt-2 w-64 border border-line-strong bg-canvas p-3 text-left text-[0.7rem] leading-relaxed text-ink-soft shadow-lift"
-        >
-          Редактирование профиля появится после подключения бэкенда. Демо-режим: изменения не сохраняются.
-          <button
-            type="button"
-            className="absolute right-2 top-2 text-ink-faint hover:text-ink"
-            onClick={() => setNotice(false)}
-            aria-label="Закрыть"
-          >
-            <X className="size-3.5" />
-          </button>
-        </p>
-      )}
-    </div>
-  );
-}
+import { cancelRegistration } from "@/lib/api/tournaments";
 
 export interface CabinetRegistration {
   id: string;
@@ -57,10 +29,21 @@ const STATUS_TONE: Record<string, string> = {
 export function MyRegistrations({ items }: { items: CabinetRegistration[] }) {
   const [cancelled, setCancelled] = useState<string[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
-  function cancel(item: CabinetRegistration) {
+  async function cancel(item: CabinetRegistration) {
+    setBusyId(item.id);
+    setError(null);
+    setNotice(null);
+    const result = await cancelRegistration(item.slug);
+    setBusyId(null);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
     setCancelled((current) => [...current, item.id]);
-    setNotice(`Заявка на «${item.title}» отменена. Место передано следующему игроку в листе ожидания.`);
+    setNotice(`Заявка на «${item.title}» отменена.`);
   }
 
   return (
@@ -100,9 +83,10 @@ export function MyRegistrations({ items }: { items: CabinetRegistration[] }) {
                   <button
                     type="button"
                     className="btn btn-ghost btn-sm text-negative hover:bg-negative-soft hover:text-negative"
+                    disabled={busyId === item.id}
                     onClick={() => cancel(item)}
                   >
-                    Отменить
+                    {busyId === item.id ? "Отмена…" : "Отменить"}
                   </button>
                 )}
               </div>
@@ -111,15 +95,18 @@ export function MyRegistrations({ items }: { items: CabinetRegistration[] }) {
         })}
       </div>
 
+      {error && (
+        <p role="alert" className="mx-4 mb-4 text-[0.7rem] text-negative md:mx-5">
+          {error}
+        </p>
+      )}
       {notice && (
         <p
           role="status"
           className="mx-4 mb-4 flex items-start gap-2 rounded-md border border-accent-line bg-accent-soft px-3 py-2 text-[0.7rem] leading-relaxed text-accent-strong md:mx-5"
         >
           <Check className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-          <span>
-            {notice} <span className="opacity-60">Демо-режим: данные не сохраняются.</span>
-          </span>
+          <span>{notice}</span>
         </p>
       )}
     </div>
@@ -176,7 +163,7 @@ export function NotificationSettings() {
         ))}
       </ul>
       <p className="mt-2 text-[0.62rem] leading-relaxed text-ink-faint">
-        Настройки сохранятся в профиле после подключения базы данных.
+        Предпочтения хранятся локально в браузере до появления профиля уведомлений на сервере.
       </p>
     </div>
   );

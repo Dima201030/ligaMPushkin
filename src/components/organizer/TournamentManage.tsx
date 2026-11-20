@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import type { CategorySlug, RegistrationStatus, TournamentStatus } from "@/lib/types";
+import { updateOrganizerTournament } from "@/lib/api/tournaments";
 import { REGISTRATION_STATUS_LABEL, FORMAT_LABEL, STATUS_BY_VALUE } from "@/lib/domain";
 import { cn, formatDateTime, formatMoney } from "@/lib/utils";
 import { CategoryBadge, StatusPill } from "@/components/ui/Badges";
@@ -45,12 +46,23 @@ export function TournamentStatusPanel({
 }) {
   const [status, setStatus] = useState<TournamentStatus>(initialStatus);
   const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const action = NEXT_ACTION[status];
 
-  function advance() {
+  async function advance() {
     if (!action) return;
-    setStatus(action.next);
-    setNotice(`${action.label}. Новый статус: «${STATUS_BY_VALUE[action.next].label}».`);
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    const result = await updateOrganizerTournament(tournament.id, { status: action.next });
+    setBusy(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    setStatus(result.tournament.status);
+    setNotice(`${action.label}. Новый статус: «${STATUS_BY_VALUE[result.tournament.status].label}».`);
   }
 
   const checklist = [
@@ -99,8 +111,8 @@ export function TournamentStatusPanel({
 
       <div className="mt-4 space-y-2">
         {action && (
-          <button type="button" className="btn btn-primary w-full" onClick={advance}>
-            {action.label}
+          <button type="button" className="btn btn-primary w-full" onClick={advance} disabled={busy}>
+            {busy ? "Сохранение…" : action.label}
             <ArrowRight className="size-4" aria-hidden="true" />
           </button>
         )}
@@ -114,7 +126,16 @@ export function TournamentStatusPanel({
         </Link>
       </div>
 
-      {notice && <DemoNote className="mt-3">{notice} Демо-режим: статус не сохраняется.</DemoNote>}
+      {notice && (
+        <p role="status" className="mt-3 border border-accent-line bg-accent-soft px-3 py-2 text-[0.7rem] text-accent-strong">
+          {notice}
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="mt-3 border border-negative/40 px-3 py-2 text-[0.7rem] text-negative">
+          {error}
+        </p>
+      )}
     </Panel>
   );
 }
@@ -191,16 +212,8 @@ export function ParticipantsManager({
   const waitlist = rows.filter((row) => row.status === "waitlist").length;
   const full = confirmed >= maxParticipants;
 
-  function setStatus(row: ManageParticipant, status: RegistrationStatus) {
-    setStatuses((current) => ({ ...current, [row.playerId]: status }));
-    const messages: Record<RegistrationStatus, string> = {
-      confirmed: `${row.firstName} ${row.lastName} переведён в основной состав.`,
-      pending: `${row.firstName} ${row.lastName} возвращён на подтверждение.`,
-      waitlist: `${row.firstName} ${row.lastName} переведён в лист ожидания.`,
-      rejected: `${row.firstName} ${row.lastName} — заявка отклонена, место освобождено.`,
-      cancelled: `Заявка ${row.firstName} ${row.lastName} отменена.`,
-    };
-    setNotice(messages[status]);
+  function setStatus(_row: ManageParticipant, _status: RegistrationStatus) {
+    setNotice("Смена статуса заявки организатором появится отдельным API. Сейчас статус задаётся при регистрации.");
   }
 
   return (
