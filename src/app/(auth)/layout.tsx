@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/layout/Logo";
+import { CLUB } from "@/lib/domain";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -15,7 +16,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <div className="w-full max-w-[400px]">{children}</div>
         </main>
         <footer className="text-[0.65rem] text-ink-faint">
-          © 2026 Теннисный клуб Mr. Pushkin · Волхонское шоссе, 79А
+          © 2026 {CLUB.fullName} · Волхонское шоссе, 79А
         </footer>
       </div>
 
@@ -29,7 +30,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             Играйте. Растите. Побеждайте.
           </p>
           <p className="mt-4 max-w-[38ch] text-sm leading-relaxed text-white/60">
-            Турниры, рейтинг и сообщество игроков клуба Mr. Pushkin — в одном личном кабинете.
+            Турниры, рейтинг и сообщество игроков {CLUB.name} — в одном личном кабинете.
           </p>
           <div className="mt-8 flex gap-8 border-t border-white/15 pt-6 text-xs text-white/50">
             <span><span className="block text-lg font-bold text-white">318</span>игроков</span>

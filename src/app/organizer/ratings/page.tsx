@@ -15,9 +15,11 @@ import {
 
 export default async function OrganizerRatingsPage() {
   const { ranking, history, audit, players } = await getRatingDesk();
-  const averageRating = Math.round(ranking.reduce((sum, row) => sum + row.rating, 0) / ranking.length);
+  const averageRating = ranking.length
+    ? Math.round(ranking.reduce((sum, row) => sum + row.rating, 0) / ranking.length)
+    : 0;
   const totalPoints = ranking.reduce((sum, row) => sum + row.points, 0);
-  const improved = ranking.filter((row) => row.position < row.previousPosition).length;
+  const improved = ranking.filter((row) => row.previousPosition > 0 && row.position < row.previousPosition).length;
   const counts = CATEGORIES.map((category) => ({
     category: category.slug,
     count: players.filter((player) => player.category === category.slug).length,

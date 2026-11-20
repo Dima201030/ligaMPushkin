@@ -4,14 +4,13 @@ import { Trophy } from "lucide-react";
 import { getArchiveYears, listArchive } from "@/lib/data";
 import { CATEGORIES, CATEGORY_BY_SLUG, TOURNAMENT_TYPES, TYPE_BY_VALUE } from "@/lib/domain";
 import type { CategorySlug, TournamentType } from "@/lib/types";
-import { playerById } from "@/lib/mock/players";
 import { formatDate } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/Section";
 import { CategoryBadge, StatusPill } from "@/components/ui/Badges";
 
 export const metadata: Metadata = {
   title: "Архив турниров",
-  description: "Все прошедшие турниры лиги Mr. Pushkin: победители, результаты и фильтры по году, категории и типу.",
+  description: "Все прошедшие турниры Pairly: победители, результаты и фильтры по году, категории и типу.",
 };
 
 export default async function ArchivePage({
@@ -97,11 +96,9 @@ export default async function ArchivePage({
               <tbody>
                 {tournaments.map((tournament) => {
                   const winners = tournament.winners?.find((item) => item.place === 1);
-                  const winnerNames = winners?.playerIds
-                    .map((id) => playerById.get(id))
-                    .filter(Boolean)
-                    .map((player) => `${player!.firstName} ${player!.lastName}`)
-                    .join(" / ");
+                  const winnerNames = winners?.playerIds?.length
+                    ? `${winners.playerIds.length} участник(ов)`
+                    : null;
                   return (
                     <tr key={tournament.id} className="row-link group">
                       <td className="whitespace-nowrap text-xs text-ink-muted">{formatDate(tournament.startsAt)}</td>
