@@ -374,19 +374,19 @@ export async function createRegistration(
   if (response.status === 201 && data && "registration" in data && data.registration) {
     return { ok: true, status: data.registration.status as RegistrationStatus };
   }
-  const body = data as ApiErrorBody | undefined;
+  const errBody = data as ApiErrorBody | undefined;
   if (response.status === 403) {
     return {
       ok: false,
       error:
-        body?.code === "profile_unverified"
+        errBody?.code === "profile_unverified"
           ? "Профиль ещё не подтверждён организатором (нужна верификация)."
-          : body?.message ?? "Регистрация запрещена (403).",
+          : errBody?.message ?? "Регистрация запрещена (403).",
     };
   }
   return {
     ok: false,
-    error: body?.message ?? "Не удалось подать заявку",
+    error: errBody?.message ?? "Не удалось подать заявку",
   };
 }
 
