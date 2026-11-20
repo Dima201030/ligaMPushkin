@@ -735,27 +735,38 @@ export async function listOrganizerPlayers(query?: string) {
   const cookie = await requestCookieHeader();
   try {
     const rows = await fetchOrganizerPlayersList({ cookie });
-    const players: Player[] = rows.map((row) => ({
-      id: row.id,
-      slug: row.slug,
-      firstName: row.first_name,
-      lastName: row.last_name,
-      gender: "male",
-      birthYear: 0,
-      city: row.city || "",
-      category: row.level as CategorySlug,
-      rating: row.rating,
-      points: row.points,
-      wins: row.wins,
-      losses: row.losses,
-      tournamentsCount: 0,
-      titlesCount: 0,
-      bestRank: 0,
-      trend: [],
-      bio: row.bio || "",
-      memberSince: row.member_since || "",
-      status: (row.status as Player["status"]) || "active",
-    }));
+    const players: Player[] = rows.map((row) => {
+      const birthDate = row.birth_date || undefined;
+      const birthYear = birthDate ? Number(birthDate.slice(0, 4)) || 0 : 0;
+      const verificationStatus =
+        row.verification_status === "approved" || row.verification_status === "rejected"
+          ? row.verification_status
+          : "pending";
+      return {
+        id: row.id,
+        slug: row.slug,
+        firstName: row.first_name,
+        lastName: row.last_name,
+        gender: "male" as const,
+        birthYear,
+        birthDate,
+        city: row.city || "",
+        category: row.level as CategorySlug,
+        rating: row.rating,
+        points: row.points,
+        wins: row.wins,
+        losses: row.losses,
+        tournamentsCount: 0,
+        titlesCount: 0,
+        bestRank: 0,
+        trend: [],
+        bio: row.bio || "",
+        memberSince: row.member_since || "",
+        status: (row.status as Player["status"]) || "active",
+        verificationStatus,
+        phone: row.phone ?? undefined,
+      };
+    });
     const normalized = query?.toLowerCase();
     return players
       .filter((player) =>

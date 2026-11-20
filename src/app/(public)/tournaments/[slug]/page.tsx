@@ -9,7 +9,7 @@ import {
   Trophy,
   Users,
 } from "lucide-react";
-import { fetchCurrentUser } from "@/lib/api/auth";
+import { fetchSession } from "@/lib/api/auth";
 import { getTournamentPage } from "@/lib/data";
 import { CATEGORY_BY_SLUG, FORMAT_LABEL, STATUS_BY_VALUE, SURFACE_LABEL, TYPE_BY_VALUE } from "@/lib/domain";
 import { cn, formatDateTime, formatMoney } from "@/lib/utils";
@@ -40,13 +40,15 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
 
   const { tournament, matches, participants, similar } = page;
   const isPairs = ["doubles", "mixed", "teams"].includes(tournament.type);
-  const user = await fetchCurrentUser();
+  const session = await fetchSession();
+  const user = session?.user ?? null;
   const myRegistration = user
     ? tournament.participants.find(
         (item) => item.playerId === user.id && item.status !== "cancelled",
       )
     : undefined;
   const registered = Boolean(myRegistration);
+  const isProfileVerified = session?.profile?.verificationStatus === "approved";
   const winners = tournament.winners ?? [];
 
   return (
@@ -265,6 +267,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
               initialStatus={myRegistration?.status}
               isAuthenticated={Boolean(user)}
               isApproved={user?.status === "approved"}
+              isProfileVerified={isProfileVerified}
             />
 
             <div className="card p-5">

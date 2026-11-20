@@ -60,12 +60,15 @@ export async function fetchOrganizerPlayersList(opts?: { cookie?: string }) {
       city: string;
       bio: string;
       status: string;
+      birth_date?: string | null;
+      verification_status?: string;
       rating: number;
       points: number;
       wins: number;
       losses: number;
       member_since?: string;
       email?: string;
+      phone?: string | null;
       user_status?: string;
       role?: string;
     }>;
@@ -77,4 +80,35 @@ export async function fetchOrganizerPlayersList(opts?: { cookie?: string }) {
     throw new ApiError(response.status, undefined, "Не удалось загрузить игроков");
   }
   return data?.players ?? [];
+}
+
+export async function confirmPlayerVerification(
+  id: string,
+  input: {
+    firstName: string;
+    lastName: string;
+    birthDate: string;
+    level?: string;
+    phone?: string;
+    status: "approved" | "rejected";
+    note?: string;
+  },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { response, data } = await apiRequest<ApiErrorBody>(
+    `/organizer/players/${encodeURIComponent(id)}/verify`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        first_name: input.firstName,
+        last_name: input.lastName,
+        birth_date: input.birthDate,
+        level: input.level,
+        phone: input.phone,
+        status: input.status,
+        note: input.note,
+      }),
+    },
+  );
+  if (response.ok) return { ok: true };
+  return { ok: false, error: data?.message ?? "Не удалось подтвердить профиль" };
 }

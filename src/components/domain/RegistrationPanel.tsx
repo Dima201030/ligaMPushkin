@@ -13,12 +13,15 @@ export function RegistrationPanel({
   initialStatus,
   isAuthenticated,
   isApproved,
+  isProfileVerified,
 }: {
   tournament: Tournament;
   initiallyRegistered: boolean;
   initialStatus?: string;
   isAuthenticated: boolean;
   isApproved: boolean;
+  /** UI hint only — server returns 403 if profile verification ≠ approved. */
+  isProfileVerified: boolean;
 }) {
   const [registered, setRegistered] = useState(initiallyRegistered);
   const [status, setStatus] = useState(initialStatus);
@@ -140,6 +143,11 @@ export function RegistrationPanel({
         ) : !isApproved ? (
           <div className="border border-warning/40 px-4 py-3 text-sm text-ink-soft">
             Запись откроется после подтверждения аккаунта организатором.
+          </div>
+        ) : !isProfileVerified ? (
+          <div className="border border-warning/40 px-4 py-3 text-sm text-ink-soft">
+            Нужна верификация профиля (ФИО, дата рождения, уровень). Организатор подтверждает данные —
+            до этого API регистрации отвечает 403.
           </div>
         ) : (
           <div className="space-y-3">

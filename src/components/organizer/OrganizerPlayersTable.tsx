@@ -2,28 +2,52 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, CheckCircle2, Plus, Search, Trophy } from "lucide-react";
-import type { CategorySlug, Player } from "@/lib/types";
+import { ArrowUpRight, CheckCircle2, Plus, Search, ShieldCheck, Trophy } from "lucide-react";
+import type { CategorySlug, Player, ProfileVerificationStatus } from "@/lib/types";
 import { CATEGORIES, CATEGORY_BY_SLUG } from "@/lib/domain";
 import { cn, formatDateShort, winRate } from "@/lib/utils";
 import { Avatar } from "@/components/ui/Avatar";
-import { updateOrganizerPlayer } from "@/lib/api/organizer-ratings";
+import { confirmPlayerVerification, updateOrganizerPlayer } from "@/lib/api/organizer-ratings";
 import { DemoNote } from "./OrganizerUI";
 
 type Sort = "rating" | "name" | "points" | "matches";
+
+function verificationLabel(status?: ProfileVerificationStatus) {
+  switch (status) {
+    case "approved":
+      return "Верифицирован";
+    case "rejected":
+      return "Отклонён";
+    default:
+      return "Ожидает";
+  }
+}
 
 export function OrganizerPlayersTable({ players }: { players: Player[] }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>("all");
   const [sort, setSort] = useState<Sort>("rating");
   const [categories, setCategories] = useState<Record<string, CategorySlug>>({});
+  const [verification, setVerification] = useState<Record<string, ProfileVerificationStatus>>({});
+  const [birthDates, setBirthDates] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
 
   const rows = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return players
-      .map((player) => ({ ...player, category: categories[player.id] ?? player.category }))
+      .map((player) => ({
+        ...player,
+        category: categories[player.id] ?? player.category,
+        verificationStatus: verification[player.id] ?? player.verificationStatus ?? "pending",
+        birthDate: birthDates[player.id] ?? player.birthDate,
+        birthYear: (() => {
+          const bd = birthDates[player.id] ?? player.birthDate;
+          if (bd) return Number(bd.slice(0, 4)) || player.birthYear;
+          return player.birthYear;
+        })(),
+      }))
       .filter((player) => {
         return (
           (category === "all" || player.category === category) &&
@@ -38,7 +62,7 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
         if (sort === "matches") return b.wins + b.losses - (a.wins + a.losses);
         return b.rating - a.rating;
       });
-  }, [players, categories, query, category, sort]);
+  }, [players, categories, verification, birthDates, query, category, sort]);
 
   async function changeCategory(player: Player, next: CategorySlug) {
     setError(null);
@@ -50,6 +74,40 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
     setCategories((current) => ({ ...current, [player.id]: next }));
     setNotice(
       `${player.firstName} ${player.lastName} переведён в категорию ${CATEGORY_BY_SLUG[next].name}.`,
+    );
+  }
+
+  async function verifyPlayer(player: Player, status: "approved" | "rejected") {
+    setError(null);
+    setVerifyingId(player.id);
+    const birthDate =
+      birthDates[player.id] ||
+      player.birthDate ||
+      (player.birthYear > 1900 ? `${player.birthYear}-01-01` : "");
+    if (status === "approved" && !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+      setError("Укажите дату рождения в формате ГГГГ-ММ-ДД перед подтверждением.");
+      setVerifyingId(null);
+      return;
+    }
+    const result = await confirmPlayerVerification(player.id, {
+      firstName: player.firstName,
+      lastName: player.lastName,
+      birthDate: birthDate || "1970-01-01",
+      level: categories[player.id] ?? player.category,
+      phone: player.phone,
+      status,
+    });
+    setVerifyingId(null);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    setVerification((current) => ({ ...current, [player.id]: status }));
+    if (birthDate) setBirthDates((current) => ({ ...current, [player.id]: birthDate }));
+    setNotice(
+      status === "approved"
+        ? `${player.lastName} ${player.firstName}: профиль подтверждён.`
+        : `${player.lastName} ${player.firstName}: верификация отклонена.`,
     );
   }
 
@@ -95,17 +153,19 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
       </div>
 
       <p className="text-[0.62rem] uppercase tracking-[0.14em] text-ink-muted">
-        {rows.length} из {players.length} игроков
+        {rows.length} из {players.length} игроков · верификация нужна для записи на турнир
       </p>
 
       <div className="border-y border-line">
         <div className="overflow-x-auto">
-          <table className="data-table min-w-[980px]">
+          <table className="data-table min-w-[1100px]">
             <thead>
               <tr>
                 <th className="w-10">#</th>
                 <th>Игрок</th>
                 <th>Категория</th>
+                <th>Дата рождения</th>
+                <th>Верификация</th>
                 <th className="text-right">Рейтинг</th>
                 <th className="text-right">Очки</th>
                 <th className="text-right">Матчи</th>
@@ -118,6 +178,7 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
             <tbody>
               {rows.map((player, index) => {
                 const rate = winRate(player.wins, player.losses);
+                const status = player.verificationStatus ?? "pending";
                 return (
                   <tr key={player.id}>
                     <td className="text-[0.64rem] tabular-nums text-ink-faint">{index + 1}</td>
@@ -129,7 +190,8 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
                             {player.lastName} {player.firstName}
                           </span>
                           <span className="block text-[0.6rem] text-ink-faint">
-                            {player.city} · {player.birthYear} г.
+                            {player.city}
+                            {player.birthYear > 1900 ? ` · ${player.birthYear} г.` : ""}
                           </span>
                         </span>
                       </Link>
@@ -147,6 +209,54 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
                           ))}
                         </select>
                       </label>
+                    </td>
+                    <td>
+                      <label className="block">
+                        <span className="sr-only">Дата рождения {player.firstName} {player.lastName}</span>
+                        <input
+                          type="date"
+                          className="field min-h-[28px] w-[132px] border-0 border-b border-line bg-transparent px-1 py-0.5 text-[0.66rem] focus:border-ink"
+                          value={player.birthDate || ""}
+                          onChange={(event) =>
+                            setBirthDates((current) => ({ ...current, [player.id]: event.target.value }))
+                          }
+                        />
+                      </label>
+                    </td>
+                    <td className="min-w-[160px]">
+                      <div className="flex flex-col gap-1.5">
+                        <span
+                          className={cn(
+                            "text-[0.62rem] uppercase tracking-[0.1em]",
+                            status === "approved" && "text-positive",
+                            status === "rejected" && "text-negative",
+                            status === "pending" && "text-ink-muted",
+                          )}
+                        >
+                          {verificationLabel(status)}
+                        </span>
+                        {status !== "approved" && (
+                          <div className="flex flex-wrap gap-1">
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              disabled={verifyingId === player.id}
+                              onClick={() => verifyPlayer(player, "approved")}
+                            >
+                              <ShieldCheck className="size-3" aria-hidden="true" />
+                              Подтвердить
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              disabled={verifyingId === player.id}
+                              onClick={() => verifyPlayer(player, "rejected")}
+                            >
+                              Отклонить
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="text-right text-[0.76rem] tabular-nums text-ink">{player.rating}</td>
                     <td className="text-right text-[0.72rem] tabular-nums text-ink-soft">{player.points}</td>
@@ -213,7 +323,7 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
         <DemoNote>
           <span className="inline-flex items-start gap-1.5">
             <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-            <span>{notice} Демо-режим: данные не сохраняются.</span>
+            <span>{notice}</span>
           </span>
         </DemoNote>
       )}

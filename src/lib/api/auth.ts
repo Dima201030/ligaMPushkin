@@ -20,12 +20,17 @@ export interface LeagueUser {
   updatedAt?: string;
 }
 
+export type ProfileVerificationStatus = "pending" | "approved" | "rejected";
+
 export interface LeagueProfile {
   slug: string;
   city: string;
   bio: string;
   avatarUrl?: string;
   status: string;
+  birthDate?: string;
+  verificationStatus: ProfileVerificationStatus;
+  verifiedAt?: string;
   rating: number;
   points: number;
   singlesPoints: number;
@@ -253,6 +258,9 @@ interface ApiProfile {
   bio: string;
   avatar_url?: string | null;
   status: string;
+  birth_date?: string | null;
+  verification_status?: string;
+  verified_at?: string | null;
   rating: number;
   points: number;
   singles_points: number;
@@ -264,12 +272,19 @@ interface ApiProfile {
 }
 
 function mapProfile(raw: ApiProfile): LeagueProfile {
+  const verificationStatus =
+    raw.verification_status === "approved" || raw.verification_status === "rejected"
+      ? raw.verification_status
+      : "pending";
   return {
     slug: raw.slug,
     city: raw.city,
     bio: raw.bio,
     avatarUrl: raw.avatar_url ?? undefined,
     status: raw.status,
+    birthDate: raw.birth_date ?? undefined,
+    verificationStatus,
+    verifiedAt: raw.verified_at ?? undefined,
     rating: raw.rating,
     points: raw.points,
     singlesPoints: raw.singles_points,
