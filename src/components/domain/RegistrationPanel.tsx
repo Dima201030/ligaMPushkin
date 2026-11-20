@@ -1,33 +1,76 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Check, Clock, Users } from "lucide-react";
 import type { Tournament } from "@/lib/types";
+import { cancelRegistration, createRegistration } from "@/lib/api/tournaments";
 import { formatDateTime, relativeDeadline } from "@/lib/utils";
 
 export function RegistrationPanel({
   tournament,
   initiallyRegistered,
+  initialStatus,
+  isAuthenticated,
+  isApproved,
+  isProfileVerified,
 }: {
   tournament: Tournament;
   initiallyRegistered: boolean;
+  initialStatus?: string;
+  isAuthenticated: boolean;
+  isApproved: boolean;
+  /** UI hint only — server returns 403 if profile verification ≠ approved. */
+  isProfileVerified: boolean;
 }) {
   const [registered, setRegistered] = useState(initiallyRegistered);
-  const [notice, setNotice] = useState<string | null>(null);
-
-  const confirmed = tournament.participants.filter((item) => item.status !== "cancelled").length;
-  const free = Math.max(0, tournament.maxParticipants - confirmed);
+  const [status, setStatus] = useState(initialStatus);
   const isPairs = ["doubles", "mixed", "teams"].includes(tournament.type);
+  const [lookingForPartner, setLookingForPartner] = useState(isPairs);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const confirmed = tournament.participants.filter(
+    (item) => item.status === "confirmed" || item.status === "pending",
+  ).length;
+  const free = Math.max(0, tournament.maxParticipants - confirmed);
   const isOpen = tournament.status === "registration_open";
   const isCompleted = tournament.status === "completed";
 
-  function register() {
+  async function register() {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    const result = await createRegistration(tournament.slug, {
+      lookingForPartner: isPairs ? lookingForPartner : false,
+    });
+    setBusy(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
     setRegistered(true);
-    setNotice("Заявка отправлена. Организатор подтвердит участие в течение дня.");
+    setStatus(result.status);
+    setNotice(
+      result.status === "waitlist"
+        ? "Мест нет — вы добавлены в лист ожидания."
+        : "Заявка принята. Место закреплено за вами.",
+    );
   }
 
-  function cancel() {
+  async function cancel() {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    const result = await cancelRegistration(tournament.slug);
+    setBusy(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
     setRegistered(false);
+    setStatus(undefined);
     setNotice("Регистрация отменена. Место освобождено для другого игрока.");
   }
 
@@ -51,14 +94,20 @@ export function RegistrationPanel({
         <p className="flex items-start gap-2">
           <Clock className="mt-0.5 size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
           <span>
-            Дедлайн регистрации: <span className="font-semibold text-ink">{formatDateTime(tournament.registrationClosesAt)}</span>
-            {isOpen && <span className="mt-1 block text-accent">({relativeDeadline(tournament.registrationClosesAt)})</span>}
+            Дедлайн регистрации:{" "}
+            <span className="font-semibold text-ink">{formatDateTime(tournament.registrationClosesAt)}</span>
+            {isOpen && (
+              <span className="mt-1 block text-accent">({relativeDeadline(tournament.registrationClosesAt)})</span>
+            )}
           </span>
         </p>
         <p className="flex items-start gap-2">
           <Users className="mt-0.5 size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
           <span>
-            Уже заявлено: <span className="font-semibold text-ink">{confirmed} из {tournament.maxParticipants}</span>{" "}
+            Уже заявлено:{" "}
+            <span className="font-semibold text-ink">
+              {confirmed} из {tournament.maxParticipants}
+            </span>{" "}
             {isPairs ? "пар" : "игроков"}
           </span>
         </p>
@@ -73,27 +122,81 @@ export function RegistrationPanel({
           <div className="space-y-2">
             <div className="flex items-center gap-2 border border-positive/50 px-4 py-3 text-sm font-medium text-positive">
               <Check className="size-4" aria-hidden="true" />
-              Вы записаны на турнир
+              {status === "waitlist" ? "Вы в листе ожидания" : "Вы записаны на турнир"}
             </div>
-            <button type="button" className="btn btn-secondary w-full" onClick={cancel}>
+            <button type="button" className="btn btn-secondary w-full" onClick={cancel} disabled={busy}>
               Отменить регистрацию
             </button>
           </div>
+        ) : !isAuthenticated ? (
+          <div className="space-y-2">
+            <Link href="/login" className="btn btn-primary w-full">
+              Войти, чтобы записаться
+            </Link>
+            <p className="text-center text-[0.68rem] text-ink-muted">
+              Нет аккаунта?{" "}
+              <Link href="/register" className="font-semibold text-accent">
+                Заявка в лигу
+              </Link>
+            </p>
+          </div>
+        ) : !isApproved ? (
+          <div className="border border-warning/40 px-4 py-3 text-sm text-ink-soft">
+            Запись откроется после подтверждения аккаунта организатором.
+          </div>
+        ) : !isProfileVerified ? (
+          <div className="border border-warning/40 px-4 py-3 text-sm text-ink-soft">
+            Нужна верификация профиля (ФИО, дата рождения, уровень). Организатор подтверждает данные —
+            до этого API регистрации отвечает 403.
+          </div>
         ) : (
-          <button type="button" className="btn btn-primary w-full" onClick={register} disabled={!isOpen}>
-            {isOpen ? "Записаться на турнир" : "Регистрация закрыта"}
-          </button>
+          <div className="space-y-3">
+            {isPairs && isOpen && (
+              <label className="flex cursor-pointer items-center gap-2 text-xs text-ink-soft">
+                <input
+                  type="checkbox"
+                  checked={lookingForPartner}
+                  onChange={(event) => setLookingForPartner(event.target.checked)}
+                  className="size-3.5 accent-[var(--color-ink)]"
+                />
+                Ищу партнёра
+              </label>
+            )}
+            <button
+              type="button"
+              className="btn btn-primary w-full"
+              onClick={register}
+              disabled={!isOpen || busy || (isPairs && !lookingForPartner)}
+            >
+              {isOpen ? (busy ? "Отправка…" : "Записаться на турнир") : "Регистрация закрыта"}
+            </button>
+            {isPairs && isOpen && !lookingForPartner && (
+              <p className="text-center text-[0.68rem] text-ink-muted">
+                Для парного турнира отметьте «ищу партнёра» или дождитесь выбора партнёра в кабинете.
+              </p>
+            )}
+          </div>
         )}
         {!isOpen && !isCompleted && (
           <p className="mt-2 text-center text-[0.68rem] text-ink-muted">
-            {tournament.status === "registration_soon" ? "Регистрация откроется позже" : "Следите за обновлениями"}
+            {tournament.status === "registration_soon"
+              ? "Регистрация откроется позже"
+              : "Следите за обновлениями"}
           </p>
         )}
       </div>
 
       {notice && (
-        <p role="status" className="mt-3 rounded-md border border-accent-line bg-accent-soft px-3 py-2 text-[0.7rem] leading-relaxed text-accent-strong">
-          {notice} <span className="text-accent-strong/60">Демо-режим: данные не сохраняются.</span>
+        <p
+          role="status"
+          className="mt-3 rounded-md border border-accent-line bg-accent-soft px-3 py-2 text-[0.7rem] leading-relaxed text-accent-strong"
+        >
+          {notice}
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="mt-3 rounded-md border border-negative/40 px-3 py-2 text-[0.7rem] text-negative">
+          {error}
         </p>
       )}
     </aside>

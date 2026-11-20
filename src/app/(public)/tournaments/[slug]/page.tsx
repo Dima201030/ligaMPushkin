@@ -9,10 +9,10 @@ import {
   Trophy,
   Users,
 } from "lucide-react";
+import { fetchSession } from "@/lib/api/auth";
 import { getTournamentPage } from "@/lib/data";
 import { CATEGORY_BY_SLUG, FORMAT_LABEL, STATUS_BY_VALUE, SURFACE_LABEL, TYPE_BY_VALUE } from "@/lib/domain";
-import { currentPlayer } from "@/lib/mock/players";
-import { cn, formatDateTime, formatMoney, winRate } from "@/lib/utils";
+import { cn, formatDateTime, formatMoney } from "@/lib/utils";
 import { CategoryBadge } from "@/components/ui/Badges";
 import { MatchRow } from "@/components/domain/MatchRow";
 import { RegistrationPanel } from "@/components/domain/RegistrationPanel";
@@ -40,9 +40,15 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
 
   const { tournament, matches, participants, similar } = page;
   const isPairs = ["doubles", "mixed", "teams"].includes(tournament.type);
-  const registered = tournament.participants.some(
-    (item) => item.playerId === currentPlayer.id && item.status !== "cancelled",
-  );
+  const session = await fetchSession();
+  const user = session?.user ?? null;
+  const myRegistration = user
+    ? tournament.participants.find(
+        (item) => item.playerId === user.id && item.status !== "cancelled",
+      )
+    : undefined;
+  const registered = Boolean(myRegistration);
+  const isProfileVerified = session?.profile?.verificationStatus === "approved";
   const winners = tournament.winners ?? [];
 
   return (
@@ -255,7 +261,14 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
           </div>
 
           <div className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-            <RegistrationPanel tournament={tournament} initiallyRegistered={registered} />
+            <RegistrationPanel
+              tournament={tournament}
+              initiallyRegistered={registered}
+              initialStatus={myRegistration?.status}
+              isAuthenticated={Boolean(user)}
+              isApproved={user?.status === "approved"}
+              isProfileVerified={isProfileVerified}
+            />
 
             <div className="card p-5">
               <p className="text-[0.68rem] font-bold uppercase tracking-[0.1em] text-ink-faint">Площадка</p>

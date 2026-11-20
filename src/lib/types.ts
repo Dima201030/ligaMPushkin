@@ -39,7 +39,7 @@ export type RegistrationStatus =
   | "cancelled"
   | "rejected";
 
-export type MatchStatus = "scheduled" | "live" | "completed" | "cancelled" | "walkover";
+export type MatchStatus = "scheduled" | "live" | "completed" | "cancelled" | "walkover" | "bye";
 
 export type UserRole = "player" | "organizer" | "owner" | "superadmin";
 
@@ -59,6 +59,8 @@ export interface Venue {
   surface: Surface;
 }
 
+export type ProfileVerificationStatus = "pending" | "approved" | "rejected";
+
 export interface Player {
   id: string;
   slug: string;
@@ -67,6 +69,7 @@ export interface Player {
   middleName?: string;
   gender: "male" | "female";
   birthYear: number;
+  birthDate?: string;
   city: string;
   category: CategorySlug;
   rating: number;
@@ -80,6 +83,8 @@ export interface Player {
   bio: string;
   memberSince: string;
   status: "active" | "blocked" | "archived";
+  verificationStatus?: ProfileVerificationStatus;
+  phone?: string;
   avatarUrl?: string;
 }
 
@@ -130,6 +135,7 @@ export interface MatchSide {
 export interface Match {
   id: string;
   tournamentId: string;
+  tournamentSlug?: string;
   tournamentTitle: string;
   type: TournamentType;
   stage: string;
@@ -142,6 +148,8 @@ export interface Match {
   score?: string;
   winner: 1 | 2 | null;
   isDoubles: boolean;
+  /** Optimistic concurrency token from the API. */
+  version?: number;
 }
 
 export interface NewsPost {

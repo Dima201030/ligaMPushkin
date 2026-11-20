@@ -111,7 +111,14 @@ export function OrganizerTournamentTable({ tournaments }: { tournaments: Tournam
       </p>
 
       {filtered.length === 0 ? (
-        <EmptyState title="Турниров не найдено" description="Измените фильтр или создайте новый турнир сезона." />
+        <EmptyState
+          title={tournaments.length === 0 ? "Пока нет турниров" : "Турниров не найдено"}
+          description={
+            tournaments.length === 0
+              ? "Создайте первый турнир сезона — он появится в публичном календаре после публикации."
+              : "Измените фильтр или создайте новый турнир сезона."
+          }
+        />
       ) : (
         <div className="overflow-x-auto border-y border-line">
           <table className="data-table min-w-[900px]">

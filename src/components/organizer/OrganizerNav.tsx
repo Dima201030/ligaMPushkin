@@ -51,8 +51,17 @@ function isActive(pathname: string, href: string, exact?: boolean) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarContent({
+  onNavigate,
+  organizerName,
+  organizerEmail,
+}: {
+  onNavigate?: () => void;
+  organizerName: string;
+  organizerEmail: string;
+}) {
   const pathname = usePathname();
+  const [firstName = "Орг", lastName = ""] = organizerName.split(" ");
 
   return (
     <div className="flex h-full flex-col">
@@ -105,10 +114,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
       <div className="border-t border-white/12 px-5 py-5">
         <div className="flex items-center gap-3">
-          <Avatar firstName="Ирина" lastName="Волкова" size="sm" tone="navy" />
+          <Avatar firstName={firstName} lastName={lastName || firstName} size="sm" tone="navy" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-medium text-white">Ирина Волкова</p>
-            <p className="truncate text-[0.58rem] uppercase tracking-[0.12em] text-white/40">Главный организатор</p>
+            <p className="truncate text-xs font-medium text-white">{organizerName}</p>
+            <p className="truncate text-[0.58rem] uppercase tracking-[0.12em] text-white/40">{organizerEmail}</p>
           </div>
         </div>
         <Link
@@ -124,7 +133,13 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-export function OrganizerNav() {
+export function OrganizerNav({
+  organizerName,
+  organizerEmail,
+}: {
+  organizerName: string;
+  organizerEmail: string;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -143,7 +158,7 @@ export function OrganizerNav() {
       </div>
 
       <aside className="sticky top-0 hidden h-screen bg-navy lg:block print:hidden">
-        <SidebarContent />
+        <SidebarContent organizerName={organizerName} organizerEmail={organizerEmail} />
       </aside>
 
       {open && (
@@ -163,7 +178,11 @@ export function OrganizerNav() {
             >
               <X className="size-4" />
             </button>
-            <SidebarContent onNavigate={() => setOpen(false)} />
+            <SidebarContent
+              onNavigate={() => setOpen(false)}
+              organizerName={organizerName}
+              organizerEmail={organizerEmail}
+            />
           </div>
         </div>
       )}
