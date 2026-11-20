@@ -11,12 +11,14 @@ import {
   Trophy,
   Wrench,
 } from "lucide-react";
+import { getCmsPage, listPlayers } from "@/lib/data";
 import { CLUB } from "@/lib/domain";
 import { PageHeader } from "@/components/ui/Section";
+import { CmsBody } from "@/components/domain/CmsBody";
 
 export const metadata: Metadata = {
   title: "О клубе",
-  description: "Теннисный клуб Mr. Pushkin: 7 крытых кортов, 2 грунтовых корта, школа тенниса, падел и кафе.",
+  description: `Теннисный клуб ${CLUB.name}: 7 крытых кортов, 2 грунтовых корта, школа тенниса, падел и кафе.`,
 };
 
 const FEATURES = [
@@ -30,12 +32,17 @@ const FEATURES = [
   { icon: Wrench, title: "Прокат инвентаря", text: "Ракетки, мячи и всё необходимое для первой игры." },
 ];
 
-export default function ClubPage() {
+export default async function ClubPage() {
+  const [page, players] = await Promise.all([getCmsPage("club"), listPlayers()]);
+  const intro =
+    page?.bodyMarkdown?.trim() ||
+    `${CLUB.name} — клуб для тех, кто любит теннис без лишнего пафоса.`;
+
   return (
     <>
       <PageHeader
         eyebrow="О клубе"
-        title="Теннисный клуб Mr. Pushkin"
+        title={page?.title && page.title !== "Клуб" ? `Теннисный клуб ${page.title}` : CLUB.fullName}
         description="Место, где играют в теннис круглый год: 9 кортов, турниры и сообщество игроков Пушкинского района."
         actions={
           <>
@@ -49,19 +56,14 @@ export default function ClubPage() {
         <div className="grid items-center gap-8 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="cover-image aspect-[16/10]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/hero.jpg" alt="Крытые корты Mr. Pushkin" />
+            <img src="/images/hero.jpg" alt={`Крытые корты ${CLUB.name}`} />
           </div>
           <div>
             <p className="eyebrow">С 2014 года</p>
             <h2 className="mt-3">Большой теннис в Пушкине</h2>
-            <p className="mt-4 text-sm leading-relaxed text-ink-soft">
-              Mr. Pushkin — клуб для тех, кто любит теннис без лишнего пафоса. Здесь тренируются
-              взрослые игроки, проходят любительские турниры и встречи после работы.
-            </p>
-            <p className="mt-3 text-sm leading-relaxed text-ink-soft">
-              Лига клуба объединяет игроков разного уровня — от первых соревнований до финалов
-              сезона. Мы верим, что хорошая игра начинается с хорошей компании.
-            </p>
+            <div className="mt-4">
+              <CmsBody markdown={intro} />
+            </div>
             <dl className="mt-8 grid grid-cols-2 gap-6 border-t border-line pt-6 sm:grid-cols-3">
               <div>
                 <dt className="display text-3xl leading-none">9</dt>
@@ -72,7 +74,7 @@ export default function ClubPage() {
                 <dd className="stat-label mt-2">часы работы</dd>
               </div>
               <div>
-                <dt className="display text-3xl leading-none">318</dt>
+                <dt className="display text-3xl leading-none">{players.length || "—"}</dt>
                 <dd className="stat-label mt-2">игроков лиги</dd>
               </div>
             </dl>
@@ -101,7 +103,7 @@ export default function ClubPage() {
         <section className="mt-14 grid gap-4 md:grid-cols-3">
           <div className="relative aspect-[4/3] overflow-hidden md:col-span-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/club/adult-tournament.webp" alt="Турнир клуба Mr. Pushkin" className="size-full object-cover" />
+            <img src="/images/club/adult-tournament.webp" alt={`Турнир клуба ${CLUB.name}`} className="size-full object-cover" />
           </div>
           <div className="flex flex-col justify-between bg-navy p-6 text-white">
             <div>

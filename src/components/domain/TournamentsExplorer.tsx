@@ -124,8 +124,14 @@ export function TournamentsExplorer({ tournaments }: { tournaments: Tournament[]
 
       {filtered.length === 0 && (
         <div className="card-flat mt-4 px-6 py-16 text-center">
-          <p className="text-lg font-bold">Турниры не найдены</p>
-          <p className="mt-2 text-sm text-ink-muted">Сбросьте фильтры или посмотрите архив прошедших соревнований.</p>
+          <p className="text-lg font-bold">
+            {tournaments.length === 0 ? "Пока нет турниров" : "Турниры не найдены"}
+          </p>
+          <p className="mt-2 text-sm text-ink-muted">
+            {tournaments.length === 0
+              ? "Организатор ещё не опубликовал соревнования. Загляните позже."
+              : "Сбросьте фильтры или посмотрите архив прошедших соревнований."}
+          </p>
         </div>
       )}
     </div>

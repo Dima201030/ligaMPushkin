@@ -31,7 +31,7 @@ server {
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 
-    auth_basic "Mr. Pushkin League";
+    auth_basic "Pairly";
     auth_basic_user_file /etc/nginx/mrpushkin.htpasswd;
 
     location ^~ __BASE_PATH__/_next/static/ {

@@ -28,7 +28,7 @@ export default async function OrganizerTournamentsPage() {
       <div className="space-y-6 px-4 py-7 md:px-8 lg:px-10">
         <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2 xl:grid-cols-4">
           <OrgStat label="Всего турниров" value={tournaments.length} icon={<Trophy className="size-4" />} tone="neutral" />
-          <OrgStat label="Идут сейчас" value={live} icon={<CircleDot className="size-4" />} tone="negative" hint="Pushkin Open 2026" />
+          <OrgStat label="Идут сейчас" value={live} icon={<CircleDot className="size-4" />} tone="negative" hint="Pairly Open 2026" />
           <OrgStat label="Регистрация открыта" value={open} icon={<CalendarClock className="size-4" />} tone="positive" hint={`${soon} откроются скоро`} />
           <OrgStat label="Черновики" value={drafts} icon={<FileEdit className="size-4" />} tone="warning" hint="Нужно проверить регламент" />
         </div>

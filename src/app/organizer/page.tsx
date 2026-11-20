@@ -322,7 +322,7 @@ export default async function OrganizerDashboardPage() {
           </span>
           <span className="inline-flex items-center gap-1.5">
             <Trophy className="size-3.5 text-ink-faint" aria-hidden="true" />
-            {STATUS_BY_VALUE.live.label}: Pushkin Open 2026
+            {STATUS_BY_VALUE.live.label}: Pairly Open 2026
           </span>
         </div>
       </div>
