@@ -287,9 +287,13 @@ export async function fetchSession(): Promise<MeSession | null> {
       const { cookies } = await import("next/headers");
       const jar = await cookies();
       const cookie = jar.getAll().map((item) => `${item.name}=${item.value}`).join("; ");
+      const { getRequestClubSlug } = await import("./client");
+      const { CLUB_HEADER } = await import("@/lib/club/tenant");
+      const clubSlug = await getRequestClubSlug(cookie || undefined);
       const response = await fetch(serverApiURL("/auth/me"), {
         headers: {
           Accept: "application/json",
+          [CLUB_HEADER]: clubSlug,
           ...(cookie ? { Cookie: cookie } : {}),
         },
         cache: "no-store",

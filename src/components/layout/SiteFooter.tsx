@@ -15,6 +15,7 @@ const LINK_GROUPS = [
     title: "Клуб",
     links: [
       { href: "/club", label: "О клубе" },
+      { href: "/clubs", label: "Клубы" },
       { href: "/news", label: "Новости" },
       { href: "/rules", label: "Правила лиги" },
       { href: "/contacts", label: "Контакты" },

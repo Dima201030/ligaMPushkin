@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CLUB } from "@/lib/domain";
 import { cn } from "@/lib/utils";
+import { ClubSwitcher } from "./ClubSwitcher";
 import { Logo } from "./Logo";
 import { SessionLinks } from "./SessionLinks";
 
@@ -62,13 +63,17 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden flex-col items-end gap-1.5 pt-1 lg:flex">
-          <span className="text-[0.66rem] uppercase tracking-[0.16em] text-ink-muted">
-            Сезон {CLUB.season}
-          </span>
+          <div className="flex items-center gap-3">
+            <ClubSwitcher />
+            <span className="text-[0.66rem] uppercase tracking-[0.16em] text-ink-muted">
+              Сезон {CLUB.season}
+            </span>
+          </div>
           <SessionLinks />
         </div>
 
         <div className="flex items-center gap-3 lg:hidden">
+          <ClubSwitcher />
           <SessionLinks compact />
           <button
             type="button"
@@ -102,6 +107,7 @@ export function SiteHeader() {
             {[
               { href: "/", label: "Главная" },
               ...NAV,
+              { href: "/clubs", label: "Клубы" },
               { href: "/cabinet", label: "Кабинет" },
               { href: "/login", label: "Войти" },
             ].map((item, index) => (
