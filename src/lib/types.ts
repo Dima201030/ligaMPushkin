@@ -39,7 +39,7 @@ export type RegistrationStatus =
   | "cancelled"
   | "rejected";
 
-export type MatchStatus = "scheduled" | "live" | "completed" | "cancelled" | "walkover";
+export type MatchStatus = "scheduled" | "live" | "completed" | "cancelled" | "walkover" | "bye";
 
 export type UserRole = "player" | "organizer" | "owner" | "superadmin";
 
@@ -130,6 +130,7 @@ export interface MatchSide {
 export interface Match {
   id: string;
   tournamentId: string;
+  tournamentSlug?: string;
   tournamentTitle: string;
   type: TournamentType;
   stage: string;
@@ -142,6 +143,8 @@ export interface Match {
   score?: string;
   winner: 1 | 2 | null;
   isDoubles: boolean;
+  /** Optimistic concurrency token from the API. */
+  version?: number;
 }
 
 export interface NewsPost {

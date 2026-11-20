@@ -1,25 +1,29 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Clock, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { getCmsPage } from "@/lib/data";
 import { CLUB } from "@/lib/domain";
 import { PageHeader } from "@/components/ui/Section";
 import { ContactForm } from "@/components/domain/ContactForm";
+import { CmsBody } from "@/components/domain/CmsBody";
 
 export const metadata: Metadata = {
   title: "Контакты",
-  description: "Адрес, телефоны и схема проезда теннисного клуба Mr. Pushkin в Пушкине.",
+  description: `Адрес, телефоны и схема проезда теннисного клуба ${CLUB.name} в Пушкине.`,
 };
 
 const MAP_URL =
   "https://yandex.ru/maps/?text=" +
   encodeURIComponent("Санкт-Петербург, Пушкинский район, Волхонское шоссе, 79А");
 
-export default function ContactsPage() {
+export default async function ContactsPage() {
+  const page = await getCmsPage("contacts");
+
   return (
     <>
       <PageHeader
         eyebrow="Контакты"
-        title="Приезжайте в клуб"
+        title={page?.title === "Контакты" ? "Приезжайте в клуб" : page?.title || "Приезжайте в клуб"}
         description="Мы находимся в Пушкинском районе, в 900 метрах от Пулковского шоссе. Бронирование кортов — по телефону или на ресепшен."
         actions={
           <a href={MAP_URL} target="_blank" rel="noreferrer" className="btn btn-light">
@@ -30,6 +34,11 @@ export default function ContactsPage() {
       />
 
       <div className="page-shell section">
+        {page?.bodyMarkdown ? (
+          <div className="mb-8 border-b border-line pb-6">
+            <CmsBody markdown={page.bodyMarkdown} />
+          </div>
+        ) : null}
         <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <div>
             {[
@@ -87,10 +96,12 @@ export default function ContactsPage() {
             <div className="pt-6">
               <p className="text-[0.58rem] uppercase tracking-[0.14em] text-ink-muted">Соцсети</p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <a href={CLUB.vk} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm">
-                  <MessageCircle className="size-4" aria-hidden="true" />
-                  ВКонтакте
-                </a>
+                {CLUB.vk ? (
+                  <a href={CLUB.vk} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm">
+                    <MessageCircle className="size-4" aria-hidden="true" />
+                    ВКонтакте
+                  </a>
+                ) : null}
                 <Link href="/tournaments" className="btn btn-secondary btn-sm">Турниры</Link>
               </div>
             </div>
@@ -102,7 +113,7 @@ export default function ContactsPage() {
               <div className="absolute inset-0 bg-gradient-to-br from-navy/40 via-transparent to-navy/80" aria-hidden="true" />
               <div className="relative flex h-full min-h-[300px] flex-col items-center justify-center p-8 text-center text-white">
                 <MapPin className="size-6 text-sky" aria-hidden="true" />
-                <p className="display mt-5 text-[1.6rem] leading-none">Mr. Pushkin</p>
+                <p className="display mt-5 text-[1.6rem] leading-none">{CLUB.name}</p>
                 <p className="mt-3 max-w-[30ch] text-xs leading-relaxed text-white/60">{CLUB.address}</p>
                 <a href={MAP_URL} target="_blank" rel="noreferrer" className="btn btn-on-dark btn-sm mt-6">
                   Построить маршрут

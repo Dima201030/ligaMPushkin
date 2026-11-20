@@ -50,6 +50,7 @@ export default async function OrganizerContentPage() {
                 publishedAt: post.publishedAt,
                 readingTime: post.readingTime,
                 coverUrl: post.coverUrl,
+                status: "status" in post ? String(post.status) : "published",
               }))}
               events={events.map((event) => ({
                 id: event.id,
@@ -59,6 +60,7 @@ export default async function OrganizerContentPage() {
                 startsAt: event.startsAt,
                 location: event.location,
                 seatsLeft: event.seatsLeft,
+                status: "status" in event ? String(event.status) : "published",
               }))}
             />
           </div>

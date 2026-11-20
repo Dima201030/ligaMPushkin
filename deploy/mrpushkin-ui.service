@@ -1,0 +1,18 @@
+[Unit]
+Description=Pairly League UI (Next.js)
+Requires=docker.service
+After=docker.service network-online.target mrpushkin-api.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=dima
+Group=dima
+WorkingDirectory=/home/dima/mr-pushkin-league
+ExecStart=/usr/bin/docker compose up -d
+ExecStop=/usr/bin/docker compose stop
+TimeoutStartSec=180
+
+[Install]
+WantedBy=multi-user.target

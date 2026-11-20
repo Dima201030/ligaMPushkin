@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -11,9 +11,10 @@ import {
   RefreshCw,
   Save,
   Shuffle,
+  Upload,
   Users,
 } from "lucide-react";
-import type { TournamentFormat } from "@/lib/types";
+import type { Match, TournamentFormat } from "@/lib/types";
 import { FORMATS, FORMAT_LABEL, TYPE_BY_VALUE } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 import {
@@ -24,6 +25,13 @@ import {
   type BracketSlot,
   type GeneratedDraw,
 } from "@/lib/bracket";
+import {
+  fetchOrganizerBracket,
+  generateBracket,
+  publishBracket,
+  type BracketMeta,
+} from "@/lib/api/matches";
+import { ApiError } from "@/lib/api/client";
 import { CategoryBadge } from "@/components/ui/Badges";
 import { DemoNote, Panel } from "./OrganizerUI";
 
@@ -56,6 +64,45 @@ function shuffle<T>(items: T[], seed: number) {
     [result[index], result[swap]] = [result[swap], result[index]];
   }
   return result;
+}
+
+function sideToSlot(side: Match["side1"]): BracketSlot {
+  if (side.label === "Пропуск" && !side.playerIds.length) {
+    return { isBye: true, placeholder: "Пропуск" };
+  }
+  return {
+    playerId: side.playerIds[0],
+    name: side.label,
+    seed: side.seed,
+    placeholder: !side.playerIds.length ? side.label ?? "—" : undefined,
+  };
+}
+
+function matchesToRounds(matches: Match[]): BracketRound[] {
+  const playable = matches.filter((match) => match.status !== "bye" || match.side1.playerIds.length || match.side2.playerIds.length);
+  const groups = new Map<string, BracketMatch[]>();
+  const order: string[] = [];
+  for (const match of playable) {
+    const label = match.stage || match.round;
+    if (!groups.has(label)) {
+      groups.set(label, []);
+      order.push(label);
+    }
+    groups.get(label)!.push({
+      id: match.id.slice(0, 8),
+      roundIndex: order.indexOf(label),
+      position: groups.get(label)!.length,
+      slot1: sideToSlot(match.side1),
+      slot2: sideToSlot(match.side2),
+      automaticWinner:
+        match.status === "bye" && (match.winner === 1 || match.winner === 2) ? match.winner : undefined,
+    });
+  }
+  return order.map((label, index) => ({
+    index,
+    label,
+    matches: groups.get(label) ?? [],
+  }));
 }
 
 function SlotRow({ slot, winner }: { slot: BracketSlot; winner?: boolean }) {
@@ -205,6 +252,12 @@ function toCsv(draw: GeneratedDraw) {
     .join("\n");
 }
 
+function bracketStatusLabel(status?: string) {
+  if (status === "published") return "опубликована";
+  if (status === "draft") return "черновик";
+  return status ?? "нет";
+}
+
 export function BracketStudio({
   sources,
   initialTournamentId,
@@ -221,8 +274,46 @@ export function BracketStudio({
   const [qualifiers, setQualifiers] = useState(2);
   const [version, setVersion] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [preferPreview, setPreferPreview] = useState(false);
+  const [apiMatches, setApiMatches] = useState<Match[]>([]);
+  const [bracketMeta, setBracketMeta] = useState<BracketMeta | null>(null);
+  const [loadingBracket, setLoadingBracket] = useState(false);
 
   const source = sources.find((item) => item.id === sourceId);
+
+  useEffect(() => {
+    if (!sourceId) {
+      setApiMatches([]);
+      setBracketMeta(null);
+      return;
+    }
+    let cancelled = false;
+    setLoadingBracket(true);
+    setError(null);
+    fetchOrganizerBracket(sourceId, { absolute: false })
+      .then((payload) => {
+        if (cancelled) return;
+        setApiMatches(payload.matches);
+        setBracketMeta(payload.bracket);
+        setPreferPreview(false);
+        if (payload.bracket.thirdPlace !== undefined) {
+          setThirdPlace(payload.bracket.thirdPlace);
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setApiMatches([]);
+        setBracketMeta(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingBracket(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [sourceId]);
 
   const entries = useMemo<BracketEntry[]>(() => {
     if (!source) return [];
@@ -240,7 +331,7 @@ export function BracketStudio({
       .map((entry, index) => ({ ...entry, seed: index + 1 }));
   }, [source, seeding, version]);
 
-  const draw = useMemo(
+  const previewDraw = useMemo(
     () =>
       entries.length >= 2
         ? generateDraw(format, entries, {
@@ -252,25 +343,33 @@ export function BracketStudio({
     [entries, format, thirdPlace, groupSize, qualifiers],
   );
 
+  const apiRounds = useMemo(() => matchesToRounds(apiMatches), [apiMatches]);
+  const showApi = apiMatches.length > 0 && !preferPreview;
+  const draw = showApi ? null : previewDraw;
+
   function pickSource(id: string) {
     setSourceId(id);
     const next = sources.find((item) => item.id === id);
     if (next) setFormat(next.format);
     setNotice(null);
+    setError(null);
+    setPreferPreview(false);
   }
 
   function regenerate() {
     setVersion((current) => current + 1);
+    setPreferPreview(true);
     setNotice(
-      `Сетка пересобрана: ${entries.length} участников, ${FORMAT_LABEL[format].toLowerCase()}.${
+      `Локальный предпросмотр: ${entries.length} участников, ${FORMAT_LABEL[format].toLowerCase()}.${
         seeding === "random" ? " Посев перемешан." : ""
       }`,
     );
+    setError(null);
   }
 
   function exportCsv() {
-    if (!draw) return;
-    const blob = new Blob([`\uFEFF${toCsv(draw)}`], { type: "text/csv;charset=utf-8" });
+    if (!previewDraw) return;
+    const blob = new Blob([`\uFEFF${toCsv(previewDraw)}`], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -280,17 +379,62 @@ export function BracketStudio({
     setNotice("CSV-файл со всеми матчами сетки скачан.");
   }
 
+  async function saveBracket() {
+    if (!source) return;
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const result = await generateBracket(source.id, {
+        thirdPlace: format === "olympic" ? thirdPlace : false,
+        groupSize: format === "groups_playoff" ? groupSize : undefined,
+        qualifiersPerGroup: format === "groups_playoff" ? qualifiers : undefined,
+        seeding,
+        randomSeed: seeding === "random" ? version + 17 : undefined,
+      });
+      setApiMatches(result.matches);
+      setBracketMeta(result.bracket);
+      setPreferPreview(false);
+      const count = result.draw?.matchCount ?? result.matches.length;
+      setNotice(
+        `Сетка сохранена как черновик: ${count} матчей, версия ${result.bracket.version}. Опубликуйте, чтобы показать на сайте.`,
+      );
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Не удалось сохранить сетку");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function publish() {
+    if (!source) return;
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const meta = await publishBracket(source.id);
+      setBracketMeta(meta);
+      setNotice(`Сетка опубликована (версия ${meta.version}). Матчи видны на странице турнира.`);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Не удалось опубликовать сетку");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const canUseThirdPlace = format === "olympic";
   const isGroups = format === "groups_playoff";
+  const hasContent = showApi ? apiRounds.length > 0 : Boolean(draw);
 
   return (
     <div className="grid gap-8 xl:grid-cols-[300px_minmax(0,1fr)]">
       <aside className="space-y-8 no-print">
-        <Panel title="Параметры жеребьёвки" description="Настройки применяются к предпросмотру сразу">
+        <Panel title="Параметры жеребьёвки" description="Предпросмотр локальный; сохранение пишет в API">
           <div className="space-y-3">
             <label className="block">
               <span className="field-label">Турнир</span>
               <select className="field text-xs" value={sourceId} onChange={(event) => pickSource(event.target.value)}>
+                {sources.length === 0 && <option value="">Нет турниров</option>}
                 {sources.map((item) => (
                   <option key={item.id} value={item.id}>{item.title}</option>
                 ))}
@@ -302,6 +446,11 @@ export function BracketStudio({
                 <CategoryBadge category={source.category} withName={false} />
                 <span className="badge badge-neutral text-[0.55rem]">{TYPE_BY_VALUE[source.type].label}</span>
                 <span className="badge badge-outline text-[0.55rem]">{source.entries.length} участников</span>
+                {bracketMeta && (
+                  <span className="badge badge-blue text-[0.55rem]">
+                    сетка: {bracketStatusLabel(bracketMeta.status)}
+                  </span>
+                )}
               </div>
             )}
 
@@ -363,15 +512,16 @@ export function BracketStudio({
             )}
 
             <div className="flex gap-2 border-t border-line pt-3">
-              <button type="button" className="btn btn-primary btn-sm flex-1" onClick={regenerate}>
+              <button type="button" className="btn btn-primary btn-sm flex-1" onClick={regenerate} disabled={busy}>
                 <RefreshCw className="size-3.5" aria-hidden="true" />
-                Пересобрать
+                Предпросмотр
               </button>
               <button
                 type="button"
                 className="btn btn-secondary btn-sm"
                 title="Случайная жеребьёвка"
                 aria-label="Случайная жеребьёвка"
+                disabled={busy}
                 onClick={() => {
                   setSeeding("random");
                   regenerate();
@@ -383,7 +533,7 @@ export function BracketStudio({
           </div>
         </Panel>
 
-        <Panel title="Участники" description="Порядок посева в текущей сетке" flush>
+        <Panel title="Участники" description="Подтверждённые заявки (посев в предпросмотре)" flush>
           <ul className="max-h-[360px] divide-y divide-line overflow-y-auto">
             {entries.map((entry, index) => (
               <li key={entry.playerId ?? `${entry.name}-${index}`} className="flex items-center gap-2 py-2">
@@ -401,13 +551,16 @@ export function BracketStudio({
         </Panel>
 
         <DemoNote>
-          Сетка строится в браузере и не сохраняется. В продакшене генерация выполняется server action и записывает
-          матчи в базу данных.
+          «Сохранить сетку» генерирует матчи в API. «Опубликовать» открывает сетку на публичной странице турнира.
         </DemoNote>
       </aside>
 
       <div className="min-w-0 space-y-6">
-        {!draw ? (
+        {loadingBracket ? (
+          <div className="border-y border-line px-6 py-20 text-center">
+            <p className="text-sm text-ink-muted">Загружаем сохранённую сетку…</p>
+          </div>
+        ) : !hasContent ? (
           <div className="border-y border-line px-6 py-20 text-center">
             <Network className="mx-auto size-8 text-ink-faint" aria-hidden="true" />
             <p className="mt-3 text-lg font-medium">Недостаточно участников</p>
@@ -424,170 +577,243 @@ export function BracketStudio({
           <>
             <div className="flex flex-wrap items-center justify-between gap-3 border-y border-line py-3 no-print">
               <div className="min-w-0">
-                <p className="text-[0.56rem] uppercase tracking-[0.16em] text-ink-faint">Предпросмотр сетки</p>
+                <p className="text-[0.56rem] uppercase tracking-[0.16em] text-ink-faint">
+                  {showApi ? "Сохранённая сетка" : "Предпросмотр сетки"}
+                </p>
                 <p className="mt-1 truncate text-sm text-ink">
                   {source?.title ?? "Турнир"} · {FORMAT_LABEL[format]}
+                  {bracketMeta ? ` · ${bracketStatusLabel(bracketMeta.status)}` : ""}
                 </p>
               </div>
               <div className="flex flex-wrap gap-1.5">
+                {showApi && previewDraw && (
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setPreferPreview(true)}>
+                    Предпросмотр
+                  </button>
+                )}
+                {!showApi && apiMatches.length > 0 && (
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setPreferPreview(false)}>
+                    Сохранённая
+                  </button>
+                )}
                 <button type="button" className="btn btn-secondary btn-sm" onClick={() => window.print()}>
                   <Printer className="size-3.5" aria-hidden="true" />
                   Печать
                 </button>
-                <button type="button" className="btn btn-secondary btn-sm" onClick={exportCsv}>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={exportCsv} disabled={!previewDraw}>
                   <Download className="size-3.5" aria-hidden="true" />
                   CSV
                 </button>
                 <button
                   type="button"
                   className="btn btn-primary btn-sm"
-                  onClick={() => setNotice("Сетка сохранена бы как черновик турнира. Демо-режим: данные не сохраняются.")}
+                  onClick={saveBracket}
+                  disabled={busy || entries.length < 2}
                 >
                   <Save className="size-3.5" aria-hidden="true" />
-                  Сохранить сетку
+                  {busy ? "Сохраняем…" : "Сохранить сетку"}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={publish}
+                  disabled={busy || !apiMatches.length}
+                >
+                  <Upload className="size-3.5" aria-hidden="true" />
+                  Опубликовать
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-x-8 gap-y-5 sm:grid-cols-5">
-              {[
-                { label: "Участники", value: draw.entriesCount, icon: Users },
-                { label: "Размер сетки", value: draw.bracketSize || "—", icon: Network },
-                { label: "Пропуски (bye)", value: draw.byes, icon: Info },
-                { label: "Матчей", value: draw.matchCount, icon: RefreshCw },
-                {
-                  label: "Раундов",
-                  value:
-                    (draw.rounds.length || 0) +
-                    (draw.playoffRounds?.length ?? 0) +
-                    (draw.lowerRounds?.length ?? 0) +
-                    (draw.groups ? 1 : 0),
-                  icon: Save,
-                },
-              ].map((stat) => {
-                const Icon = stat.icon;
-                return (
-                  <div key={stat.label} className="border-t border-line pt-3">
-                    <div className="flex items-center justify-between gap-1.5 text-[0.56rem] uppercase tracking-[0.1em] text-ink-muted">
-                      {stat.label}
-                      <Icon className="size-3 text-ink-faint" aria-hidden="true" />
-                    </div>
-                    <p className="display mt-2 text-[1.5rem] leading-none tabular-nums">{stat.value}</p>
-                  </div>
-                );
-              })}
-            </div>
-
-            {draw.groups && (
-              <div className="border-t border-line pt-5">
-                <div className="mb-3 flex items-center justify-between gap-2">
-                  <div>
-                    <h2 className="text-[0.95rem] font-medium text-ink">Групповой этап</h2>
+            {showApi ? (
+              <>
+                <div className="grid grid-cols-2 gap-x-8 gap-y-5 sm:grid-cols-4">
+                  {[
+                    { label: "Матчей в API", value: apiMatches.length, icon: RefreshCw },
+                    { label: "Раундов", value: apiRounds.length, icon: Network },
+                    { label: "Версия", value: bracketMeta?.version ?? "—", icon: Save },
+                    {
+                      label: "Статус",
+                      value: bracketStatusLabel(bracketMeta?.status),
+                      icon: Upload,
+                    },
+                  ].map((stat) => {
+                    const Icon = stat.icon;
+                    return (
+                      <div key={stat.label} className="border-t border-line pt-3">
+                        <div className="flex items-center justify-between gap-1.5 text-[0.56rem] uppercase tracking-[0.1em] text-ink-muted">
+                          {stat.label}
+                          <Icon className="size-3 text-ink-faint" aria-hidden="true" />
+                        </div>
+                        <p className="display mt-2 text-[1.5rem] leading-none tabular-nums capitalize">{stat.value}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="border-t border-line pt-5">
+                  <div className="mb-3">
+                    <h2 className="text-[0.95rem] font-medium text-ink">Матчи сетки</h2>
                     <p className="mt-0.5 text-[0.66rem] text-ink-muted">
-                      Круговые матчи в группах, затем выход в плей-офф
+                      Данные из API. После публикации матчи появятся на публичной странице.
                     </p>
                   </div>
-                  <span className="badge badge-neutral text-[0.55rem]">
-                    {draw.groups.length} {draw.groups.length === 1 ? "группа" : "группы"} · {draw.groups.reduce((sum, group) => sum + group.matches.length, 0)} матчей
+                  <BracketTree rounds={apiRounds} />
+                </div>
+                <div className="flex flex-wrap items-center gap-3 border-t border-line pt-3 text-[0.62rem] text-ink-muted">
+                  <Link href="/organizer/matches" className="inline-flex items-center gap-1.5 text-ink-soft hover:text-ink">
+                    <ArrowUpRight className="size-3" aria-hidden="true" />
+                    Перейти к внесению счёта
+                  </Link>
+                </div>
+              </>
+            ) : draw ? (
+              <>
+                <div className="grid grid-cols-2 gap-x-8 gap-y-5 sm:grid-cols-5">
+                  {[
+                    { label: "Участники", value: draw.entriesCount, icon: Users },
+                    { label: "Размер сетки", value: draw.bracketSize || "—", icon: Network },
+                    { label: "Пропуски (bye)", value: draw.byes, icon: Info },
+                    { label: "Матчей", value: draw.matchCount, icon: RefreshCw },
+                    {
+                      label: "Раундов",
+                      value:
+                        (draw.rounds.length || 0) +
+                        (draw.playoffRounds?.length ?? 0) +
+                        (draw.lowerRounds?.length ?? 0) +
+                        (draw.groups ? 1 : 0),
+                      icon: Save,
+                    },
+                  ].map((stat) => {
+                    const Icon = stat.icon;
+                    return (
+                      <div key={stat.label} className="border-t border-line pt-3">
+                        <div className="flex items-center justify-between gap-1.5 text-[0.56rem] uppercase tracking-[0.1em] text-ink-muted">
+                          {stat.label}
+                          <Icon className="size-3 text-ink-faint" aria-hidden="true" />
+                        </div>
+                        <p className="display mt-2 text-[1.5rem] leading-none tabular-nums">{stat.value}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {draw.groups && (
+                  <div className="border-t border-line pt-5">
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <div>
+                        <h2 className="text-[0.95rem] font-medium text-ink">Групповой этап</h2>
+                        <p className="mt-0.5 text-[0.66rem] text-ink-muted">
+                          Круговые матчи в группах, затем выход в плей-офф
+                        </p>
+                      </div>
+                      <span className="badge badge-neutral text-[0.55rem]">
+                        {draw.groups.length} {draw.groups.length === 1 ? "группа" : "группы"} · {draw.groups.reduce((sum, group) => sum + group.matches.length, 0)} матчей
+                      </span>
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                      {draw.groups.map((group) => (
+                        <GroupCard key={group.name} group={group} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {draw.playoffRounds && draw.playoffRounds.length > 0 && (
+                  <div className="border-t border-line pt-5">
+                    <div className="mb-3">
+                      <h2 className="text-[0.95rem] font-medium text-ink">Плей-офф</h2>
+                      <p className="mt-0.5 text-[0.66rem] text-ink-muted">
+                        Выходят {qualifiers} лучших из каждой группы. Участники подставятся после группового этапа.
+                      </p>
+                    </div>
+                    <BracketTree rounds={draw.playoffRounds} />
+                  </div>
+                )}
+
+                {draw.rounds.length > 0 && (
+                  <div className="border-t border-line pt-5">
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <div>
+                        <h2 className="text-[0.95rem] font-medium text-ink">
+                          {draw.format === "double_elimination" ? "Верхняя сетка" : "Основная сетка"}
+                        </h2>
+                        <p className="mt-0.5 text-[0.66rem] text-ink-muted">
+                          {draw.bracketSize} слотов · {draw.byes > 0 ? `${draw.byes} пропуска у сеяных игроков` : "все пары заполнены"}
+                        </p>
+                      </div>
+                      <span className="badge badge-blue text-[0.55rem]">{FORMAT_LABEL[format]}</span>
+                    </div>
+                    <BracketTree rounds={draw.rounds} />
+                  </div>
+                )}
+
+                {draw.lowerRounds && draw.lowerRounds.length > 0 && (
+                  <div className="border-t border-line pt-5">
+                    <div className="mb-3">
+                      <h2 className="text-[0.95rem] font-medium text-ink">Нижняя сетка</h2>
+                      <p className="mt-0.5 text-[0.66rem] text-ink-muted">
+                        Второй шанс: проигравшие в верхней сетке продолжают борьбу за финал.
+                      </p>
+                    </div>
+                    <BracketTree rounds={draw.lowerRounds} compact />
+                  </div>
+                )}
+
+                {draw.thirdPlace && (
+                  <div className="border-t border-line pt-5">
+                    <div className="grid gap-3 sm:grid-cols-[1fr_240px] sm:items-center">
+                      <div>
+                        <h2 className="text-[0.95rem] font-medium text-ink">Матч за третье место</h2>
+                        <p className="mt-0.5 text-[0.66rem] text-ink-muted">Проигравшие в полуфиналах разыгрывают бронзу.</p>
+                      </div>
+                      <MatchCard match={draw.thirdPlace} />
+                    </div>
+                  </div>
+                )}
+
+                {draw.grandFinal && (
+                  <div className="border-t border-line pt-5">
+                    <div className="grid gap-3 sm:grid-cols-[1fr_240px] sm:items-center">
+                      <div>
+                        <h2 className="text-[0.95rem] font-medium text-ink">Гранд-финал</h2>
+                        <p className="mt-0.5 text-[0.66rem] text-ink-muted">
+                          Победители верхней и нижней сетки. При поражении из верхней сетки назначается повторный финал.
+                        </p>
+                      </div>
+                      <MatchCard match={draw.grandFinal} isFinal />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line pt-3 text-[0.62rem] text-ink-muted">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="grid size-4 place-items-center border border-line text-[0.5rem] tabular-nums">1</span>
+                    посев игрока
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="italic text-ink-faint">Победитель R1M1</span>
+                    заполнится по ходу турнира
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="badge badge-blue text-[0.5rem]">bye</span>
+                    игрок проходит без матча
+                  </span>
+                  <span className="ml-auto inline-flex items-center gap-1.5 text-ink-faint">
+                    <ArrowUpRight className="size-3" aria-hidden="true" />
+                    Сохраните сетку, чтобы записать матчи в API
                   </span>
                 </div>
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                  {draw.groups.map((group) => (
-                    <GroupCard key={group.name} group={group} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {draw.playoffRounds && draw.playoffRounds.length > 0 && (
-              <div className="border-t border-line pt-5">
-                <div className="mb-3">
-                  <h2 className="text-[0.95rem] font-medium text-ink">Плей-офф</h2>
-                  <p className="mt-0.5 text-[0.66rem] text-ink-muted">
-                    Выходят {qualifiers} лучших из каждой группы. Участники подставятся после группового этапа.
-                  </p>
-                </div>
-                <BracketTree rounds={draw.playoffRounds} />
-              </div>
-            )}
-
-            {draw.rounds.length > 0 && (
-              <div className="border-t border-line pt-5">
-                <div className="mb-3 flex items-center justify-between gap-2">
-                  <div>
-                    <h2 className="text-[0.95rem] font-medium text-ink">
-                      {draw.format === "double_elimination" ? "Верхняя сетка" : "Основная сетка"}
-                    </h2>
-                    <p className="mt-0.5 text-[0.66rem] text-ink-muted">
-                      {draw.bracketSize} слотов · {draw.byes > 0 ? `${draw.byes} пропуска у сеяных игроков` : "все пары заполнены"}
-                    </p>
-                  </div>
-                  <span className="badge badge-blue text-[0.55rem]">{FORMAT_LABEL[format]}</span>
-                </div>
-                <BracketTree rounds={draw.rounds} />
-              </div>
-            )}
-
-            {draw.lowerRounds && draw.lowerRounds.length > 0 && (
-              <div className="border-t border-line pt-5">
-                <div className="mb-3">
-                  <h2 className="text-[0.95rem] font-medium text-ink">Нижняя сетка</h2>
-                  <p className="mt-0.5 text-[0.66rem] text-ink-muted">
-                    Второй шанс: проигравшие в верхней сетке продолжают борьбу за финал.
-                  </p>
-                </div>
-                <BracketTree rounds={draw.lowerRounds} compact />
-              </div>
-            )}
-
-            {draw.thirdPlace && (
-              <div className="border-t border-line pt-5">
-                <div className="grid gap-3 sm:grid-cols-[1fr_240px] sm:items-center">
-                  <div>
-                    <h2 className="text-[0.95rem] font-medium text-ink">Матч за третье место</h2>
-                    <p className="mt-0.5 text-[0.66rem] text-ink-muted">Проигравшие в полуфиналах разыгрывают бронзу.</p>
-                  </div>
-                  <MatchCard match={draw.thirdPlace} />
-                </div>
-              </div>
-            )}
-
-            {draw.grandFinal && (
-              <div className="border-t border-line pt-5">
-                <div className="grid gap-3 sm:grid-cols-[1fr_240px] sm:items-center">
-                  <div>
-                    <h2 className="text-[0.95rem] font-medium text-ink">Гранд-финал</h2>
-                    <p className="mt-0.5 text-[0.66rem] text-ink-muted">
-                      Победители верхней и нижней сетки. При поражении из верхней сетки назначается повторный финал.
-                    </p>
-                  </div>
-                  <MatchCard match={draw.grandFinal} isFinal />
-                </div>
-              </div>
-            )}
-
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line pt-3 text-[0.62rem] text-ink-muted">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="grid size-4 place-items-center border border-line text-[0.5rem] tabular-nums">1</span>
-                посев игрока
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="italic text-ink-faint">Победитель R1M1</span>
-                заполнится по ходу турнира
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="badge badge-blue text-[0.5rem]">bye</span>
-                игрок проходит без матча
-              </span>
-              <span className="ml-auto inline-flex items-center gap-1.5 text-ink-faint">
-                <ArrowUpRight className="size-3" aria-hidden="true" />
-                Сетка обновляется после каждого результата
-              </span>
-            </div>
+              </>
+            ) : null}
           </>
         )}
 
-        {notice && <DemoNote className="no-print">{notice}</DemoNote>}
+        {error && (
+          <DemoNote className="no-print text-negative">
+            {error}
+          </DemoNote>
+        )}
+        {notice && !error && <DemoNote className="no-print">{notice}</DemoNote>}
       </div>
     </div>
   );
