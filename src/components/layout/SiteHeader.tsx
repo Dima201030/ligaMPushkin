@@ -5,7 +5,9 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CLUB } from "@/lib/domain";
 import { cn } from "@/lib/utils";
+import { ClubSwitcher } from "./ClubSwitcher";
 import { Logo } from "./Logo";
+import { SessionLinks } from "./SessionLinks";
 
 const NAV = [
   { href: "/tournaments", label: "Турниры" },
@@ -50,42 +52,29 @@ export function SiteHeader() {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative text-[0.66rem] font-medium uppercase tracking-[0.16em] transition-opacity hover:opacity-100",
-                  active ? "text-ink opacity-100" : "text-ink-muted opacity-90",
+                  "nav-link text-[0.66rem] font-medium uppercase tracking-[0.16em]",
+                  active ? "text-ink" : "text-ink-muted hover:text-ink",
                 )}
               >
                 {item.label}
-                <span
-                  className={cn(
-                    "absolute -bottom-2 left-0 h-px w-full bg-ink transition-opacity",
-                    active ? "opacity-100" : "opacity-0",
-                  )}
-                  aria-hidden="true"
-                />
               </Link>
             );
           })}
         </nav>
 
         <div className="hidden flex-col items-end gap-1.5 pt-1 lg:flex">
-          <span className="text-[0.66rem] uppercase tracking-[0.16em] text-ink-muted">
-            Сезон {CLUB.season}
-          </span>
-          <Link
-            href="/login"
-            className="text-[0.66rem] font-medium uppercase tracking-[0.16em] text-ink transition-opacity hover:opacity-60"
-          >
-            Войти
-          </Link>
+          <div className="flex items-center gap-3">
+            <ClubSwitcher />
+            <span className="text-[0.66rem] uppercase tracking-[0.16em] text-ink-muted">
+              Сезон {CLUB.season}
+            </span>
+          </div>
+          <SessionLinks />
         </div>
 
         <div className="flex items-center gap-3 lg:hidden">
-          <Link
-            href="/cabinet"
-            className="text-[0.62rem] font-medium uppercase tracking-[0.16em] text-ink"
-          >
-            Кабинет
-          </Link>
+          <ClubSwitcher />
+          <SessionLinks compact />
           <button
             type="button"
             onClick={() => setOpen(true)}
@@ -118,6 +107,7 @@ export function SiteHeader() {
             {[
               { href: "/", label: "Главная" },
               ...NAV,
+              { href: "/clubs", label: "Клубы" },
               { href: "/cabinet", label: "Кабинет" },
               { href: "/login", label: "Войти" },
             ].map((item, index) => (

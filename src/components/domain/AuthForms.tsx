@@ -9,11 +9,9 @@ import {
   Clock3,
   Eye,
   EyeOff,
-  KeyRound,
-  ShieldCheck,
   UserCheck,
 } from "lucide-react";
-import { loginAccount, registerAccount } from "@/lib/api/auth";
+import { isOrganizerRole, loginAccount, registerAccount } from "@/lib/api/auth";
 import { CATEGORIES } from "@/lib/domain";
 
 type LoginState =
@@ -47,7 +45,8 @@ export function LoginForm() {
       setChecking(false);
 
       if (result.ok) {
-        router.push("/cabinet");
+        router.push(isOrganizerRole(result.user.role) ? "/organizer" : "/cabinet");
+        router.refresh();
         return;
       }
 
@@ -169,24 +168,6 @@ export function LoginForm() {
           </button>
         </form>
       )}
-
-      <button
-        type="button"
-        className="btn btn-secondary mt-3 w-full"
-        onClick={() => router.push("/cabinet")}
-      >
-        <ShieldCheck className="size-4" aria-hidden="true" />
-        Демо-вход игрока
-      </button>
-
-      <button
-        type="button"
-        className="btn btn-secondary mt-2 w-full"
-        onClick={() => router.push("/organizer")}
-      >
-        <KeyRound className="size-4" aria-hidden="true" />
-        Демо-вход организатора
-      </button>
 
       <div className="my-6 flex items-center gap-3 text-[0.66rem] font-semibold uppercase tracking-[0.1em] text-ink-faint">
         <span className="h-px flex-1 bg-line" />
