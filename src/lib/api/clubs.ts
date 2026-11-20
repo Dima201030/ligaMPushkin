@@ -76,9 +76,26 @@ interface ApiMembership {
   membership_status: string;
 }
 
+async function serverCookieHeader(): Promise<string | undefined> {
+  if (typeof window !== "undefined") return undefined;
+  try {
+    const { cookies } = await import("next/headers");
+    const jar = await cookies();
+    const header = jar.getAll().map((item) => `${item.name}=${item.value}`).join("; ");
+    return header || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function fetchMyClubs(): Promise<ClubMembership[]> {
+  const cookieHeader = await serverCookieHeader();
   const { response, data } = await apiRequest<{ clubs: ApiMembership[] } & ApiErrorBody>(
     "/auth/me/clubs",
+    {
+      absolute: typeof window === "undefined",
+      headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+    },
   );
   if (!response.ok) {
     throw new ApiError(response.status, data?.code, data?.message || "Не удалось загрузить ваши клубы");
