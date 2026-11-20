@@ -2,9 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Loader2, UserPlus } from "lucide-react";
+import { AlertCircle, Loader2, Trash2, UserPlus } from "lucide-react";
 import {
   addClubMember,
+  deleteClubMember,
   patchClubMember,
   type ClubMember,
   type ClubMemberRole,
@@ -24,6 +25,12 @@ const STATUS_LABEL: Record<string, string> = {
   blocked: "blocked",
   left: "left",
 };
+
+function isLastActiveOwner(member: ClubMember, members: ClubMember[]): boolean {
+  if (member.role !== "owner" || member.status !== "active") return false;
+  const owners = members.filter((item) => item.role === "owner" && item.status === "active");
+  return owners.length <= 1;
+}
 
 export function InviteMemberForm() {
   const router = useRouter();
@@ -143,8 +150,17 @@ export function MembersTable({ members }: { members: ClubMember[] }) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const visible = useMemo(
+    () => members.filter((member) => member.status !== "left"),
+    [members],
+  );
+
   async function changeRole(member: ClubMember, role: ClubMemberRole) {
     if (role === member.role) return;
+    if (member.role === "owner" && role !== "owner" && isLastActiveOwner(member, members)) {
+      setError("Нельзя снять роль с последнего owner клуба");
+      return;
+    }
     setError(null);
     setBusyId(member.id);
     const result = await patchClubMember(member.id, { role });
@@ -156,19 +172,42 @@ export function MembersTable({ members }: { members: ClubMember[] }) {
     router.refresh();
   }
 
+  async function removeMember(member: ClubMember) {
+    if (isLastActiveOwner(member, members)) {
+      setError("Нельзя удалить последнего owner клуба");
+      return;
+    }
+    const label = `${member.firstName} ${member.lastName}`.trim() || member.email;
+    if (!window.confirm(`Удалить ${label} из клуба?`)) return;
+
+    setError(null);
+    setBusyId(member.id);
+    const result = await deleteClubMember(member.id);
+    setBusyId(null);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    router.refresh();
+  }
+
   return (
-    <Panel title="Участники клуба" description="Memberships текущего tenant. Смена роли — сразу в API.">
+    <Panel
+      title="Участники клуба"
+      description="Memberships текущего tenant. Удаление — soft (status left); последнего owner убрать нельзя."
+    >
       {error ? (
         <p role="alert" className="mb-3 text-[0.78rem] text-negative">
           {error}
         </p>
       ) : null}
-      {members.length === 0 ? (
+      {visible.length === 0 ? (
         <p className="py-6 text-sm text-ink-muted">Пока нет участников в этом клубе.</p>
       ) : (
         <ul className="divide-y divide-line border-y border-line">
-          {members.map((member) => {
+          {visible.map((member) => {
             const busy = busyId === member.id;
+            const lastOwner = isLastActiveOwner(member, members);
             return (
               <li
                 key={member.id}
@@ -181,21 +220,38 @@ export function MembersTable({ members }: { members: ClubMember[] }) {
                   <p className="mt-1 text-[0.72rem] text-ink-muted">{member.email}</p>
                   <p className="mt-1 text-[0.62rem] uppercase tracking-[0.14em] text-ink-faint">
                     {STATUS_LABEL[member.status] ?? member.status}
+                    {lastOwner ? " · единственный owner" : ""}
                   </p>
                 </div>
-                <label className="flex items-center gap-2 text-[0.72rem] text-ink-muted">
-                  <span className="uppercase tracking-[0.12em]">Роль</span>
-                  <select
-                    className="field py-1.5 text-[0.78rem]"
-                    value={member.role}
-                    disabled={busy}
-                    onChange={(event) => changeRole(member, event.target.value as ClubMemberRole)}
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="flex items-center gap-2 text-[0.72rem] text-ink-muted">
+                    <span className="uppercase tracking-[0.12em]">Роль</span>
+                    <select
+                      className="field py-1.5 text-[0.78rem]"
+                      value={member.role}
+                      disabled={busy || lastOwner}
+                      onChange={(event) => changeRole(member, event.target.value as ClubMemberRole)}
+                    >
+                      <option value="owner">Owner</option>
+                      <option value="organizer">Organizer</option>
+                      <option value="player">Player</option>
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    disabled={busy || lastOwner}
+                    title={lastOwner ? "Нельзя удалить последнего owner" : "Удалить из клуба"}
+                    onClick={() => removeMember(member)}
                   >
-                    <option value="owner">Owner</option>
-                    <option value="organizer">Organizer</option>
-                    <option value="player">Player</option>
-                  </select>
-                </label>
+                    {busy ? (
+                      <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+                    ) : (
+                      <Trash2 className="size-3.5" aria-hidden="true" />
+                    )}
+                    Удалить
+                  </button>
+                </div>
               </li>
             );
           })}
