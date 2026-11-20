@@ -57,3 +57,69 @@ export async function fetchClubBySlug(
   }
   return mapClub(data.club);
 }
+
+export interface ClubMembership {
+  clubId: string;
+  slug: string;
+  name: string;
+  status: string;
+  role: string;
+  membershipStatus: string;
+}
+
+interface ApiMembership {
+  club_id: string;
+  slug: string;
+  name: string;
+  status: string;
+  role: string;
+  membership_status: string;
+}
+
+export async function fetchMyClubs(): Promise<ClubMembership[]> {
+  const { response, data } = await apiRequest<{ clubs: ApiMembership[] } & ApiErrorBody>(
+    "/auth/me/clubs",
+  );
+  if (!response.ok) {
+    throw new ApiError(response.status, data?.code, data?.message || "Не удалось загрузить ваши клубы");
+  }
+  return (data?.clubs ?? []).map((row) => ({
+    clubId: row.club_id,
+    slug: row.slug,
+    name: row.name,
+    status: row.status,
+    role: row.role,
+    membershipStatus: row.membership_status,
+  }));
+}
+
+export interface CreateClubInput {
+  slug: string;
+  name: string;
+  city?: string;
+  timezone?: string;
+  season?: number;
+}
+
+export async function createOrganizerClub(
+  input: CreateClubInput,
+): Promise<{ ok: true; club: LeagueClub } | { ok: false; error: string; code?: string }> {
+  const { response, data } = await apiRequest<{ club: ApiClub } & ApiErrorBody>("/organizer/clubs", {
+    method: "POST",
+    body: JSON.stringify({
+      slug: input.slug,
+      name: input.name,
+      city: input.city ?? "",
+      timezone: input.timezone ?? "Europe/Moscow",
+      season: input.season,
+    }),
+  });
+  if (response.status === 201 && data?.club) {
+    return { ok: true, club: mapClub(data.club) };
+  }
+  return {
+    ok: false,
+    error: data?.message ?? "Не удалось создать клуб",
+    code: data?.code,
+  };
+}
