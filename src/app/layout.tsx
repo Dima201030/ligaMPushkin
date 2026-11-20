@@ -20,7 +20,7 @@ const prata = Prata({
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
   process.env.PUBLIC_URL?.trim() ||
-  "https://pearly.app";
+  "https://pairly.app";
 
 export const metadata: Metadata = {
   title: {

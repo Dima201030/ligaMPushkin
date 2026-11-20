@@ -11,7 +11,7 @@ import { Avatar } from "@/components/ui/Avatar";
 
 export const metadata: Metadata = {
   title: "Рейтинг",
-  description: "Общий и категорийный рейтинг игроков Pearly. Очки, позиции и динамика сезона 2026.",
+  description: "Общий и категорийный рейтинг игроков Pairly. Очки, позиции и динамика сезона 2026.",
 };
 
 export default async function RatingPage({

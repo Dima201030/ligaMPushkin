@@ -9,7 +9,7 @@ import { CmsBody } from "@/components/domain/CmsBody";
 
 export const metadata: Metadata = {
   title: "Правила лиги",
-  description: "Регламент турниров Pearly: категории, форматы, регистрация, начисление рейтинга и поведение на корте.",
+  description: "Регламент турниров Pairly: категории, форматы, регистрация, начисление рейтинга и поведение на корте.",
 };
 
 export default async function RulesPage() {

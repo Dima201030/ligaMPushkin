@@ -5,7 +5,7 @@ import { TennisBall } from "@/components/ui/TennisBall";
 import { CLUB } from "@/lib/domain";
 
 /**
- * boot  — Pearly closed (Pear + ly as one word)
+ * boot  — Pairly closed (Pair + ly as one word)
  * burst — jelly births from the middle
  * idle  — Melike hover: lift + scale; active squish
  */
@@ -32,7 +32,7 @@ export function HeroWordmark() {
   return (
     <h1 className="hero-wordmark" data-phase={phase} aria-label={CLUB.productName}>
       <span className="hero-brand" aria-hidden="true">
-        <span className="hero-word hero-word--pear">Pear</span>
+        <span className="hero-word hero-word--pair">Pair</span>
         <span className="hero-ball-slot">
           <TennisBall />
         </span>

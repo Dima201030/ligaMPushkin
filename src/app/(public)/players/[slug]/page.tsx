@@ -21,7 +21,7 @@ export async function generateMetadata({
   if (!profile) return { title: "Игрок не найден" };
   return {
     title: `${profile.player.firstName} ${profile.player.lastName}`,
-    description: `Профиль игрока Pearly: ${profile.player.category}, рейтинг ${profile.player.rating}.`,
+    description: `Профиль игрока Pairly: ${profile.player.category}, рейтинг ${profile.player.rating}.`,
   };
 }
 

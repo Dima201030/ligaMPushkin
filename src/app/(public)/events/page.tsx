@@ -5,7 +5,7 @@ import { EventCard } from "@/components/domain/EventRow";
 
 export const metadata: Metadata = {
   title: "Мероприятия",
-  description: "Календарь клубных мероприятий Pearly: турниры, открытые тренировки и встречи лиги.",
+  description: "Календарь клубных мероприятий Pairly: турниры, открытые тренировки и встречи лиги.",
 };
 
 export default async function EventsPage() {

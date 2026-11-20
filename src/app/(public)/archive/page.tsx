@@ -10,7 +10,7 @@ import { CategoryBadge, StatusPill } from "@/components/ui/Badges";
 
 export const metadata: Metadata = {
   title: "Архив турниров",
-  description: "Все прошедшие турниры Pearly: победители, результаты и фильтры по году, категории и типу.",
+  description: "Все прошедшие турниры Pairly: победители, результаты и фильтры по году, категории и типу.",
 };
 
 export default async function ArchivePage({

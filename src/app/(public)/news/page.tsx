@@ -5,7 +5,7 @@ import { NewsCard } from "@/components/domain/NewsCard";
 
 export const metadata: Metadata = {
   title: "Новости",
-  description: "Новости лиги и клуба Pearly: турниры, результаты, школа тенниса и жизнь клуба.",
+  description: "Новости лиги и клуба Pairly: турниры, результаты, школа тенниса и жизнь клуба.",
 };
 
 export default async function NewsPage() {
@@ -17,7 +17,7 @@ export default async function NewsPage() {
       <PageHeader
         eyebrow="Жизнь клуба"
         title="Новости и публикации"
-        description="Результаты турниров, анонсы соревнований и заметки тренеров клуба Pearly."
+        description="Результаты турниров, анонсы соревнований и заметки тренеров клуба Pairly."
       />
 
       <div className="page-shell section">

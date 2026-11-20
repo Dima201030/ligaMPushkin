@@ -10,7 +10,7 @@ import type {
 } from "@/lib/types";
 
 /** Product brand (SaaS). Club-specific display name can override via env. */
-const productName = process.env.NEXT_PUBLIC_PRODUCT_NAME?.trim() || "Pearly";
+const productName = process.env.NEXT_PUBLIC_PRODUCT_NAME?.trim() || "Pairly";
 const clubName = process.env.NEXT_PUBLIC_CLUB_NAME?.trim() || productName;
 
 export const CLUB = {
@@ -22,7 +22,7 @@ export const CLUB = {
   phoneBookings: "+7 (911) 969-15-84",
   phoneSchool: "+7 (921) 966-20-20",
   hours: "Ежедневно с 08:00 до 23:00",
-  email: process.env.NEXT_PUBLIC_CLUB_EMAIL?.trim() || "league@pearly.app",
+  email: process.env.NEXT_PUBLIC_CLUB_EMAIL?.trim() || "league@pairly.app",
   vk: process.env.NEXT_PUBLIC_CLUB_VK?.trim() || "",
   courts: "7 крытых кортов и 2 открытых грунтовых",
   season: 2026,
