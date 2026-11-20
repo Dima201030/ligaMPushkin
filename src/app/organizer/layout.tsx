@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { fetchSession, isOrganizerRole } from "@/lib/api/auth";
 import { OrganizerNav } from "@/components/organizer/OrganizerNav";
+import { CLUB } from "@/lib/domain";
 
 export const metadata: Metadata = {
   title: {
     default: "Кабинет организатора",
-    template: "%s · Организатор лиги Mr. Pushkin",
+    template: `%s · Организатор ${CLUB.leagueName}`,
   },
-  description: "Управление турнирами, игроками, матчами и рейтингом лиги Mr. Pushkin.",
+  description: `Управление турнирами, игроками, матчами и рейтингом ${CLUB.leagueName}.`,
 };
 
 export default async function OrganizerLayout({ children }: { children: React.ReactNode }) {

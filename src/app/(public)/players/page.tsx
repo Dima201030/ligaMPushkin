@@ -7,7 +7,7 @@ import { formatNumber } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Игроки",
-  description: "Каталог игроков лиги Mr. Pushkin: рейтинг, категория, статистика побед и история матчей.",
+  description: "Каталог игроков Pearly: рейтинг, категория, статистика побед и история матчей.",
 };
 
 export default async function PlayersPage() {

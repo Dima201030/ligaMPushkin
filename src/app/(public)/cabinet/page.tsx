@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { getCabinetData } from "@/lib/data";
 import { isOrganizerRole } from "@/lib/api/auth";
-import { CATEGORY_BY_SLUG } from "@/lib/domain";
+import { CATEGORY_BY_SLUG, CLUB } from "@/lib/domain";
 import { formatDate, formatNumber, winRate } from "@/lib/utils";
 import { Avatar } from "@/components/ui/Avatar";
 import { CategoryBadge } from "@/components/ui/Badges";
@@ -24,7 +24,7 @@ import { PageHeader } from "@/components/ui/Section";
 
 export const metadata: Metadata = {
   title: "Личный кабинет",
-  description: "Заявки на турниры, матчи, рейтинг и настройки игрока лиги Mr. Pushkin.",
+  description: `Заявки на турниры, матчи, рейтинг и настройки игрока ${CLUB.leagueName}.`,
 };
 
 const NAV = [
@@ -109,7 +109,7 @@ export default async function CabinetPage() {
                 ) : null}
               </div>
               <p className="mt-3 max-w-[48ch] text-sm text-white/60">
-                {player.bio || category?.note || "Профиль игрока лиги Mr. Pushkin."}
+                {player.bio || category?.note || `Профиль игрока ${CLUB.leagueName}.`}
               </p>
             </div>
             <div className="flex gap-8 border-t border-white/15 pt-5 sm:border-l sm:border-t-0 sm:pl-8 sm:pt-0">

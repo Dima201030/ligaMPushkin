@@ -18,6 +18,7 @@ import {
   Users,
 } from "lucide-react";
 import { cn, formatDateShort, timeAgo } from "@/lib/utils";
+import { CLUB } from "@/lib/domain";
 import {
   createEvent,
   createNews,
@@ -69,7 +70,7 @@ export function ContentManager({ news, events }: { news: NewsRow[]; events: Even
   const [body, setBody] = useState("");
   const [kind, setKind] = useState<EventRow["kind"]>("club");
   const [startsAt, setStartsAt] = useState("");
-  const [location, setLocation] = useState("Mr. Pushkin");
+  const [location, setLocation] = useState(CLUB.name);
 
   const archivedNews = useMemo(
     () => new Set(news.filter((item) => item.status === "archived" || item.status === "draft").map((item) => item.id)),
@@ -137,7 +138,7 @@ export function ContentManager({ news, events }: { news: NewsRow[]; events: Even
         kind,
         description: body.trim() || excerpt.trim() || title.trim(),
         startsAt: iso,
-        location: location.trim() || "Mr. Pushkin",
+        location: location.trim() || CLUB.name,
         status: "published",
       });
       setBusy(false);

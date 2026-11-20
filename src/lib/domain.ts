@@ -9,16 +9,21 @@ import type {
   TournamentType,
 } from "@/lib/types";
 
+/** Product brand (SaaS). Club-specific display name can override via env. */
+const productName = process.env.NEXT_PUBLIC_PRODUCT_NAME?.trim() || "Pearly";
+const clubName = process.env.NEXT_PUBLIC_CLUB_NAME?.trim() || productName;
+
 export const CLUB = {
-  name: "Mr. Pushkin",
-  fullName: "Теннисный клуб Mr. Pushkin",
-  leagueName: "Лига Mr. Pushkin",
+  productName,
+  name: clubName,
+  fullName: `Теннисный клуб ${clubName}`,
+  leagueName: productName,
   address: "Санкт-Петербург, Пушкинский район, Волхонское шоссе, 79А",
   phoneBookings: "+7 (911) 969-15-84",
   phoneSchool: "+7 (921) 966-20-20",
   hours: "Ежедневно с 08:00 до 23:00",
-  email: "league@mrpushkin.com",
-  vk: "https://vk.com/mrpushkintennis",
+  email: process.env.NEXT_PUBLIC_CLUB_EMAIL?.trim() || "league@pearly.app",
+  vk: process.env.NEXT_PUBLIC_CLUB_VK?.trim() || "",
   courts: "7 крытых кортов и 2 открытых грунтовых",
   season: 2026,
 } as const;

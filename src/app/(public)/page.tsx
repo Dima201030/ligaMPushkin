@@ -49,8 +49,8 @@ export default async function HomePage() {
 
         <div className="grid gap-7 border-t border-line pt-6 md:grid-cols-[1.15fr_1fr] md:items-end">
           <p className="max-w-[40ch] text-sm leading-relaxed text-ink-soft md:text-[0.95rem]">
-            Турниры для взрослых игроков, прозрачный рейтинг и сообщество клуба
-            Mr. Pushkin. Записывайтесь, следите за сеткой и растите в игре.
+            Турниры для взрослых игроков, прозрачный рейтинг и сообщество {CLUB.name}.
+            Записывайтесь, следите за сеткой и растите в игре.
           </p>
 
           <nav
@@ -162,7 +162,7 @@ export default async function HomePage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/images/club/courts-aerial.webp"
-              alt="Корты теннисного клуба Mr. Pushkin с высоты"
+              alt={`Корты теннисного клуба ${CLUB.name} с высоты`}
               className="aspect-[4/3] w-full object-cover lg:aspect-[5/4]"
             />
             <figcaption className="mt-3 flex items-center justify-between text-[0.58rem] uppercase tracking-[0.14em] text-ink-muted">
@@ -174,7 +174,7 @@ export default async function HomePage() {
           <div className="flex flex-col justify-center">
             <h2 className="max-w-[12ch]">Большой теннис в Пушкине</h2>
             <p className="mt-6 max-w-[46ch] text-sm leading-relaxed text-ink-soft">
-              Mr. Pushkin — клуб для тех, кто любит теннис без лишнего пафоса. Здесь
+              {CLUB.name} — клуб для тех, кто любит теннис без лишнего пафоса. Здесь
               играют любительские турниры и встречаются на корте после работы.
             </p>
 

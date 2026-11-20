@@ -48,7 +48,7 @@ export interface TournamentFilters {
 export const CLUB_VENUES: Venue[] = [
   {
     id: "club-default",
-    name: "Mr. Pushkin",
+    name: CLUB.name,
     address: CLUB.address,
     courts: 9,
     surface: "hard",

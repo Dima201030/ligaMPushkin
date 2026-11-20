@@ -18,7 +18,7 @@ import { CmsBody } from "@/components/domain/CmsBody";
 
 export const metadata: Metadata = {
   title: "О клубе",
-  description: "Теннисный клуб Mr. Pushkin: 7 крытых кортов, 2 грунтовых корта, школа тенниса, падел и кафе.",
+  description: `Теннисный клуб ${CLUB.name}: 7 крытых кортов, 2 грунтовых корта, школа тенниса, падел и кафе.`,
 };
 
 const FEATURES = [
@@ -36,13 +36,13 @@ export default async function ClubPage() {
   const [page, players] = await Promise.all([getCmsPage("club"), listPlayers()]);
   const intro =
     page?.bodyMarkdown?.trim() ||
-    "Mr. Pushkin — клуб для тех, кто любит теннис без лишнего пафоса.";
+    `${CLUB.name} — клуб для тех, кто любит теннис без лишнего пафоса.`;
 
   return (
     <>
       <PageHeader
         eyebrow="О клубе"
-        title={page?.title ? `Теннисный клуб ${page.title === "Клуб" ? "Mr. Pushkin" : page.title}` : "Теннисный клуб Mr. Pushkin"}
+        title={page?.title && page.title !== "Клуб" ? `Теннисный клуб ${page.title}` : CLUB.fullName}
         description="Место, где играют в теннис круглый год: 9 кортов, турниры и сообщество игроков Пушкинского района."
         actions={
           <>
@@ -56,7 +56,7 @@ export default async function ClubPage() {
         <div className="grid items-center gap-8 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="cover-image aspect-[16/10]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/hero.jpg" alt="Крытые корты Mr. Pushkin" />
+            <img src="/images/hero.jpg" alt={`Крытые корты ${CLUB.name}`} />
           </div>
           <div>
             <p className="eyebrow">С 2014 года</p>
@@ -103,7 +103,7 @@ export default async function ClubPage() {
         <section className="mt-14 grid gap-4 md:grid-cols-3">
           <div className="relative aspect-[4/3] overflow-hidden md:col-span-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/club/adult-tournament.webp" alt="Турнир клуба Mr. Pushkin" className="size-full object-cover" />
+            <img src="/images/club/adult-tournament.webp" alt={`Турнир клуба ${CLUB.name}`} className="size-full object-cover" />
           </div>
           <div className="flex flex-col justify-between bg-navy p-6 text-white">
             <div>

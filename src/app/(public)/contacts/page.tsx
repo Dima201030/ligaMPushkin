@@ -9,7 +9,7 @@ import { CmsBody } from "@/components/domain/CmsBody";
 
 export const metadata: Metadata = {
   title: "Контакты",
-  description: "Адрес, телефоны и схема проезда теннисного клуба Mr. Pushkin в Пушкине.",
+  description: `Адрес, телефоны и схема проезда теннисного клуба ${CLUB.name} в Пушкине.`,
 };
 
 const MAP_URL =
@@ -96,10 +96,12 @@ export default async function ContactsPage() {
             <div className="pt-6">
               <p className="text-[0.58rem] uppercase tracking-[0.14em] text-ink-muted">Соцсети</p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <a href={CLUB.vk} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm">
-                  <MessageCircle className="size-4" aria-hidden="true" />
-                  ВКонтакте
-                </a>
+                {CLUB.vk ? (
+                  <a href={CLUB.vk} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm">
+                    <MessageCircle className="size-4" aria-hidden="true" />
+                    ВКонтакте
+                  </a>
+                ) : null}
                 <Link href="/tournaments" className="btn btn-secondary btn-sm">Турниры</Link>
               </div>
             </div>
@@ -111,7 +113,7 @@ export default async function ContactsPage() {
               <div className="absolute inset-0 bg-gradient-to-br from-navy/40 via-transparent to-navy/80" aria-hidden="true" />
               <div className="relative flex h-full min-h-[300px] flex-col items-center justify-center p-8 text-center text-white">
                 <MapPin className="size-6 text-sky" aria-hidden="true" />
-                <p className="display mt-5 text-[1.6rem] leading-none">Mr. Pushkin</p>
+                <p className="display mt-5 text-[1.6rem] leading-none">{CLUB.name}</p>
                 <p className="mt-3 max-w-[30ch] text-xs leading-relaxed text-white/60">{CLUB.address}</p>
                 <a href={MAP_URL} target="_blank" rel="noreferrer" className="btn btn-on-dark btn-sm mt-6">
                   Построить маршрут
