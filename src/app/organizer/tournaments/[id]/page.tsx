@@ -107,6 +107,7 @@ export default async function OrganizerTournamentPage({
                 maxParticipants={tournament.maxParticipants}
                 entryFee={tournament.entryFee}
                 participants={participants.map((entry) => ({
+                  registrationId: entry.registrationId,
                   playerId: entry.playerId,
                   firstName: entry.player.firstName,
                   lastName: entry.player.lastName,

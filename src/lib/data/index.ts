@@ -483,6 +483,7 @@ export async function getOrganizerTournament(id: string) {
     if (!data) return null;
     const { tournament, registrations, counts } = data;
     const participants = registrations.map((registration) => ({
+      registrationId: registration.id,
       playerId: registration.playerId,
       partnerId: registration.partnerId,
       lookingForPartner: registration.lookingForPartner,

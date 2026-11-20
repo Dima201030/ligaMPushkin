@@ -393,3 +393,24 @@ export async function cancelRegistration(
     error: data?.message ?? "Не удалось отменить заявку",
   };
 }
+
+export async function updateOrganizerRegistrationStatus(
+  tournamentId: string,
+  registrationId: string,
+  status: RegistrationStatus,
+): Promise<{ ok: true; status: RegistrationStatus } | { ok: false; error: string }> {
+  const { response, data } = await apiRequest<{ registration: ApiRegistration } & ApiErrorBody>(
+    `/organizer/tournaments/${encodeURIComponent(tournamentId)}/registrations/${encodeURIComponent(registrationId)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    },
+  );
+  if (response.ok && data && "registration" in data && data.registration) {
+    return { ok: true, status: data.registration.status as RegistrationStatus };
+  }
+  return {
+    ok: false,
+    error: (data as ApiErrorBody | undefined)?.message ?? "Не удалось обновить статус заявки",
+  };
+}

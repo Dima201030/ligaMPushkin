@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Check,
@@ -14,7 +15,7 @@ import {
   X,
 } from "lucide-react";
 import type { CategorySlug, RegistrationStatus, TournamentStatus } from "@/lib/types";
-import { updateOrganizerTournament } from "@/lib/api/tournaments";
+import { updateOrganizerRegistrationStatus, updateOrganizerTournament } from "@/lib/api/tournaments";
 import { REGISTRATION_STATUS_LABEL, FORMAT_LABEL, STATUS_BY_VALUE } from "@/lib/domain";
 import { cn, formatDateTime, formatMoney } from "@/lib/utils";
 import { CategoryBadge, StatusPill } from "@/components/ui/Badges";
@@ -143,6 +144,7 @@ export function TournamentStatusPanel({
 /* ─────────────────────────── participants manager ───────────────────────── */
 
 export interface ManageParticipant {
+  registrationId: string;
   playerId: string;
   firstName: string;
   lastName: string;
@@ -185,16 +187,19 @@ export function ParticipantsManager({
   maxParticipants: number;
   entryFee: number;
 }) {
+  const router = useRouter();
   const [statuses, setStatuses] = useState<Record<string, RegistrationStatus>>({});
   const [tab, setTab] = useState<(typeof TABS)[number]["value"]>("all");
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const rows = useMemo(
     () =>
       participants.map((participant) => ({
         ...participant,
-        status: statuses[participant.playerId] ?? participant.status,
+        status: statuses[participant.registrationId] ?? participant.status,
       })),
     [participants, statuses],
   );
@@ -212,8 +217,20 @@ export function ParticipantsManager({
   const waitlist = rows.filter((row) => row.status === "waitlist").length;
   const full = confirmed >= maxParticipants;
 
-  function setStatus(_row: ManageParticipant, _status: RegistrationStatus) {
-    setNotice("Смена статуса заявки организатором появится отдельным API. Сейчас статус задаётся при регистрации.");
+  async function setStatus(row: ManageParticipant, status: RegistrationStatus) {
+    if (busyId) return;
+    setBusyId(row.registrationId);
+    setNotice(null);
+    setError(null);
+    const result = await updateOrganizerRegistrationStatus(tournamentId, row.registrationId, status);
+    setBusyId(null);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    setStatuses((prev) => ({ ...prev, [row.registrationId]: result.status }));
+    setNotice(`${row.firstName} ${row.lastName}: ${REGISTRATION_STATUS_LABEL[result.status]}`);
+    router.refresh();
   }
 
   return (
@@ -313,10 +330,11 @@ export function ParticipantsManager({
                     {row.status !== "confirmed" && (
                       <button
                         type="button"
-                        className="grid size-7 place-items-center border border-line text-positive transition-colors hover:border-positive"
+                        disabled={busyId === row.registrationId}
+                        className="grid size-7 place-items-center border border-line text-positive transition-colors hover:border-positive disabled:opacity-40"
                         title="Подтвердить"
                         aria-label={`Подтвердить ${row.firstName} ${row.lastName}`}
-                        onClick={() => setStatus(row, "confirmed")}
+                        onClick={() => void setStatus(row, "confirmed")}
                       >
                         <UserCheck className="size-3.5" />
                       </button>
@@ -324,10 +342,11 @@ export function ParticipantsManager({
                     {row.status === "confirmed" && (
                       <button
                         type="button"
-                        className="grid size-7 place-items-center border border-line text-ink-muted transition-colors hover:border-line-strong hover:text-ink"
+                        disabled={busyId === row.registrationId}
+                        className="grid size-7 place-items-center border border-line text-ink-muted transition-colors hover:border-line-strong hover:text-ink disabled:opacity-40"
                         title="Перевести в лист ожидания"
                         aria-label={`Перевести ${row.firstName} ${row.lastName} в лист ожидания`}
-                        onClick={() => setStatus(row, "waitlist")}
+                        onClick={() => void setStatus(row, "waitlist")}
                       >
                         <Clock className="size-3.5" />
                       </button>
@@ -335,20 +354,22 @@ export function ParticipantsManager({
                     {row.status !== "rejected" && row.status !== "cancelled" ? (
                       <button
                         type="button"
-                        className="grid size-7 place-items-center border border-line text-negative transition-colors hover:border-negative"
+                        disabled={busyId === row.registrationId}
+                        className="grid size-7 place-items-center border border-line text-negative transition-colors hover:border-negative disabled:opacity-40"
                         title="Отклонить заявку"
                         aria-label={`Отклонить заявку ${row.firstName} ${row.lastName}`}
-                        onClick={() => setStatus(row, "rejected")}
+                        onClick={() => void setStatus(row, "rejected")}
                       >
                         <UserX className="size-3.5" />
                       </button>
                     ) : (
                       <button
                         type="button"
-                        className="grid size-7 place-items-center border border-line text-ink-muted transition-colors hover:border-ink hover:text-ink"
+                        disabled={busyId === row.registrationId}
+                        className="grid size-7 place-items-center border border-line text-ink-muted transition-colors hover:border-ink hover:text-ink disabled:opacity-40"
                         title="Вернуть заявку"
                         aria-label={`Вернуть заявку ${row.firstName} ${row.lastName}`}
-                        onClick={() => setStatus(row, "pending")}
+                        onClick={() => void setStatus(row, "pending")}
                       >
                         <X className="size-3.5" />
                       </button>
@@ -378,12 +399,12 @@ export function ParticipantsManager({
         </Link>
       </div>
 
-      {notice && (
+      {(notice || error) && (
         <div className="pb-2 pt-2">
           <DemoNote>
             <span className="inline-flex items-start gap-1.5">
               <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-              <span>{notice} Демо-режим: данные не сохраняются.</span>
+              <span>{error ?? notice}</span>
             </span>
           </DemoNote>
         </div>
