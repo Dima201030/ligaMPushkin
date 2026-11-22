@@ -76,7 +76,7 @@ export function TournamentStatusPanel({
   return (
     <Panel title="Статус турнира" description="Управляйте жизненным циклом соревнования">
       <StatusPill status={status} />
-      <div className="mt-4 space-y-2 border-t border-line pt-4 text-sm text-ink-muted">
+      <div className="mt-4 space-y-2 border-t border-line pt-4 text-[0.7rem] text-ink-muted">
         <p className="flex justify-between gap-2">
           <span>Старт</span>
           <span className="text-ink">{formatDateTime(tournament.startsAt)}</span>
@@ -95,7 +95,7 @@ export function TournamentStatusPanel({
         <MiniLabel>Готовность</MiniLabel>
         <ul className="mt-2 space-y-1.5">
           {checklist.map((item) => (
-            <li key={item.label} className="flex items-center gap-2 text-sm">
+            <li key={item.label} className="flex items-center gap-2 text-[0.68rem]">
               <span
                 className={cn(
                   "grid size-4 shrink-0 place-items-center border",
@@ -118,7 +118,7 @@ export function TournamentStatusPanel({
           </button>
         )}
         {status === "completed" && (
-          <p className="border-y border-line py-2 text-center text-sm text-positive">
+          <p className="border-y border-line py-2 text-center text-[0.68rem] text-positive">
             Турнир завершён, результаты опубликованы
           </p>
         )}
@@ -128,12 +128,12 @@ export function TournamentStatusPanel({
       </div>
 
       {notice && (
-        <p role="status" className="mt-3 border border-accent-line bg-accent-soft px-3 py-2 text-sm text-accent-strong">
+        <p role="status" className="mt-3 border border-accent-line bg-accent-soft px-3 py-2 text-[0.7rem] text-accent-strong">
           {notice}
         </p>
       )}
       {error && (
-        <p role="alert" className="mt-3 border border-negative/40 px-3 py-2 text-sm text-negative">
+        <p role="alert" className="mt-3 border border-negative/40 px-3 py-2 text-[0.7rem] text-negative">
           {error}
         </p>
       )}
@@ -245,14 +245,14 @@ export function ParticipantsManager({
                 type="button"
                 onClick={() => setTab(item.value)}
                 className={cn(
-                  "inline-flex shrink-0 items-baseline gap-1.5 text-sm uppercase tracking-[0.12em] transition-colors",
+                  "inline-flex shrink-0 items-baseline gap-1.5 text-[0.72rem] uppercase tracking-[0.12em] transition-colors",
                   tab === item.value
                     ? "text-ink underline decoration-1 underline-offset-[6px]"
                     : "text-ink-muted hover:text-ink",
                 )}
               >
                 {item.label}
-                <span className="text-[0.78rem] tabular-nums text-ink-faint">{count}</span>
+                <span className="text-[0.6875rem] tabular-nums text-ink-faint">{count}</span>
               </button>
             );
           })}
@@ -261,7 +261,7 @@ export function ParticipantsManager({
           <span className="sr-only">Поиск игрока</span>
           <Search className="pointer-events-none absolute left-0 top-1/2 size-3.5 -translate-y-1/2 text-ink-faint" aria-hidden="true" />
           <input
-            className="field min-h-11 border-0 border-b border-line bg-transparent pl-5 text-sm focus:border-ink"
+            className="field min-h-[32px] border-0 border-b border-line bg-transparent pl-5 text-xs focus:border-ink"
             placeholder="Найти игрока"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -277,7 +277,7 @@ export function ParticipantsManager({
         </button>
       </div>
 
-      <div className="flex flex-wrap gap-x-5 gap-y-1 border-b border-line py-2.5 text-sm text-ink-muted">
+      <div className="flex flex-wrap gap-x-5 gap-y-1 border-b border-line py-2.5 text-[0.72rem] text-ink-muted">
         <span>
           Основной состав: <span className="tabular-nums text-ink">{confirmed}/{maxParticipants}</span>
           {full && <span className="ml-1 text-warning">· мест нет</span>}
@@ -304,22 +304,22 @@ export function ParticipantsManager({
           <tbody>
             {filtered.map((row, index) => (
               <tr key={row.playerId}>
-                <td className="text-sm tabular-nums text-ink-faint">
+                <td className="text-[0.72rem] tabular-nums text-ink-faint">
                   {row.seed ?? index + 1}
                 </td>
                 <td>
                   <Link href={`/players/${row.slug}`} className="group flex items-center gap-2.5">
                     <Avatar firstName={row.firstName} lastName={row.lastName} size="sm" />
                     <span>
-                      <span className="block text-[0.95rem] font-medium text-ink transition-opacity group-hover:opacity-60">{row.firstName} {row.lastName}</span>
-                      <span className="block text-[0.78rem] text-ink-faint">{row.playerId}</span>
+                      <span className="block text-[0.78rem] font-medium text-ink transition-opacity group-hover:opacity-60">{row.firstName} {row.lastName}</span>
+                      <span className="block text-[0.7rem] text-ink-faint">{row.playerId}</span>
                     </span>
                   </Link>
                 </td>
                 <td><CategoryBadge category={row.category} withName={false} /></td>
-                <td className="text-right text-sm tabular-nums">{row.rating}</td>
-                <td className="text-sm text-ink-soft">{row.partnerName ?? "—"}</td>
-                <td className="whitespace-nowrap text-sm text-ink-muted">
+                <td className="text-right text-[0.72rem] tabular-nums">{row.rating}</td>
+                <td className="text-[0.7rem] text-ink-soft">{row.partnerName ?? "—"}</td>
+                <td className="whitespace-nowrap text-[0.72rem] text-ink-muted">
                   {new Date(row.registeredAt).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" })}
                 </td>
                 <td>
@@ -331,7 +331,7 @@ export function ParticipantsManager({
                       <button
                         type="button"
                         disabled={busyId === row.registrationId}
-                        className="grid size-11 place-items-center border border-line text-positive transition-colors hover:border-positive disabled:opacity-40"
+                        className="grid size-9 place-items-center border border-line text-positive transition-colors hover:border-positive disabled:opacity-40"
                         title="Подтвердить"
                         aria-label={`Подтвердить ${row.firstName} ${row.lastName}`}
                         onClick={() => void setStatus(row, "confirmed")}
@@ -343,7 +343,7 @@ export function ParticipantsManager({
                       <button
                         type="button"
                         disabled={busyId === row.registrationId}
-                        className="grid size-11 place-items-center border border-line text-ink-muted transition-colors hover:border-line-strong hover:text-ink disabled:opacity-40"
+                        className="grid size-9 place-items-center border border-line text-ink-muted transition-colors hover:border-line-strong hover:text-ink disabled:opacity-40"
                         title="Перевести в лист ожидания"
                         aria-label={`Перевести ${row.firstName} ${row.lastName} в лист ожидания`}
                         onClick={() => void setStatus(row, "waitlist")}
@@ -355,7 +355,7 @@ export function ParticipantsManager({
                       <button
                         type="button"
                         disabled={busyId === row.registrationId}
-                        className="grid size-11 place-items-center border border-line text-negative transition-colors hover:border-negative disabled:opacity-40"
+                        className="grid size-9 place-items-center border border-line text-negative transition-colors hover:border-negative disabled:opacity-40"
                         title="Отклонить заявку"
                         aria-label={`Отклонить заявку ${row.firstName} ${row.lastName}`}
                         onClick={() => void setStatus(row, "rejected")}
@@ -366,12 +366,12 @@ export function ParticipantsManager({
                       <button
                         type="button"
                         disabled={busyId === row.registrationId}
-                        className="grid size-11 place-items-center border border-line text-ink-muted transition-colors hover:border-ink hover:text-ink disabled:opacity-40"
+                        className="grid size-9 place-items-center border border-line text-ink-muted transition-colors hover:border-ink hover:text-ink disabled:opacity-40"
                         title="Вернуть заявку"
                         aria-label={`Вернуть заявку ${row.firstName} ${row.lastName}`}
                         onClick={() => void setStatus(row, "pending")}
                       >
-                        <X className="size-5" />
+                        <X className="size-3.5" />
                       </button>
                     )}
                   </div>
@@ -385,15 +385,15 @@ export function ParticipantsManager({
       {filtered.length === 0 && (
         <div className="px-6 py-12 text-center">
           <p className="text-sm font-medium">Игроки не найдены</p>
-          <p className="mt-1 text-sm text-ink-muted">Сбросьте поиск или выберите другой статус.</p>
+          <p className="mt-1 text-xs text-ink-muted">Сбросьте поиск или выберите другой статус.</p>
         </div>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line py-3">
-        <p className="text-sm text-ink-faint">
+        <p className="text-[0.72rem] text-ink-faint">
           Турнир «{tournamentTitle}» · {rows.length} заявок
         </p>
-        <Link href={`/organizer/tournaments/${tournamentId}`} className="link-arrow text-sm">
+        <Link href={`/organizer/tournaments/${tournamentId}`} className="link-arrow text-[0.7rem]">
           Карточка турнира
           <ArrowRight className="size-3.5" aria-hidden="true" />
         </Link>

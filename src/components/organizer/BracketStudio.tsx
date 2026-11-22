@@ -110,12 +110,12 @@ function SlotRow({ slot, winner }: { slot: BracketSlot; winner?: boolean }) {
   return (
     <div
       className={cn(
-        "flex min-h-11 items-center gap-1.5 px-2 py-1 text-sm",
+        "flex min-h-[30px] items-center gap-1.5 px-2 py-1 text-[0.7rem]",
         winner ? "bg-canvas-deep" : "",
       )}
     >
       {slot.seed && (
-        <span className="grid size-4 shrink-0 place-items-center border border-line text-[0.72rem] tabular-nums text-ink-muted">
+        <span className="grid size-4 shrink-0 place-items-center border border-line text-[0.6875rem] tabular-nums text-ink-muted">
           {slot.seed}
         </span>
       )}
@@ -141,7 +141,7 @@ function MatchCard({ match, isFinal }: { match: BracketMatch; isFinal?: boolean 
         isFinal ? "border-ink" : "border-line",
       )}
     >
-      <div className="flex items-center justify-between border-b border-line px-2 py-0.5 text-[0.72rem] uppercase tracking-[0.08em] text-ink-faint">
+      <div className="flex items-center justify-between border-b border-line px-2 py-0.5 text-[0.6875rem] uppercase tracking-[0.08em] text-ink-faint">
         <span>{match.id}</span>
         {match.automaticWinner && <span className="text-positive">bye</span>}
       </div>
@@ -158,8 +158,8 @@ function BracketTree({ rounds, compact = false }: { rounds: BracketRound[]; comp
       {rounds.map((round) => (
         <div key={round.index} className={cn("flex shrink-0 flex-col", compact ? "w-[190px]" : "w-[212px]")}>
           <div className="mb-2 flex items-baseline justify-between gap-2 border-b border-line pb-1">
-            <span className="text-[0.78rem] uppercase tracking-[0.12em] text-ink-soft">{round.label}</span>
-            <span className="text-[0.78rem] tabular-nums text-ink-faint">{round.matches.length}</span>
+            <span className="text-[0.7rem] uppercase tracking-[0.12em] text-ink-soft">{round.label}</span>
+            <span className="text-[0.6875rem] tabular-nums text-ink-faint">{round.matches.length}</span>
           </div>
           <div className="flex flex-1 flex-col justify-around gap-2.5">
             {round.matches.map((match) => (
@@ -176,26 +176,26 @@ function GroupCard({ group }: { group: NonNullable<GeneratedDraw["groups"]>[numb
   return (
     <div className="border-y border-line">
       <div className="flex items-center justify-between border-b border-line py-2">
-        <p className="text-[0.78rem] uppercase tracking-[0.12em] text-ink">{group.name}</p>
-        <span className="text-[0.78rem] text-ink-muted">{group.entries.length} игрока</span>
+        <p className="text-[0.7rem] uppercase tracking-[0.12em] text-ink">{group.name}</p>
+        <span className="text-[0.7rem] text-ink-muted">{group.entries.length} игрока</span>
       </div>
       <ol className="divide-y divide-divider">
         {group.entries.map((entry, index) => (
-          <li key={`${group.name}-${entry.playerId ?? entry.name}`} className="flex items-center gap-2 px-3 py-1.5 text-sm">
-            <span className="w-4 shrink-0 text-[0.78rem] tabular-nums text-ink-faint">{index + 1}</span>
+          <li key={`${group.name}-${entry.playerId ?? entry.name}`} className="flex items-center gap-2 px-3 py-1.5 text-[0.7rem]">
+            <span className="w-4 shrink-0 text-[0.7rem] tabular-nums text-ink-faint">{index + 1}</span>
             <span className="min-w-0 flex-1 truncate text-ink">{entry.name}</span>
-            {entry.seed && <span className="text-[0.78rem] text-ink-faint">#{entry.seed}</span>}
+            {entry.seed && <span className="text-[0.6875rem] text-ink-faint">#{entry.seed}</span>}
           </li>
         ))}
       </ol>
       <div className="border-t border-line py-1.5">
-        <p className="text-[0.72rem] uppercase tracking-[0.12em] text-ink-faint">Матчи группы</p>
+        <p className="text-[0.6875rem] uppercase tracking-[0.12em] text-ink-faint">Матчи группы</p>
       </div>
       <ul className="divide-y divide-divider">
         {group.matches.map((match) => (
-          <li key={match.id} className="flex items-center justify-between gap-2 px-3 py-1.5 text-sm text-ink-soft">
+          <li key={match.id} className="flex items-center justify-between gap-2 px-3 py-1.5 text-[0.72rem] text-ink-soft">
             <span className="truncate">{match.slot1.name ?? "—"}</span>
-            <span className="shrink-0 text-[0.78rem] text-ink-faint">vs</span>
+            <span className="shrink-0 text-[0.6875rem] text-ink-faint">vs</span>
             <span className="truncate text-right">{match.slot2.name ?? "—"}</span>
           </li>
         ))}
@@ -433,7 +433,7 @@ export function BracketStudio({
           <div className="space-y-3">
             <label className="block">
               <span className="field-label">Турнир</span>
-              <select className="field text-sm" value={sourceId} onChange={(event) => pickSource(event.target.value)}>
+              <select className="field text-xs" value={sourceId} onChange={(event) => pickSource(event.target.value)}>
                 {sources.length === 0 && <option value="">Нет турниров</option>}
                 {sources.map((item) => (
                   <option key={item.id} value={item.id}>{item.title}</option>
@@ -444,10 +444,10 @@ export function BracketStudio({
             {source && (
               <div className="flex flex-wrap items-center gap-1.5">
                 <CategoryBadge category={source.category} withName={false} />
-                <span className="badge badge-neutral text-[0.78rem]">{TYPE_BY_VALUE[source.type].label}</span>
-                <span className="badge badge-outline text-[0.78rem]">{source.entries.length} участников</span>
+                <span className="badge badge-neutral text-[0.6875rem]">{TYPE_BY_VALUE[source.type].label}</span>
+                <span className="badge badge-outline text-[0.6875rem]">{source.entries.length} участников</span>
                 {bracketMeta && (
-                  <span className="badge badge-blue text-[0.78rem]">
+                  <span className="badge badge-blue text-[0.6875rem]">
                     сетка: {bracketStatusLabel(bracketMeta.status)}
                   </span>
                 )}
@@ -457,7 +457,7 @@ export function BracketStudio({
             <label className="block">
               <span className="field-label">Формат</span>
               <select
-                className="field text-sm"
+                className="field text-xs"
                 value={format}
                 onChange={(event) => setFormat(event.target.value as TournamentFormat)}
               >
@@ -465,14 +465,14 @@ export function BracketStudio({
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
               </select>
-              <span className="mt-1 block text-sm leading-relaxed text-ink-faint">
+              <span className="mt-1 block text-[0.72rem] leading-relaxed text-ink-faint">
                 {FORMATS.find((item) => item.value === format)?.description}
               </span>
             </label>
 
             <label className="block">
               <span className="field-label">Посев</span>
-              <select className="field text-sm" value={seeding} onChange={(event) => setSeeding(event.target.value as Seeding)}>
+              <select className="field text-xs" value={seeding} onChange={(event) => setSeeding(event.target.value as Seeding)}>
                 <option value="seed">По заявленному посеву</option>
                 <option value="rating">По рейтингу клуба</option>
                 <option value="random">Случайная жеребьёвка</option>
@@ -483,7 +483,7 @@ export function BracketStudio({
               <div className="grid grid-cols-2 gap-2">
                 <label className="block">
                   <span className="field-label">Размер группы</span>
-                  <select className="field text-sm" value={groupSize} onChange={(event) => setGroupSize(Number(event.target.value))}>
+                  <select className="field text-xs" value={groupSize} onChange={(event) => setGroupSize(Number(event.target.value))}>
                     <option value={3}>3 игрока</option>
                     <option value={4}>4 игрока</option>
                     <option value={5}>5 игроков</option>
@@ -491,7 +491,7 @@ export function BracketStudio({
                 </label>
                 <label className="block">
                   <span className="field-label">Выходят</span>
-                  <select className="field text-sm" value={qualifiers} onChange={(event) => setQualifiers(Number(event.target.value))}>
+                  <select className="field text-xs" value={qualifiers} onChange={(event) => setQualifiers(Number(event.target.value))}>
                     <option value={1}>по 1</option>
                     <option value={2}>по 2</option>
                   </select>
@@ -500,7 +500,7 @@ export function BracketStudio({
             )}
 
             {canUseThirdPlace && (
-              <label className="flex cursor-pointer items-start gap-2 text-sm text-ink-soft">
+              <label className="flex cursor-pointer items-start gap-2 text-[0.7rem] text-ink-soft">
                 <input
                   type="checkbox"
                   checked={thirdPlace}
@@ -537,16 +537,16 @@ export function BracketStudio({
           <ul className="max-h-[360px] divide-y divide-line overflow-y-auto">
             {entries.map((entry, index) => (
               <li key={entry.playerId ?? `${entry.name}-${index}`} className="flex items-center gap-2 py-2">
-                <span className="grid size-5 shrink-0 place-items-center border border-line text-[0.72rem] tabular-nums text-ink-muted">
+                <span className="grid size-5 shrink-0 place-items-center border border-line text-[0.6875rem] tabular-nums text-ink-muted">
                   {entry.seed ?? index + 1}
                 </span>
-                <span className="min-w-0 flex-1 truncate text-sm text-ink">{entry.name}</span>
-                <span className="text-[0.78rem] tabular-nums text-ink-faint">{entry.rating}</span>
+                <span className="min-w-0 flex-1 truncate text-[0.7rem] text-ink">{entry.name}</span>
+                <span className="text-[0.7rem] tabular-nums text-ink-faint">{entry.rating}</span>
               </li>
             ))}
           </ul>
           {entries.length === 0 && (
-            <p className="px-4 py-8 text-center text-sm text-ink-muted">У турнира пока нет подтверждённых участников.</p>
+            <p className="px-4 py-8 text-center text-xs text-ink-muted">У турнира пока нет подтверждённых участников.</p>
           )}
         </Panel>
 
@@ -577,7 +577,7 @@ export function BracketStudio({
           <>
             <div className="flex flex-wrap items-center justify-between gap-3 border-y border-line py-3 no-print">
               <div className="min-w-0">
-                <p className="text-[0.78rem] uppercase tracking-[0.16em] text-ink-faint">
+                <p className="text-[0.7rem] uppercase tracking-[0.16em] text-ink-faint">
                   {showApi ? "Сохранённая сетка" : "Предпросмотр сетки"}
                 </p>
                 <p className="mt-1 truncate text-sm text-ink">
@@ -641,7 +641,7 @@ export function BracketStudio({
                     const Icon = stat.icon;
                     return (
                       <div key={stat.label} className="border-t border-line pt-3">
-                        <div className="flex items-center justify-between gap-1.5 text-[0.78rem] uppercase tracking-[0.1em] text-ink-muted">
+                        <div className="flex items-center justify-between gap-1.5 text-[0.7rem] uppercase tracking-[0.1em] text-ink-muted">
                           {stat.label}
                           <Icon className="size-3 text-ink-faint" aria-hidden="true" />
                         </div>
@@ -652,14 +652,14 @@ export function BracketStudio({
                 </div>
                 <div className="border-t border-line pt-5">
                   <div className="mb-3">
-                    <h2 className="text-lg font-medium text-ink">Матчи сетки</h2>
-                    <p className="mt-0.5 text-sm text-ink-muted">
+                    <h2 className="text-[0.95rem] font-medium text-ink">Матчи сетки</h2>
+                    <p className="mt-0.5 text-[0.72rem] text-ink-muted">
                       Данные из API. После публикации матчи появятся на публичной странице.
                     </p>
                   </div>
                   <BracketTree rounds={apiRounds} />
                 </div>
-                <div className="flex flex-wrap items-center gap-3 border-t border-line pt-3 text-sm text-ink-muted">
+                <div className="flex flex-wrap items-center gap-3 border-t border-line pt-3 text-[0.72rem] text-ink-muted">
                   <Link href="/organizer/matches" className="inline-flex items-center gap-1.5 text-ink-soft hover:text-ink">
                     <ArrowUpRight className="size-3" aria-hidden="true" />
                     Перейти к внесению счёта
@@ -687,7 +687,7 @@ export function BracketStudio({
                     const Icon = stat.icon;
                     return (
                       <div key={stat.label} className="border-t border-line pt-3">
-                        <div className="flex items-center justify-between gap-1.5 text-[0.78rem] uppercase tracking-[0.1em] text-ink-muted">
+                        <div className="flex items-center justify-between gap-1.5 text-[0.7rem] uppercase tracking-[0.1em] text-ink-muted">
                           {stat.label}
                           <Icon className="size-3 text-ink-faint" aria-hidden="true" />
                         </div>
@@ -701,12 +701,12 @@ export function BracketStudio({
                   <div className="border-t border-line pt-5">
                     <div className="mb-3 flex items-center justify-between gap-2">
                       <div>
-                        <h2 className="text-lg font-medium text-ink">Групповой этап</h2>
-                        <p className="mt-0.5 text-sm text-ink-muted">
+                        <h2 className="text-[0.95rem] font-medium text-ink">Групповой этап</h2>
+                        <p className="mt-0.5 text-[0.72rem] text-ink-muted">
                           Круговые матчи в группах, затем выход в плей-офф
                         </p>
                       </div>
-                      <span className="badge badge-neutral text-[0.78rem]">
+                      <span className="badge badge-neutral text-[0.6875rem]">
                         {draw.groups.length} {draw.groups.length === 1 ? "группа" : "группы"} · {draw.groups.reduce((sum, group) => sum + group.matches.length, 0)} матчей
                       </span>
                     </div>
@@ -721,8 +721,8 @@ export function BracketStudio({
                 {draw.playoffRounds && draw.playoffRounds.length > 0 && (
                   <div className="border-t border-line pt-5">
                     <div className="mb-3">
-                      <h2 className="text-lg font-medium text-ink">Плей-офф</h2>
-                      <p className="mt-0.5 text-sm text-ink-muted">
+                      <h2 className="text-[0.95rem] font-medium text-ink">Плей-офф</h2>
+                      <p className="mt-0.5 text-[0.72rem] text-ink-muted">
                         Выходят {qualifiers} лучших из каждой группы. Участники подставятся после группового этапа.
                       </p>
                     </div>
@@ -734,14 +734,14 @@ export function BracketStudio({
                   <div className="border-t border-line pt-5">
                     <div className="mb-3 flex items-center justify-between gap-2">
                       <div>
-                        <h2 className="text-lg font-medium text-ink">
+                        <h2 className="text-[0.95rem] font-medium text-ink">
                           {draw.format === "double_elimination" ? "Верхняя сетка" : "Основная сетка"}
                         </h2>
-                        <p className="mt-0.5 text-sm text-ink-muted">
+                        <p className="mt-0.5 text-[0.72rem] text-ink-muted">
                           {draw.bracketSize} слотов · {draw.byes > 0 ? `${draw.byes} пропуска у сеяных игроков` : "все пары заполнены"}
                         </p>
                       </div>
-                      <span className="badge badge-blue text-[0.78rem]">{FORMAT_LABEL[format]}</span>
+                      <span className="badge badge-blue text-[0.6875rem]">{FORMAT_LABEL[format]}</span>
                     </div>
                     <BracketTree rounds={draw.rounds} />
                   </div>
@@ -750,8 +750,8 @@ export function BracketStudio({
                 {draw.lowerRounds && draw.lowerRounds.length > 0 && (
                   <div className="border-t border-line pt-5">
                     <div className="mb-3">
-                      <h2 className="text-lg font-medium text-ink">Нижняя сетка</h2>
-                      <p className="mt-0.5 text-sm text-ink-muted">
+                      <h2 className="text-[0.95rem] font-medium text-ink">Нижняя сетка</h2>
+                      <p className="mt-0.5 text-[0.72rem] text-ink-muted">
                         Второй шанс: проигравшие в верхней сетке продолжают борьбу за финал.
                       </p>
                     </div>
@@ -763,8 +763,8 @@ export function BracketStudio({
                   <div className="border-t border-line pt-5">
                     <div className="grid gap-3 sm:grid-cols-[1fr_240px] sm:items-center">
                       <div>
-                        <h2 className="text-lg font-medium text-ink">Матч за третье место</h2>
-                        <p className="mt-0.5 text-sm text-ink-muted">Проигравшие в полуфиналах разыгрывают бронзу.</p>
+                        <h2 className="text-[0.95rem] font-medium text-ink">Матч за третье место</h2>
+                        <p className="mt-0.5 text-[0.72rem] text-ink-muted">Проигравшие в полуфиналах разыгрывают бронзу.</p>
                       </div>
                       <MatchCard match={draw.thirdPlace} />
                     </div>
@@ -775,8 +775,8 @@ export function BracketStudio({
                   <div className="border-t border-line pt-5">
                     <div className="grid gap-3 sm:grid-cols-[1fr_240px] sm:items-center">
                       <div>
-                        <h2 className="text-lg font-medium text-ink">Гранд-финал</h2>
-                        <p className="mt-0.5 text-sm text-ink-muted">
+                        <h2 className="text-[0.95rem] font-medium text-ink">Гранд-финал</h2>
+                        <p className="mt-0.5 text-[0.72rem] text-ink-muted">
                           Победители верхней и нижней сетки. При поражении из верхней сетки назначается повторный финал.
                         </p>
                       </div>
@@ -785,9 +785,9 @@ export function BracketStudio({
                   </div>
                 )}
 
-                <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line pt-3 text-sm text-ink-muted">
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line pt-3 text-[0.72rem] text-ink-muted">
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="grid size-4 place-items-center border border-line text-[0.72rem] tabular-nums">1</span>
+                    <span className="grid size-4 place-items-center border border-line text-[0.6875rem] tabular-nums">1</span>
                     посев игрока
                   </span>
                   <span className="inline-flex items-center gap-1.5">
@@ -795,7 +795,7 @@ export function BracketStudio({
                     заполнится по ходу турнира
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="badge badge-blue text-[0.72rem]">bye</span>
+                    <span className="badge badge-blue text-[0.6875rem]">bye</span>
                     игрок проходит без матча
                   </span>
                   <span className="ml-auto inline-flex items-center gap-1.5 text-ink-faint">

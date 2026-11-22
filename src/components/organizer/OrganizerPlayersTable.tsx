@@ -60,14 +60,14 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
           <span className="sr-only">Поиск игрока</span>
           <Search className="pointer-events-none absolute left-0 top-1/2 size-3.5 -translate-y-1/2 text-ink-faint" aria-hidden="true" />
           <input
-            className="field min-h-11 border-0 border-b border-line bg-transparent pl-6 text-sm focus:border-ink"
+            className="field min-h-[36px] border-0 border-b border-line bg-transparent pl-6 text-xs focus:border-ink"
             placeholder="Имя, фамилия или город"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
         </label>
         <select
-          className="field min-h-11 w-auto border-0 border-b border-line bg-transparent text-sm focus:border-ink"
+          className="field min-h-[36px] w-auto border-0 border-b border-line bg-transparent text-xs focus:border-ink"
           value={category}
           onChange={(event) => setCategory(event.target.value)}
           aria-label="Категория"
@@ -78,7 +78,7 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
           ))}
         </select>
         <select
-          className="field min-h-11 w-auto border-0 border-b border-line bg-transparent text-sm focus:border-ink"
+          className="field min-h-[36px] w-auto border-0 border-b border-line bg-transparent text-xs focus:border-ink"
           value={sort}
           onChange={(event) => setSort(event.target.value as Sort)}
           aria-label="Сортировка"
@@ -94,7 +94,7 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
         </Link>
       </div>
 
-      <p className="text-sm uppercase tracking-[0.14em] text-ink-muted">
+      <p className="text-[0.72rem] uppercase tracking-[0.14em] text-ink-muted">
         {rows.length} из {players.length} игроков
       </p>
 
@@ -120,15 +120,15 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
                 const rate = winRate(player.wins, player.losses);
                 return (
                   <tr key={player.id}>
-                    <td className="text-sm tabular-nums text-ink-faint">{index + 1}</td>
+                    <td className="text-[0.72rem] tabular-nums text-ink-faint">{index + 1}</td>
                     <td className="min-w-[200px]">
                       <Link href={`/players/${player.slug}`} className="group flex items-center gap-2.5">
                         <Avatar firstName={player.firstName} lastName={player.lastName} size="sm" />
                         <span>
-                          <span className="block text-[0.95rem] font-medium text-ink transition-opacity group-hover:opacity-60">
+                          <span className="block text-[0.78rem] font-medium text-ink transition-opacity group-hover:opacity-60">
                             {player.lastName} {player.firstName}
                           </span>
-                          <span className="block text-[0.78rem] text-ink-faint">
+                          <span className="block text-[0.7rem] text-ink-faint">
                             {player.city} · {player.birthYear} г.
                           </span>
                         </span>
@@ -138,7 +138,7 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
                       <label className="block">
                         <span className="sr-only">Категория {player.firstName} {player.lastName}</span>
                         <select
-                          className="field min-h-[28px] w-[124px] border-0 border-b border-line bg-transparent px-1 py-0.5 text-sm focus:border-ink"
+                          className="field min-h-[28px] w-[124px] border-0 border-b border-line bg-transparent px-1 py-0.5 text-[0.72rem] focus:border-ink"
                           value={player.category}
                           onChange={(event) => changeCategory(player, event.target.value as CategorySlug)}
                         >
@@ -148,32 +148,32 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
                         </select>
                       </label>
                     </td>
-                    <td className="text-right text-[0.9375rem] tabular-nums text-ink">{player.rating}</td>
-                    <td className="text-right text-sm tabular-nums text-ink-soft">{player.points}</td>
-                    <td className="text-right text-sm tabular-nums text-ink-soft">
+                    <td className="text-right text-[0.76rem] tabular-nums text-ink">{player.rating}</td>
+                    <td className="text-right text-[0.72rem] tabular-nums text-ink-soft">{player.points}</td>
+                    <td className="text-right text-[0.7rem] tabular-nums text-ink-soft">
                       {player.wins}–{player.losses}
                     </td>
                     <td className="text-right">
-                      <span className={cn("text-sm tabular-nums", rate >= 60 ? "text-positive" : "text-ink-soft")}>
+                      <span className={cn("text-[0.7rem] tabular-nums", rate >= 60 ? "text-positive" : "text-ink-soft")}>
                         {rate}%
                       </span>
                     </td>
-                    <td className="text-right text-sm tabular-nums text-ink-soft">
+                    <td className="text-right text-[0.7rem] tabular-nums text-ink-soft">
                       {player.tournamentsCount}
                       {player.titlesCount > 0 && (
-                        <span className="ml-1 inline-flex items-center gap-0.5 text-[0.78rem] text-warning">
+                        <span className="ml-1 inline-flex items-center gap-0.5 text-[0.7rem] text-warning">
                           <Trophy className="size-3" aria-hidden="true" />
                           {player.titlesCount}
                         </span>
                       )}
                     </td>
-                    <td className="whitespace-nowrap text-sm text-ink-muted">
+                    <td className="whitespace-nowrap text-[0.72rem] text-ink-muted">
                       {formatDateShort(player.memberSince)}
                     </td>
                     <td>
                       <Link
                         href={`/players/${player.slug}`}
-                        className="grid size-11 place-items-center text-ink-faint transition-colors hover:text-ink"
+                        className="grid size-9 place-items-center text-ink-faint transition-colors hover:text-ink"
                         title="Открыть профиль"
                         aria-label={`Профиль ${player.firstName} ${player.lastName}`}
                       >
@@ -189,7 +189,7 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
         {rows.length === 0 && (
           <div className="px-6 py-12 text-center">
             <p className="text-sm font-medium">Игроки не найдены</p>
-            <p className="mt-1 text-sm text-ink-muted">Измените запрос или категорию.</p>
+            <p className="mt-1 text-xs text-ink-muted">Измените запрос или категорию.</p>
           </div>
         )}
       </div>
@@ -199,7 +199,7 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
           const count = players.filter((player) => (categories[player.id] ?? player.category) === item.slug).length;
           if (!count) return null;
           return (
-            <span key={item.slug} className="inline-flex items-baseline gap-1.5 text-sm uppercase tracking-[0.12em] text-ink-muted">
+            <span key={item.slug} className="inline-flex items-baseline gap-1.5 text-[0.72rem] uppercase tracking-[0.12em] text-ink-muted">
               <span className="size-1.5 self-center" style={{ backgroundColor: item.color }} aria-hidden="true" />
               {item.name}
               <span className="tabular-nums text-ink">{count}</span>

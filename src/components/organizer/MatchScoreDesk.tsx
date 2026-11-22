@@ -235,14 +235,14 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
                   type="button"
                   onClick={() => setTab(item.value)}
                   className={cn(
-                    "inline-flex shrink-0 items-baseline gap-1.5 text-sm uppercase tracking-[0.12em] transition-colors",
+                    "inline-flex shrink-0 items-baseline gap-1.5 text-[0.72rem] uppercase tracking-[0.12em] transition-colors",
                     tab === item.value
                       ? "text-ink underline decoration-1 underline-offset-[6px]"
                       : "text-ink-muted hover:text-ink",
                   )}
                 >
                   {item.label}
-                  <span className="text-[0.78rem] tabular-nums text-ink-faint">
+                  <span className="text-[0.6875rem] tabular-nums text-ink-faint">
                     {count}
                   </span>
                 </button>
@@ -253,7 +253,7 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
             <span className="sr-only">Поиск матча</span>
             <Search className="pointer-events-none absolute left-0 top-1/2 size-3.5 -translate-y-1/2 text-ink-faint" aria-hidden="true" />
             <input
-              className="field min-h-11 border-0 border-b border-line bg-transparent pl-5 text-sm focus:border-ink"
+              className="field min-h-[32px] border-0 border-b border-line bg-transparent pl-5 text-xs focus:border-ink"
               placeholder="Турнир, стадия или игрок"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
@@ -263,7 +263,7 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
             <span className="sr-only">Турнир</span>
             <Filter className="pointer-events-none absolute left-0 top-1/2 size-3.5 -translate-y-1/2 text-ink-faint" aria-hidden="true" />
             <select
-              className="field min-h-11 w-full border-0 border-b border-line bg-transparent pl-5 text-sm focus:border-ink sm:w-48"
+              className="field min-h-[32px] w-full border-0 border-b border-line bg-transparent pl-5 text-xs focus:border-ink sm:w-48"
               value={tournament}
               onChange={(event) => setTournament(event.target.value)}
             >
@@ -279,21 +279,21 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
       <div className="grid gap-x-8 gap-y-6 sm:grid-cols-3">
         <div className="border-t border-line pt-4">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[0.78rem] uppercase tracking-[0.14em] text-ink-muted">Идут прямо сейчас</p>
+            <p className="text-[0.7rem] uppercase tracking-[0.14em] text-ink-muted">Идут прямо сейчас</p>
             <Zap className="size-3.5 text-negative" aria-hidden="true" />
           </div>
           <p className="display mt-3 text-[2rem] leading-none tabular-nums">{liveCount}</p>
         </div>
         <div className="border-t border-line pt-4">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[0.78rem] uppercase tracking-[0.14em] text-ink-muted">Запланированы</p>
+            <p className="text-[0.7rem] uppercase tracking-[0.14em] text-ink-muted">Запланированы</p>
             <RefreshCw className="size-3.5 text-ink-faint" aria-hidden="true" />
           </div>
           <p className="display mt-3 text-[2rem] leading-none tabular-nums">{scheduledCount}</p>
         </div>
         <div className="border-t border-line pt-4">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[0.78rem] uppercase tracking-[0.14em] text-ink-muted">Без счёта</p>
+            <p className="text-[0.7rem] uppercase tracking-[0.14em] text-ink-muted">Без счёта</p>
             <AlertCircle className="size-3.5 text-warning" aria-hidden="true" />
           </div>
           <p className="display mt-3 text-[2rem] leading-none tabular-nums">{missing}</p>
@@ -310,8 +310,8 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
           {filtered.map((match) => (
             <div key={match.id} className="border-y border-line">
               <div className="flex items-center justify-between gap-3 border-b border-line py-2">
-                <div className="flex min-w-0 items-center gap-2 text-sm text-ink-muted">
-                  <span className="font-mono text-[0.78rem] uppercase tracking-[0.08em] text-ink-soft">{match.id.slice(0, 8).toUpperCase()}</span>
+                <div className="flex min-w-0 items-center gap-2 text-[0.72rem] text-ink-muted">
+                  <span className="font-mono text-[0.7rem] uppercase tracking-[0.08em] text-ink-soft">{match.id.slice(0, 8).toUpperCase()}</span>
                   <span className="truncate">{match.tournamentTitle}</span>
                   <span className="text-ink-faint">·</span>
                   <span>{formatDateShort(match.scheduledAt)}, {formatTime(match.scheduledAt)}</span>
@@ -320,7 +320,7 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
                   {match.status === "scheduled" && (
                     <button
                       type="button"
-                      className="btn btn-ghost btn-sm text-sm"
+                      className="btn btn-ghost btn-sm text-[0.72rem]"
                       disabled={busyId === match.id}
                       onClick={() => markLive(match)}
                     >
@@ -331,7 +331,7 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
                   {match.status !== "bye" && match.status !== "cancelled" && (
                     <button
                       type="button"
-                      className="btn btn-secondary btn-sm text-sm"
+                      className="btn btn-secondary btn-sm text-[0.72rem]"
                       onClick={() => (editing === match.id ? setEditing(null) : openEditor(match))}
                     >
                       <ClipboardEdit className="size-3.5" aria-hidden="true" />
@@ -406,7 +406,7 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
                       </button>
                     </div>
                   </div>
-                  <p className="mt-2 text-sm text-ink-muted">
+                  <p className="mt-2 text-[0.72rem] text-ink-muted">
                     Формат счёта: сеты через запятую (6:4, 6:3). Тех. победа — без сетов. Отказ — с частичным счётом
                     (необязательно). DQ — дисквалификация проигравшей стороны.
                   </p>

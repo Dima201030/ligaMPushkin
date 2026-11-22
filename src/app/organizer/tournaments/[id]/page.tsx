@@ -95,7 +95,7 @@ export default async function OrganizerTournamentPage({
               title="Участники"
               description="Подтверждайте заявки, управляйте листом ожидания и посевом"
               action={
-                <span className="text-[0.78rem] uppercase tracking-[0.14em] text-ink-muted">
+                <span className="text-[0.7rem] uppercase tracking-[0.14em] text-ink-muted">
                   {participants.length} заявок
                 </span>
               }
@@ -128,7 +128,7 @@ export default async function OrganizerTournamentPage({
               title="Матчи турнира"
               description={`${matches.length} матчей в расписании`}
               action={
-                <Link href="/organizer/matches" className="link-arrow text-sm">
+                <Link href="/organizer/matches" className="link-arrow text-xs">
                   Внести счёт
                   <ArrowRight className="size-3.5" aria-hidden="true" />
                 </Link>
@@ -158,7 +158,7 @@ export default async function OrganizerTournamentPage({
             </Panel>
 
             <Panel title="Регламент и условия" description="Информация, которую видят игроки">
-              <p className="text-base leading-relaxed text-ink-soft">{tournament.regulations}</p>
+              <p className="text-[0.82rem] leading-relaxed text-ink-soft">{tournament.regulations}</p>
               <dl className="mt-5 grid gap-4 border-t border-line pt-5 sm:grid-cols-2">
                 <div>
                   <dt className="stat-label">Взнос</dt>
@@ -200,7 +200,7 @@ export default async function OrganizerTournamentPage({
                 <SurfaceBadge surface={tournament.surface} />
                 <span className="badge badge-neutral">{TYPE_BY_VALUE[tournament.type].label}</span>
               </div>
-              <dl className="mt-4 space-y-2.5 text-sm">
+              <dl className="mt-4 space-y-2.5 text-[0.72rem]">
                 <div className="flex justify-between gap-3">
                   <dt className="text-ink-muted">Формат</dt>
                   <dd className="text-right text-ink">{FORMAT_LABEL[tournament.format]}</dd>
@@ -218,7 +218,7 @@ export default async function OrganizerTournamentPage({
                   <dd className="text-right text-ink">{tournament.venue.address}</dd>
                 </div>
               </dl>
-              <div className="mt-4 flex items-start gap-2 border-t border-line pt-3 text-sm leading-relaxed text-ink-muted">
+              <div className="mt-4 flex items-start gap-2 border-t border-line pt-3 text-[0.72rem] leading-relaxed text-ink-muted">
                 <MapPin className="mt-0.5 size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
                 {tournament.venue.courts} {tournament.venue.courts === 1 ? "корт" : "корта"} доступно для проведения
               </div>
@@ -233,14 +233,14 @@ export default async function OrganizerTournamentPage({
                 <ul className="space-y-3">
                   {winners.map((winner) => (
                     <li key={winner.place} className="flex items-start gap-2.5">
-                      <span className="mt-0.5 grid size-5 shrink-0 place-items-center border border-warning/40 text-[0.78rem] tabular-nums text-warning">
+                      <span className="mt-0.5 grid size-5 shrink-0 place-items-center border border-warning/40 text-[0.7rem] tabular-nums text-warning">
                         {winner.place}
                       </span>
                       <div>
-                        <p className="text-[0.9375rem] font-medium text-ink">
+                        <p className="text-[0.76rem] font-medium text-ink">
                           {winner.players.map((player) => `${player!.firstName} ${player!.lastName}`).join(" / ")}
                         </p>
-                        <p className="text-sm text-ink-muted">{winner.place === 1 ? "Победитель" : "Призовое место"}</p>
+                        <p className="text-[0.72rem] text-ink-muted">{winner.place === 1 ? "Победитель" : "Призовое место"}</p>
                       </div>
                     </li>
                   ))}
@@ -250,7 +250,7 @@ export default async function OrganizerTournamentPage({
 
             <Panel title="Служебное">
               <MiniLabel>Идентификатор</MiniLabel>
-              <p className="mt-1 font-mono text-sm text-ink-soft">{tournament.id} · {tournament.slug}</p>
+              <p className="mt-1 font-mono text-xs text-ink-soft">{tournament.id} · {tournament.slug}</p>
               <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
                 <Link href={`/tournaments/${tournament.slug}`} className="btn btn-secondary btn-sm">
                   <Trophy className="size-3.5" aria-hidden="true" />
@@ -260,7 +260,7 @@ export default async function OrganizerTournamentPage({
                   В архив
                 </button>
               </div>
-              <p className="mt-2 text-sm leading-relaxed text-ink-faint">
+              <p className="mt-2 text-[0.72rem] leading-relaxed text-ink-faint">
                 Перенос в архив и удаление доступны после подключения базы данных и проверки прав.
               </p>
             </Panel>
