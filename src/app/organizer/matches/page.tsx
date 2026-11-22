@@ -13,7 +13,7 @@ export default async function OrganizerMatchesPage() {
         title="Счёт и расписание"
         description="Ведите матчи в реальном времени, вносите счёты и технические победы. Победитель сразу переносится в следующий матч сетки."
         meta={
-          <span className="inline-flex items-center gap-2 text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted">
+          <span className="inline-flex items-center gap-2 text-[0.78rem] uppercase tracking-[0.14em] text-ink-muted">
             <span className="size-1.5 animate-pulse bg-negative" aria-hidden="true" />
             {live.length} live
           </span>

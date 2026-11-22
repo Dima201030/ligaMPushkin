@@ -53,7 +53,7 @@ export default async function OrganizerRatingsPage() {
               title="Таблица рейтинга"
               description="Топ игроков по очкам сезона. Стрелка показывает движение за последний пересчёт."
               action={
-                <Link href="/rating" className="link-arrow text-xs">
+                <Link href="/rating" className="link-arrow text-sm">
                   Публичная таблица
                   <ArrowRight className="size-3.5" aria-hidden="true" />
                 </Link>
@@ -82,7 +82,7 @@ export default async function OrganizerRatingsPage() {
                           <td>
                             <span
                               className={cn(
-                                "inline-flex items-center gap-1 text-[0.66rem] tabular-nums",
+                                "inline-flex items-center gap-1 text-sm tabular-nums",
                                 diff > 0 ? "text-positive" : diff < 0 ? "text-negative" : "text-ink-faint",
                               )}
                             >
@@ -105,22 +105,22 @@ export default async function OrganizerRatingsPage() {
                             <Link href={`/players/${row.player.slug}`} className="group flex items-center gap-2.5">
                               <Avatar firstName={row.player.firstName} lastName={row.player.lastName} size="sm" />
                               <span>
-                                <span className="block text-[0.78rem] font-medium text-ink transition-opacity group-hover:opacity-60">
+                                <span className="block text-[0.95rem] font-medium text-ink transition-opacity group-hover:opacity-60">
                                   {row.player.lastName} {row.player.firstName}
                                 </span>
-                                <span className="block text-[0.6rem] text-ink-faint">{row.player.city}</span>
+                                <span className="block text-[0.78rem] text-ink-faint">{row.player.city}</span>
                               </span>
                             </Link>
                           </td>
                           <td><CategoryBadge category={row.category} withName={false} /></td>
-                          <td className="text-right text-[0.72rem] tabular-nums text-ink-soft">
+                          <td className="text-right text-sm tabular-nums text-ink-soft">
                             {formatNumber(row.points)}
                           </td>
-                          <td className="text-right text-[0.76rem] tabular-nums text-ink">{row.rating}</td>
+                          <td className="text-right text-[0.9375rem] tabular-nums text-ink">{row.rating}</td>
                           <td>
                             <Link
                               href={`/players/${row.player.slug}`}
-                              className="grid size-7 place-items-center text-ink-faint transition-colors hover:text-ink"
+                              className="grid size-11 place-items-center text-ink-faint transition-colors hover:text-ink"
                               title="Открыть профиль"
                               aria-label={`Профиль ${row.player.firstName} ${row.player.lastName}`}
                             >
@@ -155,7 +155,7 @@ export default async function OrganizerRatingsPage() {
                     {history.map((entry) => (
                       <tr key={entry.id}>
                         <td className="font-medium text-ink">{entry.match}</td>
-                        <td className="whitespace-nowrap text-[0.68rem] text-ink-muted">{formatDateShort(entry.date)}</td>
+                        <td className="whitespace-nowrap text-sm text-ink-muted">{formatDateShort(entry.date)}</td>
                         <td
                           className={cn(
                             "text-right tabular-nums",
@@ -166,7 +166,7 @@ export default async function OrganizerRatingsPage() {
                           {entry.delta}
                         </td>
                         <td className="text-right tabular-nums">{entry.after}</td>
-                        <td className="text-[0.68rem] text-ink-muted">{entry.reason}</td>
+                        <td className="text-sm text-ink-muted">{entry.reason}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -177,8 +177,8 @@ export default async function OrganizerRatingsPage() {
             <Panel title="Правила начисления" description="Опубликованы в разделе «Регламент» на сайте">
               <ol className="space-y-2.5">
                 {RATING_RULES.map((rule, index) => (
-                  <li key={rule} className="flex gap-2.5 text-[0.78rem] leading-relaxed text-ink-soft">
-                    <span className="grid size-5 shrink-0 place-items-center border border-line text-[0.6rem] tabular-nums text-ink-muted">
+                  <li key={rule} className="flex gap-2.5 text-[0.95rem] leading-relaxed text-ink-soft">
+                    <span className="grid size-5 shrink-0 place-items-center border border-line text-[0.78rem] tabular-nums text-ink-muted">
                       {index + 1}
                     </span>
                     {rule}
@@ -215,10 +215,10 @@ export default async function OrganizerRatingsPage() {
               <ul className="divide-y divide-line">
                 {audit.map((entry) => (
                   <li key={entry.id} className="py-3">
-                    <p className="text-[0.72rem] leading-snug text-ink-soft">
+                    <p className="text-sm leading-snug text-ink-soft">
                       <span className="font-medium text-ink">{entry.actor}</span> {entry.action.toLowerCase()}
                     </p>
-                    <p className="mt-0.5 flex items-center justify-between gap-2 text-[0.62rem] text-ink-muted">
+                    <p className="mt-0.5 flex items-center justify-between gap-2 text-sm text-ink-muted">
                       <span className="truncate">{entry.entity}</span>
                       <span className="shrink-0 text-ink-faint">{timeAgo(entry.createdAt)}</span>
                     </p>
@@ -229,7 +229,7 @@ export default async function OrganizerRatingsPage() {
 
             <Panel>
               <MiniLabel>Важно</MiniLabel>
-              <p className="mt-2 text-[0.68rem] leading-relaxed text-ink-muted">
+              <p className="mt-2 text-sm leading-relaxed text-ink-muted">
                 Пересчёт рейтинга необратим. Перед запуском убедитесь, что все матчи турнира завершены и счёт внесён
                 корректно.
               </p>

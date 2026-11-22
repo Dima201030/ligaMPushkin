@@ -67,7 +67,7 @@ export default async function OrganizerContentPage() {
 
           <aside className="space-y-8">
             <Panel title="Редакционный чек-лист" description="Чтобы материал хорошо читался">
-              <ol className="space-y-2.5 text-[0.74rem] leading-relaxed text-ink-soft">
+              <ol className="space-y-2.5 text-sm leading-relaxed text-ink-soft">
                 {[
                   "Заголовок до 60 символов: понятно, о чём и когда.",
                   "Первый абзац — суть: кто, где, когда, результат.",
@@ -76,7 +76,7 @@ export default async function OrganizerContentPage() {
                   "Ссылка на турнир или событие в первом абзаце.",
                 ].map((item, index) => (
                   <li key={item} className="flex gap-2.5">
-                    <span className="grid size-5 shrink-0 place-items-center border border-line text-[0.6rem] tabular-nums text-ink-muted">
+                    <span className="grid size-5 shrink-0 place-items-center border border-line text-[0.78rem] tabular-nums text-ink-muted">
                       {index + 1}
                     </span>
                     {item}
@@ -93,7 +93,7 @@ export default async function OrganizerContentPage() {
                   { label: "Telegram-канал", value: "По расписанию", tone: "text-ink-muted" },
                   { label: "Рассылка игрокам", value: "Раз в неделю", tone: "text-ink-muted" },
                 ].map((channel) => (
-                  <li key={channel.label} className="flex items-center justify-between gap-3 text-[0.72rem]">
+                  <li key={channel.label} className="flex items-center justify-between gap-3 text-sm">
                     <span className="inline-flex items-center gap-2 text-ink-soft">
                       <Send className="size-3.5 text-ink-faint" aria-hidden="true" />
                       {channel.label}
@@ -102,7 +102,7 @@ export default async function OrganizerContentPage() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-4 border-t border-line pt-3 text-[0.62rem] leading-relaxed text-ink-faint">
+              <p className="mt-4 border-t border-line pt-3 text-sm leading-relaxed text-ink-faint">
                 Подключение соцсетей и рассылок — следующий этап. Сейчас публикация управляется вручную.
               </p>
             </Panel>
@@ -111,10 +111,10 @@ export default async function OrganizerContentPage() {
               <ul className="divide-y divide-line">
                 {news.slice(0, 4).map((post) => (
                   <li key={post.id} className="py-3">
-                    <Link href={`/news/${post.slug}`} className="block text-[0.74rem] font-medium text-ink transition-opacity hover:opacity-60">
+                    <Link href={`/news/${post.slug}`} className="block text-sm font-medium text-ink transition-opacity hover:opacity-60">
                       {post.title}
                     </Link>
-                    <p className="mt-0.5 text-[0.6rem] text-ink-muted">
+                    <p className="mt-0.5 text-[0.78rem] text-ink-muted">
                       {formatDateShort(post.publishedAt)} · {post.tag}
                     </p>
                   </li>

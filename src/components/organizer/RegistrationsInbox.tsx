@@ -51,8 +51,8 @@ export function RegistrationsInbox({ items }: { items: InboxRegistration[] }) {
             <li key={item.id} className="flex flex-wrap items-center gap-3 py-3">
               <Avatar firstName={item.firstName} lastName={item.lastName} size="sm" />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[0.8rem] font-medium text-ink">{item.playerName}</p>
-                <p className="mt-0.5 truncate text-[0.66rem] text-ink-muted">
+                <p className="truncate text-base font-medium text-ink">{item.playerName}</p>
+                <p className="mt-0.5 truncate text-sm text-ink-muted">
                   <Link href={`/tournaments/${item.tournamentSlug}`} className="transition-colors hover:text-ink">
                     {item.tournamentTitle}
                   </Link>
@@ -65,21 +65,21 @@ export function RegistrationsInbox({ items }: { items: InboxRegistration[] }) {
                 <div className="flex shrink-0 gap-1">
                   <button
                     type="button"
-                    className="grid size-7 place-items-center border border-line text-positive transition-colors hover:border-positive"
+                    className="grid size-11 place-items-center border border-line text-positive transition-colors hover:border-positive"
                     title="Подтвердить заявку"
                     aria-label={`Подтвердить заявку ${item.playerName}`}
                     onClick={() => decide(item, "confirmed")}
                   >
-                    <Check className="size-3.5" />
+                    <Check className="size-5" />
                   </button>
                   <button
                     type="button"
-                    className="grid size-7 place-items-center border border-line text-negative transition-colors hover:border-negative"
+                    className="grid size-11 place-items-center border border-line text-negative transition-colors hover:border-negative"
                     title="Отклонить заявку"
                     aria-label={`Отклонить заявку ${item.playerName}`}
                     onClick={() => decide(item, "rejected")}
                   >
-                    <X className="size-3.5" />
+                    <X className="size-5" />
                   </button>
                 </div>
               )}

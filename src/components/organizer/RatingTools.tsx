@@ -33,10 +33,10 @@ export function RecalculateRating({
 
   return (
     <div>
-      <p className="text-[0.76rem] leading-relaxed text-ink-muted">
+      <p className="text-[0.9375rem] leading-relaxed text-ink-muted">
         Пересчёт таблицы рейтинга по текущим очкам профилей. Создаёт snapshot для публичной таблицы.
       </p>
-      <dl className="mt-4 grid grid-cols-1 gap-3 border-t border-line pt-4 text-[0.7rem]">
+      <dl className="mt-4 grid grid-cols-1 gap-3 border-t border-line pt-4 text-sm">
         <div>
           <dt className="stat-label">Игроков в лиге</dt>
           <dd className="mt-1 text-sm tabular-nums">{formatNumber(playersCount)}</dd>
@@ -110,7 +110,7 @@ export function ManualAdjustment({
     <form onSubmit={submit} className="space-y-3">
       <label className="block">
         <span className="field-label">Игрок</span>
-        <select className="field text-xs" value={playerId} onChange={(event) => setPlayerId(event.target.value)}>
+        <select className="field text-sm" value={playerId} onChange={(event) => setPlayerId(event.target.value)}>
           {sorted.map((item) => (
             <option key={item.id} value={item.id}>
               {item.name} · {CATEGORY_BY_SLUG[item.category]?.shortName ?? item.category}
@@ -124,7 +124,7 @@ export function ManualAdjustment({
           <span className="field-label">Изменение</span>
           <input
             type="number"
-            className="field text-xs"
+            className="field text-sm"
             value={delta}
             onChange={(event) => setDelta(event.target.value)}
             step={1}
@@ -134,7 +134,7 @@ export function ManualAdjustment({
           <MiniLabel>Станет</MiniLabel>
           <p className="mt-0.5 text-sm tabular-nums text-ink">
             {nextRating}
-            <span className="ml-1 text-[0.6rem] text-ink-faint">очков рейтинга</span>
+            <span className="ml-1 text-[0.78rem] text-ink-faint">очков рейтинга</span>
           </p>
         </div>
       </div>
@@ -142,7 +142,7 @@ export function ManualAdjustment({
       <label className="block">
         <span className="field-label">Причина корректировки</span>
         <textarea
-          className="field min-h-[64px] resize-y text-xs"
+          className="field min-h-[64px] resize-y text-sm"
           placeholder="Например: перенос очков за пропущенный матч"
           value={reason}
           onChange={(event) => setReason(event.target.value)}
@@ -153,7 +153,7 @@ export function ManualAdjustment({
         <SlidersHorizontal className="size-4" aria-hidden="true" />
         {busy ? "Сохраняем…" : "Применить корректировку"}
       </button>
-      {error && <p className="text-[0.68rem] text-negative">{error}</p>}
+      {error && <p className="text-sm text-negative">{error}</p>}
       {saved && <DemoNote>{saved}</DemoNote>}
     </form>
   );
@@ -161,7 +161,7 @@ export function ManualAdjustment({
 
 export function RatingCalculatorHint() {
   return (
-    <p className="mt-5 flex items-start gap-2 border-t border-line pt-4 text-[0.68rem] leading-relaxed text-ink-muted">
+    <p className="mt-5 flex items-start gap-2 border-t border-line pt-4 text-sm leading-relaxed text-ink-muted">
       <Calculator className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
       Формула сезона живёт на сервере: очки турниров + Elo-корректировки матчей.
     </p>
@@ -176,7 +176,7 @@ export function RatingLegend({
   return (
     <ul className="divide-y divide-line">
       {counts.map((item) => (
-        <li key={item.category} className="flex items-center justify-between gap-3 py-2.5 text-[0.72rem]">
+        <li key={item.category} className="flex items-center justify-between gap-3 py-2.5 text-sm">
           <span>{CATEGORY_BY_SLUG[item.category]?.name ?? item.category}</span>
           <span className="tabular-nums text-ink-muted">{item.count}</span>
         </li>

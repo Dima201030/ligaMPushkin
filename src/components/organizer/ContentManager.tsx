@@ -163,7 +163,7 @@ export function ContentManager({ news, events }: { news: NewsRow[]; events: Even
             type="button"
             onClick={() => setTab("news")}
             className={cn(
-              "inline-flex items-baseline gap-1.5 text-[0.64rem] uppercase tracking-[0.12em] transition-colors",
+              "inline-flex items-baseline gap-1.5 text-sm uppercase tracking-[0.12em] transition-colors",
               tab === "news"
                 ? "text-ink underline decoration-1 underline-offset-[6px]"
                 : "text-ink-muted hover:text-ink",
@@ -171,13 +171,13 @@ export function ContentManager({ news, events }: { news: NewsRow[]; events: Even
           >
             <Newspaper className="size-3.5 self-center" aria-hidden="true" />
             Новости
-            <span className="text-[0.55rem] tabular-nums text-ink-faint">{news.length}</span>
+            <span className="text-[0.78rem] tabular-nums text-ink-faint">{news.length}</span>
           </button>
           <button
             type="button"
             onClick={() => setTab("events")}
             className={cn(
-              "inline-flex items-baseline gap-1.5 text-[0.64rem] uppercase tracking-[0.12em] transition-colors",
+              "inline-flex items-baseline gap-1.5 text-sm uppercase tracking-[0.12em] transition-colors",
               tab === "events"
                 ? "text-ink underline decoration-1 underline-offset-[6px]"
                 : "text-ink-muted hover:text-ink",
@@ -185,7 +185,7 @@ export function ContentManager({ news, events }: { news: NewsRow[]; events: Even
           >
             <CalendarDays className="size-3.5 self-center" aria-hidden="true" />
             События
-            <span className="text-[0.55rem] tabular-nums text-ink-faint">{events.length}</span>
+            <span className="text-[0.78rem] tabular-nums text-ink-faint">{events.length}</span>
           </button>
         </div>
         <button
@@ -268,18 +268,18 @@ export function ContentManager({ news, events }: { news: NewsRow[]; events: Even
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="badge badge-neutral text-[0.55rem]">{post.tag}</span>
-                        <span className={cn("badge text-[0.55rem]", isHidden ? "badge-warning" : "badge-positive")}>
+                        <span className="badge badge-neutral text-[0.78rem]">{post.tag}</span>
+                        <span className={cn("badge text-[0.78rem]", isHidden ? "badge-warning" : "badge-positive")}>
                           {isHidden ? "Снято с публикации" : "Опубликовано"}
                         </span>
                       </div>
                       <Link
                         href={`/news/${post.slug}`}
-                        className="mt-1 block truncate text-[0.8rem] font-medium text-ink transition-opacity hover:opacity-60"
+                        className="mt-1 block truncate text-base font-medium text-ink transition-opacity hover:opacity-60"
                       >
                         {post.title}
                       </Link>
-                      <p className="mt-0.5 text-[0.62rem] text-ink-muted">
+                      <p className="mt-0.5 text-sm text-ink-muted">
                         {post.author} · {post.publishedAt ? formatDateShort(post.publishedAt) : "черновик"} · {post.readingTime} мин
                       </p>
                     </div>
@@ -323,18 +323,18 @@ export function ContentManager({ news, events }: { news: NewsRow[]; events: Even
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="badge badge-neutral text-[0.55rem]">{meta.label}</span>
-                        <span className={cn("badge text-[0.55rem]", isHidden ? "badge-warning" : "badge-positive")}>
+                        <span className="badge badge-neutral text-[0.78rem]">{meta.label}</span>
+                        <span className={cn("badge text-[0.78rem]", isHidden ? "badge-warning" : "badge-positive")}>
                           {isHidden ? "Скрыто" : "На сайте"}
                         </span>
                       </div>
                       <Link
                         href={`/events/${event.slug}`}
-                        className="mt-1 block truncate text-[0.8rem] font-medium text-ink transition-opacity hover:opacity-60"
+                        className="mt-1 block truncate text-base font-medium text-ink transition-opacity hover:opacity-60"
                       >
                         {event.title}
                       </Link>
-                      <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[0.62rem] text-ink-muted">
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-ink-muted">
                         <span className="inline-flex items-center gap-1">
                           <CalendarDays className="size-3 text-ink-faint" aria-hidden="true" />
                           {formatDateShort(event.startsAt)}
@@ -369,7 +369,7 @@ export function ContentManager({ news, events }: { news: NewsRow[]; events: Even
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3 text-[0.62rem] uppercase tracking-[0.12em] text-ink-muted">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3 text-sm uppercase tracking-[0.12em] text-ink-muted">
         <span>
           Обновлено <span className="text-ink">{timeAgo(new Date())}</span> · {news.length} новостей и {events.length} событий
         </span>

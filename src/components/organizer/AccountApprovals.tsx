@@ -145,11 +145,11 @@ export function AccountApprovals() {
     <div className="space-y-8">
       <section>
         <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-line pb-3">
-          <h2 className="text-[0.95rem] font-medium text-ink">
+          <h2 className="text-lg font-medium text-ink">
             Ожидают проверки
             <span className="ml-2 text-ink-faint">{pending.length}</span>
           </h2>
-          <p className="text-[0.68rem] text-ink-muted">
+          <p className="text-sm text-ink-muted">
             Сверьте имя, фамилию и уровень — эти данные увидит лига.
           </p>
         </div>
@@ -170,23 +170,23 @@ export function AccountApprovals() {
                     <Avatar firstName={draft.firstName} lastName={draft.lastName} size="md" />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                        <p className="text-[0.8rem] font-medium text-ink">
+                        <p className="text-base font-medium text-ink">
                           {draft.firstName || "Без имени"} {draft.lastName}
                         </p>
                         <span className={cn("badge", STATUS_BADGE[account.status])}>
                           {STATUS_LABEL[account.status]}
                         </span>
-                        <span className="inline-flex items-center gap-1 text-[0.65rem] text-ink-faint">
+                        <span className="inline-flex items-center gap-1 text-sm text-ink-faint">
                           <Clock3 className="size-3" aria-hidden="true" />
                           {timeAgo(account.submittedAt)}
                         </span>
                       </div>
-                      <p className="mt-1 inline-flex items-center gap-1.5 text-[0.68rem] text-ink-muted">
+                      <p className="mt-1 inline-flex items-center gap-1.5 text-sm text-ink-muted">
                         <Mail className="size-3" aria-hidden="true" />
                         {account.email}
                         {account.phone && <span className="text-ink-faint">· {account.phone}</span>}
                       </p>
-                      <p className="mt-1 text-[0.66rem] text-ink-faint">
+                      <p className="mt-1 text-sm text-ink-faint">
                         Уровень при регистрации: {CATEGORY_BY_SLUG[account.level]?.name ?? account.level}
                       </p>
                     </div>
@@ -259,7 +259,7 @@ export function AccountApprovals() {
 
       <section>
         <div className="border-b border-line pb-3">
-          <h2 className="text-[0.95rem] font-medium text-ink">Проверенные аккаунты</h2>
+          <h2 className="text-lg font-medium text-ink">Проверенные аккаунты</h2>
         </div>
         {processed.length === 0 ? (
           <p className="py-6 text-sm text-ink-muted">Пока никто не проходил проверку.</p>
@@ -269,10 +269,10 @@ export function AccountApprovals() {
               <li key={account.id} className="flex flex-wrap items-center gap-3 py-3">
                 <Avatar firstName={account.firstName} lastName={account.lastName} size="sm" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[0.78rem] font-medium text-ink">
+                  <p className="truncate text-[0.95rem] font-medium text-ink">
                     {account.firstName} {account.lastName}
                   </p>
-                  <p className="mt-0.5 truncate text-[0.65rem] text-ink-muted">
+                  <p className="mt-0.5 truncate text-sm text-ink-muted">
                     {account.email}
                     <span className="mx-1.5 text-ink-faint">·</span>
                     {CATEGORY_BY_SLUG[account.level]?.name ?? account.level}

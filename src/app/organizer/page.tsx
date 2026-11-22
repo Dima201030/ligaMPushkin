@@ -32,7 +32,7 @@ export default async function OrganizerDashboardPage() {
         title="Обзор лиги"
         description="Всё, что требует внимания сегодня: новые заявки, матчи на корте и турниры, которые готовятся к старту."
         meta={
-          <span className="inline-flex items-center gap-2 text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted">
+          <span className="inline-flex items-center gap-2 text-[0.78rem] uppercase tracking-[0.14em] text-ink-muted">
             <CircleDot className="size-3.5 text-positive" aria-hidden="true" />
             Сезон 2026
           </span>
@@ -94,7 +94,7 @@ export default async function OrganizerDashboardPage() {
               title="Заявки на подтверждение"
               description="Свежие регистрации по всем турнирам лиги"
               action={
-                <Link href="/organizer/tournaments" className="link-arrow text-xs">
+                <Link href="/organizer/tournaments" className="link-arrow text-sm">
                   Все турниры
                   <ArrowRight className="size-3.5" aria-hidden="true" />
                 </Link>
@@ -120,7 +120,7 @@ export default async function OrganizerDashboardPage() {
                 title="На корте"
                 description={live.length > 0 ? `${live.length} матча идут сейчас` : "Сейчас игр нет"}
                 action={
-                  <Link href="/organizer/matches" className="link-arrow text-xs">
+                  <Link href="/organizer/matches" className="link-arrow text-sm">
                     К матчам
                     <ArrowRight className="size-3.5" aria-hidden="true" />
                   </Link>
@@ -140,7 +140,7 @@ export default async function OrganizerDashboardPage() {
                 title="Ближайшие турниры"
                 description="Готовность к старту и регистрация"
                 action={
-                  <Link href="/organizer/tournaments" className="link-arrow text-xs">
+                  <Link href="/organizer/tournaments" className="link-arrow text-sm">
                     Все
                     <ArrowRight className="size-3.5" aria-hidden="true" />
                   </Link>
@@ -159,10 +159,10 @@ export default async function OrganizerDashboardPage() {
                           className="block py-3 transition-colors"
                         >
                           <div className="flex items-center justify-between gap-3">
-                            <p className="truncate text-[0.8rem] font-bold text-ink">{tournament.title}</p>
+                            <p className="truncate text-base font-bold text-ink">{tournament.title}</p>
                             <StatusPill status={tournament.status} className="shrink-0" />
                           </div>
-                          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[0.64rem] text-ink-muted">
+                          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
                             <span>{formatDateShort(tournament.startsAt)}</span>
                             <span className="text-ink-faint">·</span>
                             <CategoryBadge category={tournament.category} withName={false} />
@@ -183,7 +183,7 @@ export default async function OrganizerDashboardPage() {
               title="Последние результаты"
               description="Завершённые матчи и опубликованные счёты"
               action={
-                <Link href="/organizer/matches" className="link-arrow text-xs">
+                <Link href="/organizer/matches" className="link-arrow text-sm">
                   Внести счёт
                   <ArrowRight className="size-3.5" aria-hidden="true" />
                 </Link>
@@ -238,8 +238,8 @@ export default async function OrganizerDashboardPage() {
                         <Icon className="size-4" aria-hidden="true" />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block text-[0.8rem] font-medium text-ink transition-opacity group-hover:opacity-60">{action.label}</span>
-                        <span className="block text-[0.64rem] text-ink-muted">{action.hint}</span>
+                        <span className="block text-base font-medium text-ink transition-opacity group-hover:opacity-60">{action.label}</span>
+                        <span className="block text-sm text-ink-muted">{action.hint}</span>
                       </span>
                       <ArrowRight className="size-3.5 shrink-0 text-ink-faint transition-transform group-hover:translate-x-0.5 group-hover:text-ink" aria-hidden="true" />
                     </Link>
@@ -254,12 +254,12 @@ export default async function OrganizerDashboardPage() {
                   <li key={entry.id} className="py-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="truncate text-[0.78rem] font-medium text-ink">{entry.match}</p>
-                        <p className="mt-0.5 text-[0.64rem] text-ink-muted">{entry.reason}</p>
+                        <p className="truncate text-[0.95rem] font-medium text-ink">{entry.match}</p>
+                        <p className="mt-0.5 text-sm text-ink-muted">{entry.reason}</p>
                       </div>
                       <span
                         className={cn(
-                          "shrink-0 text-[0.68rem] font-medium tabular-nums",
+                          "shrink-0 text-sm font-medium tabular-nums",
                           entry.delta >= 0 ? "text-positive" : "text-negative",
                         )}
                       >
@@ -271,7 +271,7 @@ export default async function OrganizerDashboardPage() {
                 ))}
               </ul>
               <div className="border-t border-line py-3">
-                <Link href="/organizer/ratings" className="link-arrow text-xs">
+                <Link href="/organizer/ratings" className="link-arrow text-sm">
                   Управление рейтингом
                   <ArrowRight className="size-3.5" aria-hidden="true" />
                 </Link>
@@ -283,16 +283,16 @@ export default async function OrganizerDashboardPage() {
                 {data.audit.map((entry) => (
                   <li key={entry.id} className="py-3">
                     <div className="flex items-start gap-2.5">
-                      <span className="mt-0.5 grid size-6 shrink-0 place-items-center border border-line text-[0.55rem] tabular-nums text-ink-muted">
+                      <span className="mt-0.5 grid size-6 shrink-0 place-items-center border border-line text-[0.78rem] tabular-nums text-ink-muted">
                         {entry.actor.charAt(0)}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[0.72rem] leading-snug text-ink-soft">
+                        <p className="text-sm leading-snug text-ink-soft">
                           <span className="font-bold text-ink">{entry.actor}</span> {entry.action.toLowerCase()}
                         </p>
-                        <p className="mt-0.5 truncate text-[0.62rem] text-ink-muted">{entry.entity}</p>
+                        <p className="mt-0.5 truncate text-sm text-ink-muted">{entry.entity}</p>
                       </div>
-                      <span className="shrink-0 text-[0.58rem] text-ink-faint">{timeAgo(entry.createdAt)}</span>
+                      <span className="shrink-0 text-[0.78rem] text-ink-faint">{timeAgo(entry.createdAt)}</span>
                     </div>
                   </li>
                 ))}
@@ -304,19 +304,19 @@ export default async function OrganizerDashboardPage() {
               <div className="mt-3 flex items-end justify-between gap-3">
                 <div>
                   <p className="display text-[1.9rem] leading-none tabular-nums">412 500 ₽</p>
-                  <p className="mt-2 text-[0.64rem] text-ink-muted">собрано взносов в 2026</p>
+                  <p className="mt-2 text-sm text-ink-muted">собрано взносов в 2026</p>
                 </div>
                 <Wallet className="size-4 text-ink-muted" aria-hidden="true" />
               </div>
               <div className="mt-4 h-px bg-line">
                 <div className="h-px w-[72%] bg-ink" />
               </div>
-              <p className="mt-2 text-[0.62rem] text-ink-faint">72% от плана сезона</p>
+              <p className="mt-2 text-sm text-ink-faint">72% от плана сезона</p>
             </Panel>
           </aside>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4 text-[0.66rem] text-ink-muted">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4 text-sm text-ink-muted">
           <span>
             Данные обновлены {formatTime(new Date())} · демо-режим на мок-данных
           </span>

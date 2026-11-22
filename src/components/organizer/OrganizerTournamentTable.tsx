@@ -67,14 +67,14 @@ export function OrganizerTournamentTable({ tournaments }: { tournaments: Tournam
                 type="button"
                 onClick={() => setFilter(item.value)}
                 className={cn(
-                  "inline-flex items-baseline gap-1.5 text-[0.68rem] uppercase tracking-[0.12em] transition-colors",
+                  "inline-flex items-baseline gap-1.5 text-sm uppercase tracking-[0.12em] transition-colors",
                   filter === item.value
                     ? "text-ink underline decoration-1 underline-offset-[6px]"
                     : "text-ink-muted hover:text-ink",
                 )}
               >
                 {item.label}
-                <span className="text-[0.58rem] tabular-nums text-ink-faint">{count}</span>
+                <span className="text-[0.78rem] tabular-nums text-ink-faint">{count}</span>
               </button>
             );
           })}
@@ -84,14 +84,14 @@ export function OrganizerTournamentTable({ tournaments }: { tournaments: Tournam
             <span className="sr-only">Поиск турнира</span>
             <Search className="pointer-events-none absolute left-0 top-1/2 size-3.5 -translate-y-1/2 text-ink-faint" aria-hidden="true" />
             <input
-              className="field min-h-[34px] border-0 border-b border-line bg-transparent pl-6 text-xs focus:border-ink"
+              className="field min-h-11 border-0 border-b border-line bg-transparent pl-6 text-sm focus:border-ink"
               placeholder="Название или slug"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
           </label>
           <select
-            className="field min-h-[34px] w-auto border-0 border-b border-line bg-transparent text-xs focus:border-ink"
+            className="field min-h-11 w-auto border-0 border-b border-line bg-transparent text-sm focus:border-ink"
             value={category}
             onChange={(event) => setCategory(event.target.value)}
             aria-label="Категория"
@@ -106,7 +106,7 @@ export function OrganizerTournamentTable({ tournaments }: { tournaments: Tournam
         </div>
       </div>
 
-      <p className="text-[0.62rem] uppercase tracking-[0.14em] text-ink-muted">
+      <p className="text-sm uppercase tracking-[0.14em] text-ink-muted">
         {filtered.length} из {tournaments.length} турниров
       </p>
 
@@ -152,17 +152,17 @@ export function OrganizerTournamentTable({ tournaments }: { tournaments: Tournam
                       </Link>
                       <div className="mt-1 flex flex-wrap items-center gap-1.5">
                         <CategoryBadge category={tournament.category} withName={false} />
-                        <span className="text-[0.64rem] text-ink-muted">{TYPE_BY_VALUE[tournament.type].label}</span>
-                        <span className="text-[0.64rem] text-ink-faint">· {tournament.slug}</span>
+                        <span className="text-sm text-ink-muted">{TYPE_BY_VALUE[tournament.type].label}</span>
+                        <span className="text-sm text-ink-faint">· {tournament.slug}</span>
                       </div>
                     </td>
                     <td>
                       <StatusPill status={tournament.status} />
                     </td>
-                    <td className="whitespace-nowrap text-[0.72rem] text-ink-soft">
+                    <td className="whitespace-nowrap text-sm text-ink-soft">
                       {formatDateShort(tournament.startsAt)}
                       {tournament.endsAt && (
-                        <span className="block text-[0.64rem] text-ink-faint">
+                        <span className="block text-sm text-ink-faint">
                           до {formatDateShort(tournament.endsAt)}
                         </span>
                       )}
@@ -175,18 +175,18 @@ export function OrganizerTournamentTable({ tournaments }: { tournaments: Tournam
                             style={{ width: `${fill}%` }}
                           />
                         </div>
-                        <span className="text-[0.68rem] tabular-nums text-ink-soft">
+                        <span className="text-sm tabular-nums text-ink-soft">
                           {confirmed}/{tournament.maxParticipants}
                         </span>
                         {pending > 0 && (
-                          <span className="badge badge-warning text-[0.55rem]">+{pending}</span>
+                          <span className="badge badge-warning text-[0.78rem]">+{pending}</span>
                         )}
                       </div>
                     </td>
-                    <td className="whitespace-nowrap text-[0.7rem] text-ink-soft">
+                    <td className="whitespace-nowrap text-sm text-ink-soft">
                       {FORMAT_LABEL[tournament.format]}
                     </td>
-                    <td className="whitespace-nowrap text-right text-[0.72rem] tabular-nums text-ink-soft">
+                    <td className="whitespace-nowrap text-right text-sm tabular-nums text-ink-soft">
                       {tournament.entryFee ? formatMoney(tournament.entryFee) : "—"}
                     </td>
                     <td>
@@ -215,7 +215,7 @@ export function OrganizerTournamentTable({ tournaments }: { tournaments: Tournam
         </div>
       )}
 
-      <p className="text-[0.64rem] text-ink-faint">
+      <p className="text-sm text-ink-faint">
         Статусы: {["draft", "registration_open", "registration_closed", "scheduled", "live", "completed"].map((status) => STATUS_BY_VALUE[status as keyof typeof STATUS_BY_VALUE].label).join(" · ")}
       </p>
     </div>

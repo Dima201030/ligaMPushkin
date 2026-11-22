@@ -212,8 +212,8 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
           </dl>
 
           <div className="mt-6 border-y border-line py-4">
-            <p className="text-[0.58rem] uppercase tracking-[0.16em] text-ink-muted">Что дальше</p>
-            <ol className="mt-2 space-y-1.5 text-[0.78rem] leading-relaxed text-ink-soft">
+            <p className="text-[0.78rem] uppercase tracking-[0.16em] text-ink-muted">Что дальше</p>
+            <ol className="mt-2 space-y-1.5 text-[0.95rem] leading-relaxed text-ink-soft">
               <li>1. Проверьте регламент и взнос в карточке турнира.</li>
               <li>2. Подтвердите заявки игроков.</li>
               <li>3. Сгенерируйте сетку после закрытия регистрации.</li>
@@ -260,7 +260,7 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
               <CategoryBadge category={form.category} />
               <span className="badge badge-neutral">{TYPE_BY_VALUE[form.type].label}</span>
             </div>
-            <div className="mt-4 space-y-2 border-t border-line pt-4 text-[0.72rem] text-ink-muted">
+            <div className="mt-4 space-y-2 border-t border-line pt-4 text-sm text-ink-muted">
               <p className="flex items-center gap-2">
                 <CalendarDays className="size-3.5 text-ink-faint" aria-hidden="true" />
                 {form.startsAt ? `${formatDate(form.startsAt)}, ${formatTime(form.startsAt)}` : "Дата не выбрана"}
@@ -304,7 +304,7 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
                 value={form.title}
                 onChange={(event) => update("title", event.target.value)}
               />
-              {attempted && errors.title && <span className="mt-1 block text-[0.68rem] text-negative">{errors.title}</span>}
+              {attempted && errors.title && <span className="mt-1 block text-sm text-negative">{errors.title}</span>}
             </label>
 
             <label className="block">
@@ -367,8 +367,8 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
                   className="mt-1 size-3.5 accent-[var(--color-accent)]"
                 />
                 <span>
-                  <span className="block text-[0.78rem] font-medium text-ink">{item.label}</span>
-                  <span className="mt-0.5 block text-[0.66rem] leading-relaxed text-ink-muted">{item.description}</span>
+                  <span className="block text-[0.95rem] font-medium text-ink">{item.label}</span>
+                  <span className="mt-0.5 block text-sm leading-relaxed text-ink-muted">{item.description}</span>
                 </span>
               </label>
             ))}
@@ -387,7 +387,7 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
                 onChange={(event) => update("maxParticipants", event.target.value)}
               />
               {attempted && errors.maxParticipants && (
-                <span className="mt-1 block text-[0.68rem] text-negative">{errors.maxParticipants}</span>
+                <span className="mt-1 block text-sm text-negative">{errors.maxParticipants}</span>
               )}
             </label>
             <label className="block">
@@ -402,7 +402,7 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
               />
             </label>
             <div className="flex items-end pb-1">
-              <p className="text-[0.66rem] leading-relaxed text-ink-faint">
+              <p className="text-sm leading-relaxed text-ink-faint">
                 Для парных турниров вместимость считается в парах.
               </p>
             </div>
@@ -416,11 +416,11 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
               onChange={(event) => update("regulations", event.target.value)}
             />
             {attempted && errors.regulations && (
-              <span className="mt-1 block text-[0.68rem] text-negative">{errors.regulations}</span>
+              <span className="mt-1 block text-sm text-negative">{errors.regulations}</span>
             )}
             <button
               type="button"
-              className="mt-2 text-[0.68rem] text-ink-muted underline decoration-line underline-offset-4 transition-colors hover:text-ink hover:decoration-ink"
+              className="mt-2 text-sm text-ink-muted underline decoration-line underline-offset-4 transition-colors hover:text-ink hover:decoration-ink"
               onClick={() => update("regulations", REGULATION_PRESETS[form.format])}
             >
               Подставить типовой регламент для формата «{FORMAT_LABEL[form.format]}»
@@ -438,7 +438,7 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
                 value={form.startsAt}
                 onChange={(event) => update("startsAt", event.target.value)}
               />
-              {attempted && errors.startsAt && <span className="mt-1 block text-[0.68rem] text-negative">{errors.startsAt}</span>}
+              {attempted && errors.startsAt && <span className="mt-1 block text-sm text-negative">{errors.startsAt}</span>}
             </label>
             <label className="block">
               <span className="field-label">Регистрация закрывается</span>
@@ -449,7 +449,7 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
                 onChange={(event) => update("registrationClosesAt", event.target.value)}
               />
               {attempted && errors.registrationClosesAt && (
-                <span className="mt-1 block text-[0.68rem] text-negative">{errors.registrationClosesAt}</span>
+                <span className="mt-1 block text-sm text-negative">{errors.registrationClosesAt}</span>
               )}
             </label>
           </div>
@@ -487,21 +487,21 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
                     onChange={() => update("publish", item.value as FormState["publish"])}
                     className="size-3.5 accent-[var(--color-accent)]"
                   />
-                  <span className="text-[0.76rem] font-medium text-ink">{item.label}</span>
+                  <span className="text-[0.9375rem] font-medium text-ink">{item.label}</span>
                 </span>
-                <span className="mt-1 block pl-5 text-[0.64rem] text-ink-muted">{item.hint}</span>
+                <span className="mt-1 block pl-5 text-sm text-ink-muted">{item.hint}</span>
               </label>
             ))}
           </div>
 
           {attempted && !isValid && (
-            <p role="alert" className="mt-4 flex items-start gap-2 border border-negative/30 px-3 py-2 text-[0.7rem] text-negative">
+            <p role="alert" className="mt-4 flex items-start gap-2 border border-negative/30 px-3 py-2 text-sm text-negative">
               <AlertCircle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
               Проверьте выделенные поля: {Object.values(errors).length} замечаний.
             </p>
           )}
           {submitError && (
-            <p role="alert" className="mt-4 flex items-start gap-2 border border-negative/30 px-3 py-2 text-[0.7rem] text-negative">
+            <p role="alert" className="mt-4 flex items-start gap-2 border border-negative/30 px-3 py-2 text-sm text-negative">
               <AlertCircle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
               {submitError}
             </p>
@@ -542,10 +542,10 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
             <p className="mt-3 text-base font-medium leading-snug text-ink">
               {form.title || "Название турнира"}
             </p>
-            <p className="mt-1.5 line-clamp-3 text-[0.7rem] leading-relaxed text-ink-muted">
+            <p className="mt-1.5 line-clamp-3 text-sm leading-relaxed text-ink-muted">
               {form.description || "Описание появится здесь. Расскажите игрокам о формате и атмосфере турнира."}
             </p>
-            <div className="mt-4 space-y-2 border-t border-line pt-4 text-[0.7rem] text-ink-muted">
+            <div className="mt-4 space-y-2 border-t border-line pt-4 text-sm text-ink-muted">
               <p className="flex items-center gap-2">
                 <CalendarDays className="size-3.5 text-ink-faint" aria-hidden="true" />
                 {form.startsAt ? `${formatDate(form.startsAt)}, ${formatTime(form.startsAt)}` : "Дата не выбрана"}
@@ -578,7 +578,7 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
             </div>
             <ul className="mt-4 space-y-2">
               {checklist.map((item) => (
-                <li key={item.label} className="flex items-center gap-2 text-[0.72rem]">
+                <li key={item.label} className="flex items-center gap-2 text-sm">
                   <span
                     className={cn(
                       "grid size-4 shrink-0 place-items-center border",
