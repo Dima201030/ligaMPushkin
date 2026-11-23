@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   ArrowUpRight,
   Download,
+  GripVertical,
   Info,
   Network,
   Printer,
@@ -29,11 +30,15 @@ import {
   fetchOrganizerBracket,
   generateBracket,
   publishBracket,
+  swapBracketSlots,
   type BracketMeta,
+  type BracketSlotRef,
 } from "@/lib/api/matches";
 import { ApiError } from "@/lib/api/client";
 import { CategoryBadge } from "@/components/ui/Badges";
 import { DemoNote, Panel } from "./OrganizerUI";
+
+const SLOT_DND_MIME = "application/x-pairly-bracket-slot";
 
 export interface BracketSource {
   id: string;
@@ -66,9 +71,15 @@ function shuffle<T>(items: T[], seed: number) {
   return result;
 }
 
-function sideToSlot(side: Match["side1"]): BracketSlot {
-  if (side.label === "Пропуск" && !side.playerIds.length) {
-    return { isBye: true, placeholder: "Пропуск" };
+function sideToSlot(side: Match["side1"], isBye?: boolean): BracketSlot {
+  if (isBye || (side.label === "Пропуск" && !side.playerIds.length)) {
+    return {
+      isBye: true,
+      placeholder: "Пропуск",
+      playerId: side.playerIds[0],
+      seed: side.seed,
+      name: side.playerIds.length ? side.label : undefined,
+    };
   }
   return {
     playerId: side.playerIds[0],
@@ -78,9 +89,35 @@ function sideToSlot(side: Match["side1"]): BracketSlot {
   };
 }
 
-function matchesToRounds(matches: Match[]): BracketRound[] {
-  const playable = matches.filter((match) => match.status !== "bye" || match.side1.playerIds.length || match.side2.playerIds.length);
-  const groups = new Map<string, BracketMatch[]>();
+type StudioMatch = BracketMatch & {
+  matchId: string;
+  swappable1?: boolean;
+  swappable2?: boolean;
+};
+
+type StudioRound = {
+  index: number;
+  label: string;
+  matches: StudioMatch[];
+};
+
+function isSlotSwappable(match: Match, format: TournamentFormat): boolean {
+  const stage = match.bracketStage || match.round;
+  if (stage === "group") return true;
+  if (stage === "main" || stage === "lower") {
+    if (format === "round_robin") return true;
+    return (match.roundIndex ?? 0) === 0;
+  }
+  return false;
+}
+
+function slotCanDrag(slot: BracketSlot): boolean {
+  return Boolean(slot.playerId) || Boolean(slot.isBye);
+}
+
+function matchesToRounds(matches: Match[], format: TournamentFormat): StudioRound[] {
+  const playable = matches.filter((match) => match.status !== "bye" || match.side1.playerIds.length || match.side2.playerIds.length || match.side1Bye || match.side2Bye);
+  const groups = new Map<string, StudioMatch[]>();
   const order: string[] = [];
   for (const match of playable) {
     const label = match.stage || match.round;
@@ -88,14 +125,21 @@ function matchesToRounds(matches: Match[]): BracketRound[] {
       groups.set(label, []);
       order.push(label);
     }
+    const slot1 = sideToSlot(match.side1, match.side1Bye);
+    const slot2 = sideToSlot(match.side2, match.side2Bye);
+    const stageOk = isSlotSwappable(match, format);
+    const statusOk = match.status === "scheduled" || match.status === "bye" || match.status === "live";
     groups.get(label)!.push({
       id: match.id.slice(0, 8),
+      matchId: match.id,
       roundIndex: order.indexOf(label),
       position: groups.get(label)!.length,
-      slot1: sideToSlot(match.side1),
-      slot2: sideToSlot(match.side2),
+      slot1,
+      slot2,
       automaticWinner:
         match.status === "bye" && (match.winner === 1 || match.winner === 2) ? match.winner : undefined,
+      swappable1: stageOk && statusOk && slotCanDrag(slot1),
+      swappable2: stageOk && statusOk && slotCanDrag(slot2),
     });
   }
   return order.map((label, index) => ({
@@ -105,15 +149,65 @@ function matchesToRounds(matches: Match[]): BracketRound[] {
   }));
 }
 
-function SlotRow({ slot, winner }: { slot: BracketSlot; winner?: boolean }) {
+function SlotRow({
+  slot,
+  winner,
+  dragRef,
+  droppable,
+  disabled,
+  onDragStart,
+  onDrop,
+}: {
+  slot: BracketSlot;
+  winner?: boolean;
+  dragRef?: BracketSlotRef;
+  droppable?: boolean;
+  disabled?: boolean;
+  onDragStart?: (ref: BracketSlotRef) => void;
+  onDrop?: (from: BracketSlotRef, to: BracketSlotRef) => void;
+}) {
   const label = slot.name ?? slot.placeholder ?? (slot.isBye ? "Пропуск" : "—");
+  const canDrag = Boolean(dragRef) && droppable && !disabled;
+  const [over, setOver] = useState(false);
+
   return (
     <div
       className={cn(
-        "flex min-h-[30px] items-center gap-1.5 px-2 py-1 text-[0.7rem]",
+        "flex min-h-[30px] items-center gap-1.5 px-2 py-1 text-[0.7rem] transition-colors",
         winner ? "bg-canvas-deep" : "",
+        canDrag && "cursor-grab active:cursor-grabbing",
+        over && droppable && "bg-accent/10 outline outline-1 outline-accent",
       )}
+      draggable={canDrag}
+      onDragStart={(event) => {
+        if (!dragRef || !canDrag) return;
+        event.dataTransfer.setData(SLOT_DND_MIME, JSON.stringify(dragRef));
+        event.dataTransfer.effectAllowed = "move";
+        onDragStart?.(dragRef);
+      }}
+      onDragOver={(event) => {
+        if (!droppable || disabled || !dragRef) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+        setOver(true);
+      }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(event) => {
+        setOver(false);
+        if (!droppable || disabled || !dragRef) return;
+        event.preventDefault();
+        const raw = event.dataTransfer.getData(SLOT_DND_MIME);
+        if (!raw) return;
+        try {
+          const from = JSON.parse(raw) as BracketSlotRef;
+          if (from.matchId === dragRef.matchId && from.side === dragRef.side) return;
+          onDrop?.(from, dragRef);
+        } catch {
+          /* ignore bad payload */
+        }
+      }}
     >
+      {canDrag && <GripVertical className="size-3 shrink-0 text-ink-faint" aria-hidden="true" />}
       {slot.seed && (
         <span className="grid size-4 shrink-0 place-items-center border border-line text-[0.52rem] tabular-nums text-ink-muted">
           {slot.seed}
@@ -133,7 +227,21 @@ function SlotRow({ slot, winner }: { slot: BracketSlot; winner?: boolean }) {
   );
 }
 
-function MatchCard({ match, isFinal }: { match: BracketMatch; isFinal?: boolean }) {
+function MatchCard({
+  match,
+  isFinal,
+  interactive,
+  disabled,
+  onSwap,
+}: {
+  match: StudioMatch | BracketMatch;
+  isFinal?: boolean;
+  interactive?: boolean;
+  disabled?: boolean;
+  onSwap?: (from: BracketSlotRef, to: BracketSlotRef) => void;
+}) {
+  const studio = match as StudioMatch;
+  const matchId = studio.matchId;
   return (
     <div
       className={cn(
@@ -145,14 +253,40 @@ function MatchCard({ match, isFinal }: { match: BracketMatch; isFinal?: boolean 
         <span>{match.id}</span>
         {match.automaticWinner && <span className="text-positive">bye</span>}
       </div>
-      <SlotRow slot={match.slot1} winner={match.automaticWinner === 1} />
+      <SlotRow
+        slot={match.slot1}
+        winner={match.automaticWinner === 1}
+        dragRef={interactive && matchId && studio.swappable1 ? { matchId, side: 1 } : undefined}
+        droppable={Boolean(interactive && studio.swappable1)}
+        disabled={disabled}
+        onDrop={onSwap}
+      />
       <div className="h-px bg-line" />
-      <SlotRow slot={match.slot2} winner={match.automaticWinner === 2} />
+      <SlotRow
+        slot={match.slot2}
+        winner={match.automaticWinner === 2}
+        dragRef={interactive && matchId && studio.swappable2 ? { matchId, side: 2 } : undefined}
+        droppable={Boolean(interactive && studio.swappable2)}
+        disabled={disabled}
+        onDrop={onSwap}
+      />
     </div>
   );
 }
 
-function BracketTree({ rounds, compact = false }: { rounds: BracketRound[]; compact?: boolean }) {
+function BracketTree({
+  rounds,
+  compact = false,
+  interactive,
+  disabled,
+  onSwap,
+}: {
+  rounds: Array<StudioRound | BracketRound>;
+  compact?: boolean;
+  interactive?: boolean;
+  disabled?: boolean;
+  onSwap?: (from: BracketSlotRef, to: BracketSlotRef) => void;
+}) {
   return (
     <div className="flex gap-3 overflow-x-auto pb-2">
       {rounds.map((round) => (
@@ -163,7 +297,14 @@ function BracketTree({ rounds, compact = false }: { rounds: BracketRound[]; comp
           </div>
           <div className="flex flex-1 flex-col justify-around gap-2.5">
             {round.matches.map((match) => (
-              <MatchCard key={match.id} match={match} isFinal={round.matches.length === 1} />
+              <MatchCard
+                key={`${"matchId" in match ? match.matchId : match.id}`}
+                match={match as StudioMatch}
+                isFinal={round.matches.length === 1}
+                interactive={interactive}
+                disabled={disabled}
+                onSwap={onSwap}
+              />
             ))}
           </div>
         </div>
@@ -343,9 +484,13 @@ export function BracketStudio({
     [entries, format, thirdPlace, groupSize, qualifiers],
   );
 
-  const apiRounds = useMemo(() => matchesToRounds(apiMatches), [apiMatches]);
+  const apiRounds = useMemo(() => matchesToRounds(apiMatches, format), [apiMatches, format]);
   const showApi = apiMatches.length > 0 && !preferPreview;
   const draw = showApi ? null : previewDraw;
+  const canDragSlots = showApi && apiMatches.every((match) => {
+    const scored = ["completed", "walkover", "disqualified"].includes(match.status);
+    return !scored;
+  });
 
   function pickSource(id: string) {
     setSourceId(id);
@@ -417,6 +562,24 @@ export function BracketStudio({
       setNotice(`Сетка опубликована (версия ${meta.version}). Матчи видны на странице турнира.`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось опубликовать сетку");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleSlotSwap(from: BracketSlotRef, to: BracketSlotRef) {
+    if (!source || busy) return;
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const result = await swapBracketSlots(source.id, from, to);
+      setApiMatches(result.matches);
+      setBracketMeta(result.bracket);
+      setPreferPreview(false);
+      setNotice("Слоты поменяли местами. Скоринг и структура сетки сохранены.");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Не удалось поменять слоты");
     } finally {
       setBusy(false);
     }
@@ -551,7 +714,8 @@ export function BracketStudio({
         </Panel>
 
         <DemoNote>
-          «Сохранить сетку» генерирует матчи в API. «Опубликовать» открывает сетку на публичной странице турнира.
+          «Сохранить сетку» пишет матчи в API. После сохранения перетаскивайте игроков/пропуски в первом раунде.
+          «Опубликовать» открывает сетку на сайте. После первого сыгранного матча перестановка блокируется.
         </DemoNote>
       </aside>
 
@@ -654,10 +818,17 @@ export function BracketStudio({
                   <div className="mb-3">
                     <h2 className="text-[0.95rem] font-medium text-ink">Матчи сетки</h2>
                     <p className="mt-0.5 text-[0.66rem] text-ink-muted">
-                      Данные из API. После публикации матчи появятся на публичной странице.
+                      {canDragSlots
+                        ? "Перетащите игрока или пропуск на другой слот первого раунда — без пересоздания сетки."
+                        : "Данные из API. Перестановка недоступна: уже есть сыгранные матчи."}
                     </p>
                   </div>
-                  <BracketTree rounds={apiRounds} />
+                  <BracketTree
+                    rounds={apiRounds}
+                    interactive={canDragSlots}
+                    disabled={busy}
+                    onSwap={handleSlotSwap}
+                  />
                 </div>
                 <div className="flex flex-wrap items-center gap-3 border-t border-line pt-3 text-[0.62rem] text-ink-muted">
                   <Link href="/organizer/matches" className="inline-flex items-center gap-1.5 text-ink-soft hover:text-ink">

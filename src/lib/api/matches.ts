@@ -111,13 +111,18 @@ export function mapMatch(raw: ApiMatch, fallbackTitle = "Турнир"): Match {
     type,
     stage: raw.round_label || raw.stage,
     round: raw.stage || `R${raw.round_index}`,
+    roundIndex: raw.round_index,
+    bracketStage: raw.stage,
     scheduledAt: raw.scheduled_at ?? new Date().toISOString(),
     court: raw.court ?? undefined,
     status,
     side1: mapSide(raw.side1),
     side2: mapSide(raw.side2),
+    side1Bye: Boolean(raw.side1?.is_bye),
+    side2Bye: Boolean(raw.side2?.is_bye),
     score: raw.score_text ?? undefined,
     winner: raw.winner_side === 1 || raw.winner_side === 2 ? (raw.winner_side as 1 | 2) : null,
+    isBye: Boolean(raw.is_bye) || status === "bye",
     isDoubles: ["doubles", "mixed", "teams"].includes(type),
     version: raw.version,
   };
@@ -269,6 +274,45 @@ export async function generateBracket(
           matchCount: data.draw.match_count,
         }
       : undefined,
+    matches: (data?.matches ?? []).map((item) => mapMatch(item, title)),
+  };
+}
+
+export type BracketSlotRef = {
+  matchId: string;
+  side: 1 | 2;
+};
+
+export async function swapBracketSlots(
+  tournamentId: string,
+  a: BracketSlotRef,
+  b: BracketSlotRef,
+): Promise<{ bracket: BracketMeta; matches: Match[] }> {
+  const { response, data } = await apiRequest<{
+    bracket: {
+      status: string;
+      version: number;
+      published_at?: string | null;
+      third_place: boolean;
+      format: string;
+      match_count?: number;
+    };
+    matches: ApiMatch[];
+  } & ApiErrorBody>(`/organizer/tournaments/${encodeURIComponent(tournamentId)}/bracket/swap`, {
+    method: "POST",
+    body: JSON.stringify({
+      a: { match_id: a.matchId, side: a.side },
+      b: { match_id: b.matchId, side: b.side },
+    }),
+  });
+  if (!response.ok) {
+    throw new ApiError(response.status, data?.code, data?.message ?? "Не удалось поменять слоты");
+  }
+  const title = data?.matches?.[0]?.tournament_title;
+  return {
+    bracket: data?.bracket
+      ? mapBracketMeta(data.bracket)
+      : { status: "draft", version: 0, thirdPlace: false, format: "olympic", matchCount: 0 },
     matches: (data?.matches ?? []).map((item) => mapMatch(item, title)),
   };
 }

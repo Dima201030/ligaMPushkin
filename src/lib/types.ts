@@ -143,13 +143,20 @@ export interface Match {
   type: TournamentType;
   stage: string;
   round: string;
+  /** API round_index — used by bracket studio DnD. */
+  roundIndex?: number;
+  /** API stage key (main/group/lower/…). */
+  bracketStage?: string;
   scheduledAt: string;
   court?: string;
   status: MatchStatus;
   side1: MatchSide;
   side2: MatchSide;
+  side1Bye?: boolean;
+  side2Bye?: boolean;
   score?: string;
   winner: 1 | 2 | null;
+  isBye?: boolean;
   isDoubles: boolean;
   /** Optimistic concurrency token from the API. */
   version?: number;
