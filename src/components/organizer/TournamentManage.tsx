@@ -252,7 +252,9 @@ export function ParticipantsManager({
   }, [activePlayerIds, clubPlayers, playerFilter]);
 
   useEffect(() => {
-    if (!addOpen || clubPlayers.length > 0 || playersLoading) return;
+    // Do not put playersLoading in deps: setPlayersLoading(true) would re-run
+    // this effect, cancel the in-flight fetch, and leave "Загрузка…" forever.
+    if (!addOpen || clubPlayers.length > 0) return;
     let cancelled = false;
     setPlayersLoading(true);
     setPlayersError(null);
@@ -279,7 +281,7 @@ export function ParticipantsManager({
     return () => {
       cancelled = true;
     };
-  }, [addOpen, clubPlayers.length, playersLoading]);
+  }, [addOpen, clubPlayers.length]);
 
   const filtered = rows.filter((row) => {
     const needle = query.trim().toLowerCase();
