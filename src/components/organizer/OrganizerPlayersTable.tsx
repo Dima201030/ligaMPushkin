@@ -148,12 +148,12 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
         </select>
         <Link href="/organizer/applications" className="btn btn-secondary btn-sm ml-auto">
           <Plus className="size-3.5" aria-hidden="true" />
-          Заявки игроков
+          Заявки / объединение
         </Link>
       </div>
 
       <p className="text-[0.62rem] uppercase tracking-[0.14em] text-ink-muted">
-        {rows.length} из {players.length} игроков · верификация нужна для записи на турнир
+        {rows.length} из {players.length} игроков · заготовки без email объединяйте с заявками во вкладке «Заявки»
       </p>
 
       <div className="border-y border-line">
@@ -190,8 +190,11 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
                             {player.lastName} {player.firstName}
                           </span>
                           <span className="block text-[0.6rem] text-ink-faint">
-                            {player.city}
-                            {player.birthYear > 1900 ? ` · ${player.birthYear} г.` : ""}
+                            {player.isPlaceholder ? "без аккаунта" : player.city}
+                            {!player.isPlaceholder && player.birthYear > 1900 ? ` · ${player.birthYear} г.` : ""}
+                            {player.isPlaceholder ? (
+                              <span className="ml-1.5 uppercase tracking-[0.08em] text-warning">заготовка</span>
+                            ) : null}
                           </span>
                         </span>
                       </Link>

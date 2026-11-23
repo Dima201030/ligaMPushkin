@@ -86,6 +86,9 @@ export interface Player {
   verificationStatus?: ProfileVerificationStatus;
   phone?: string;
   avatarUrl?: string;
+  /** Organizer-created player without login; merge with a registration application later. */
+  isPlaceholder?: boolean;
+  email?: string;
 }
 
 export interface Registration {

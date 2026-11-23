@@ -765,6 +765,8 @@ export async function listOrganizerPlayers(query?: string) {
         status: (row.status as Player["status"]) || "active",
         verificationStatus,
         phone: row.phone ?? undefined,
+        email: row.email || undefined,
+        isPlaceholder: Boolean(row.is_placeholder) || !row.email,
       };
     });
     const normalized = query?.toLowerCase();

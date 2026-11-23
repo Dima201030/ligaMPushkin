@@ -71,6 +71,7 @@ export async function fetchOrganizerPlayersList(opts?: { cookie?: string }) {
       phone?: string | null;
       user_status?: string;
       role?: string;
+      is_placeholder?: boolean;
     }>;
   }>("/organizer/players", {
     absolute: true,

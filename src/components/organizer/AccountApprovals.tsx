@@ -1,13 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Check, Clock3, Mail, UserCheck, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Check, Clock3, GitMerge, Mail, UserCheck, X } from "lucide-react";
 import {
   approveOrganizerApplication,
   listOrganizerApplications,
   rejectOrganizerApplication,
   type LeagueApplication,
 } from "@/lib/api/auth";
+import {
+  listPlaceholderPlayers,
+  mergePlaceholderPlayer,
+  type PlaceholderPlayer,
+} from "@/lib/api/organizer-players";
 import type { CategorySlug } from "@/lib/types";
 import { CATEGORIES, CATEGORY_BY_SLUG } from "@/lib/domain";
 import { cn, timeAgo } from "@/lib/utils";
@@ -32,9 +37,22 @@ const STATUS_LABEL: Record<LeagueApplication["status"], string> = {
   rejected: "Отклонён",
 };
 
+function scoreNameMatch(account: LeagueApplication, placeholder: PlaceholderPlayer): number {
+  const a = `${account.lastName} ${account.firstName}`.trim().toLowerCase();
+  const b = `${placeholder.lastName} ${placeholder.firstName}`.trim().toLowerCase();
+  if (a === b) return 3;
+  if (account.lastName.trim().toLowerCase() === placeholder.lastName.trim().toLowerCase()) return 2;
+  if (a.includes(placeholder.lastName.trim().toLowerCase()) || b.includes(account.lastName.trim().toLowerCase())) {
+    return 1;
+  }
+  return 0;
+}
+
 export function AccountApprovals() {
   const [accounts, setAccounts] = useState<LeagueApplication[]>([]);
+  const [placeholders, setPlaceholders] = useState<PlaceholderPlayer[]>([]);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
+  const [mergeTarget, setMergeTarget] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState<string | null>(null);
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -44,8 +62,9 @@ export function AccountApprovals() {
     setLoadState("loading");
     setLoadError(null);
     try {
-      const list = await listOrganizerApplications();
+      const [list, ph] = await Promise.all([listOrganizerApplications(), listPlaceholderPlayers()]);
       setAccounts(list);
+      setPlaceholders(ph);
       setLoadState("ready");
     } catch {
       setLoadState("error");
@@ -118,7 +137,53 @@ export function AccountApprovals() {
     }
   }
 
-  const pending = accounts.filter((account) => account.status === "pending");
+  async function merge(account: LeagueApplication) {
+    const placeholderId = mergeTarget[account.id];
+    if (!placeholderId) {
+      setNotice("Выберите заготовку игрока для объединения.");
+      return;
+    }
+    const ph = placeholders.find((item) => item.id === placeholderId);
+    const label = ph ? `${ph.lastName} ${ph.firstName}` : "заготовку";
+    if (
+      !window.confirm(
+        `Объединить заявку ${account.firstName} ${account.lastName} (${account.email}) с заготовкой ${label}? Сохранятся турниры/рейтинг заготовки; вход — по паролю из заявки.`,
+      )
+    ) {
+      return;
+    }
+
+    setBusyId(account.id);
+    setNotice(null);
+    const result = await mergePlaceholderPlayer(placeholderId, account.id);
+    if (!result.ok) {
+      setNotice(result.error);
+      setBusyId(null);
+      return;
+    }
+    setMergeTarget((current) => {
+      const next = { ...current };
+      delete next[account.id];
+      return next;
+    });
+    await refresh();
+    setNotice(`Заявка связана с ${label}. Игрок может войти с email и паролем из регистрации.`);
+    setBusyId(null);
+  }
+
+  const pending = useMemo(
+    () => accounts.filter((account) => account.status === "pending"),
+    [accounts],
+  );
+  const placeholdersByAccount = useMemo(() => {
+    const map: Record<string, PlaceholderPlayer[]> = {};
+    for (const account of pending) {
+      map[account.id] = [...placeholders].sort(
+        (a, b) => scoreNameMatch(account, b) - scoreNameMatch(account, a),
+      );
+    }
+    return map;
+  }, [pending, placeholders]);
   const processed = accounts
     .filter((account) => account.status !== "pending")
     .sort((a, b) => +new Date(b.reviewedAt ?? b.submittedAt) - +new Date(a.reviewedAt ?? a.submittedAt))
@@ -248,6 +313,43 @@ export function AccountApprovals() {
                       </select>
                     </label>
                   </div>
+
+                  {placeholders.length > 0 ? (
+                    <div className="mt-4 flex flex-wrap items-end gap-3 border-t border-line pt-4">
+                      <label className="min-w-[220px] flex-1">
+                        <span className="field-label">Связать с заготовкой</span>
+                        <select
+                          className="field"
+                          value={mergeTarget[account.id] ?? ""}
+                          onChange={(event) =>
+                            setMergeTarget((current) => ({
+                              ...current,
+                              [account.id]: event.target.value,
+                            }))
+                          }
+                          disabled={disabled}
+                        >
+                          <option value="">Не объединять</option>
+                          {(placeholdersByAccount[account.id] ?? placeholders).map((ph) => (
+                            <option key={ph.id} value={ph.id}>
+                              {ph.lastName} {ph.firstName}
+                              {scoreNameMatch(account, ph) >= 2 ? " · похожее ФИО" : ""}
+                              {` · ${CATEGORY_BY_SLUG[ph.level]?.name ?? ph.level}`}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        disabled={disabled || !mergeTarget[account.id]}
+                        onClick={() => void merge(account)}
+                      >
+                        <GitMerge className="size-3.5" aria-hidden="true" />
+                        Объединить
+                      </button>
+                    </div>
+                  ) : null}
                 </li>
               );
             })}
