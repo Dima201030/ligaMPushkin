@@ -402,6 +402,36 @@ export async function publishBracket(tournamentId: string): Promise<BracketMeta>
     : { status: "published", version: 0, thirdPlace: false, format: "olympic", matchCount: 0 };
 }
 
+/** Backfill playoff A1/B1/… slots from finished group standings. */
+export async function syncBracketQualifiers(
+  tournamentId: string,
+): Promise<{ bracket: BracketMeta; matches: Match[] }> {
+  const { response, data } = await apiRequest<{
+    bracket: {
+      status: string;
+      version: number;
+      published_at?: string | null;
+      third_place: boolean;
+      format: string;
+      match_count?: number;
+    };
+    matches: ApiMatch[];
+  } & ApiErrorBody>(
+    `/organizer/tournaments/${encodeURIComponent(tournamentId)}/bracket/sync-qualifiers`,
+    { method: "POST" },
+  );
+  if (!response.ok) {
+    throw new ApiError(response.status, data?.code, data?.message ?? "Не удалось обновить плей-офф");
+  }
+  const title = data?.matches?.[0]?.tournament_title;
+  return {
+    bracket: data?.bracket
+      ? mapBracketMeta(data.bracket)
+      : { status: "published", version: 0, thirdPlace: false, format: "olympic", matchCount: 0 },
+    matches: (data?.matches ?? []).map((item) => mapMatch(item, title)),
+  };
+}
+
 export async function submitScore(
   matchId: string,
   input: { sets: number[][]; version: number },

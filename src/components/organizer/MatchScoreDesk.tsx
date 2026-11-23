@@ -17,6 +17,7 @@ import { cn, formatDateShort, formatTime } from "@/lib/utils";
 import { ApiError } from "@/lib/api/client";
 import {
   disqualifyMatch,
+  fetchOrganizerMatches,
   parseScoreDraft,
   retireMatch,
   submitScore,
@@ -149,6 +150,16 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
     setItems((current) => current.map((item) => (item.id === next.id ? next : item)));
   }
 
+  /** Reload full list so next-round / A1·B1 qualifier slots update after a result. */
+  async function refreshAfterResult(fallback: Match) {
+    try {
+      const all = await fetchOrganizerMatches();
+      setItems(all);
+    } catch {
+      replaceMatch(fallback);
+    }
+  }
+
   function openEditor(match: Match) {
     const mode = detectBestOf(match.score);
     const rows = scoreTextToRows(match.score, mode);
@@ -221,7 +232,7 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
         replaceMatch(fresh);
         return submitScore(fresh.id, { sets, version: fresh.version });
       });
-      replaceMatch(updated);
+      await refreshAfterResult(updated);
       setEditing(null);
       setNotice(
         `Счёт «${updated.score ?? setsToDraft(sets)}» сохранён. Победа: ${sideName(
@@ -251,7 +262,7 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
           version: fresh.version,
         });
       });
-      replaceMatch(updated);
+      await refreshAfterResult(updated);
       setEditing(null);
       setNotice(
         `Техническая победа присуждена: ${sideName(
@@ -288,7 +299,7 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
           version: fresh.version,
         });
       });
-      replaceMatch(updated);
+      await refreshAfterResult(updated);
       setEditing(null);
       setNotice("Отказ зафиксирован. Победа присуждена выбранной стороне.");
     } catch (err) {
@@ -313,7 +324,7 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
           version: fresh.version,
         });
       });
-      replaceMatch(updated);
+      await refreshAfterResult(updated);
       setEditing(null);
       setNotice("Дисквалификация зафиксирована.");
     } catch (err) {
