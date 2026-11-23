@@ -2,6 +2,8 @@ import { getMatchDesk } from "@/lib/data";
 import { OrganizerHeader } from "@/components/organizer/OrganizerUI";
 import { MatchScoreDesk } from "@/components/organizer/MatchScoreDesk";
 
+export const dynamic = "force-dynamic";
+
 export default async function OrganizerMatchesPage() {
   const { live, scheduled, completed } = await getMatchDesk();
   const matches = [...live, ...scheduled, ...completed];

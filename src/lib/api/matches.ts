@@ -220,6 +220,43 @@ export async function fetchOrganizerMatches(opts?: { cookie?: string; absolute?:
   return (data?.matches ?? []).map((item) => mapMatch(item));
 }
 
+/** Fresh match snapshot for optimistic concurrency (version). */
+export async function fetchOrganizerMatch(matchId: string): Promise<Match | null> {
+  const all = await fetchOrganizerMatches();
+  return all.find((match) => match.id === matchId) ?? null;
+}
+
+/**
+ * Run a match mutation with the latest version. On 409 conflict, refetch once and retry.
+ * Keeps the scoring API contract (sets + version) unchanged.
+ */
+export async function withFreshMatchVersion<T>(
+  matchId: string,
+  version: number | undefined,
+  run: (fresh: Match) => Promise<T>,
+): Promise<T> {
+  let fresh = await fetchOrganizerMatch(matchId);
+  if (!fresh) {
+    throw new ApiError(404, "not_found", "Матч не найден — обновите страницу");
+  }
+  if (version !== undefined && fresh.version !== undefined && fresh.version < version) {
+    // Local state ahead of list (rare); still try with the higher known version via overlay.
+    fresh = { ...fresh, version };
+  }
+  try {
+    return await run(fresh);
+  } catch (err) {
+    if (!(err instanceof ApiError) || err.status !== 409 || err.code !== "conflict") {
+      throw err;
+    }
+    const again = await fetchOrganizerMatch(matchId);
+    if (!again || again.version === fresh.version) {
+      throw err;
+    }
+    return run(again);
+  }
+}
+
 export type GenerateBracketInput = {
   thirdPlace?: boolean;
   groupSize?: number;
