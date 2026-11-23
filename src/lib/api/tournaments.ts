@@ -424,3 +424,27 @@ export async function updateOrganizerRegistrationStatus(
     error: (data as ApiErrorBody | undefined)?.message ?? "Не удалось обновить статус заявки",
   };
 }
+
+export async function addOrganizerRegistration(
+  tournamentId: string,
+  input: { playerId: string; partnerId?: string; lookingForPartner?: boolean },
+): Promise<{ ok: true; status: RegistrationStatus } | { ok: false; error: string }> {
+  const { response, data } = await apiRequest<{ registration: ApiRegistration } & ApiErrorBody>(
+    `/organizer/tournaments/${encodeURIComponent(tournamentId)}/registrations`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        player_id: input.playerId,
+        partner_id: input.partnerId,
+        looking_for_partner: input.lookingForPartner ?? false,
+      }),
+    },
+  );
+  if (response.status === 201 && data && "registration" in data && data.registration) {
+    return { ok: true, status: data.registration.status as RegistrationStatus };
+  }
+  return {
+    ok: false,
+    error: (data as ApiErrorBody | undefined)?.message ?? "Не удалось добавить участника",
+  };
+}
