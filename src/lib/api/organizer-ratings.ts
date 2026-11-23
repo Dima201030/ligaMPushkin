@@ -74,7 +74,9 @@ export async function fetchOrganizerPlayersList(opts?: { cookie?: string }) {
       is_placeholder?: boolean;
     }>;
   }>("/organizer/players", {
-    absolute: true,
+    // Server: hit Go API directly. Browser: same-origin /basePath/api via nginx
+    // (absolute 127.0.0.1:3020 is unreachable from the client → «Не удалось загрузить»).
+    absolute: typeof window === "undefined",
     headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
   });
   if (!response.ok) {
