@@ -90,6 +90,15 @@ function detectBestOf(score?: string): BestOf {
   return 3;
 }
 
+function mutationErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof ApiError) return err.message || fallback;
+  if (err instanceof TypeError) {
+    return "Нет связи с сервером. Проверьте сеть и попробуйте ещё раз.";
+  }
+  if (err instanceof Error && err.message) return err.message;
+  return fallback;
+}
+
 export function MatchScoreDesk({ matches }: { matches: Match[] }) {
   const [items, setItems] = useState(matches);
   const [tab, setTab] = useState<Tab>("all");
@@ -205,7 +214,7 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
     setError(null);
     setNotice(null);
     try {
-      const updated = await withFreshMatchVersion(match.id, match.version, (fresh) => {
+      const updated = await withFreshMatchVersion(match.id, match, (fresh) => {
         if (fresh.version === undefined) {
           throw new ApiError(409, "conflict", "Не удалось определить версию матча. Обновите страницу.");
         }
@@ -221,7 +230,7 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
         )}.`,
       );
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Не удалось сохранить счёт");
+      setError(mutationErrorMessage(err, "Не удалось сохранить счёт"));
     } finally {
       setBusyId(null);
     }
@@ -232,7 +241,7 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
     setError(null);
     setNotice(null);
     try {
-      const updated = await withFreshMatchVersion(match.id, match.version, (fresh) => {
+      const updated = await withFreshMatchVersion(match.id, match, (fresh) => {
         if (fresh.version === undefined) {
           throw new ApiError(409, "conflict", "Не удалось определить версию матча. Обновите страницу.");
         }
@@ -251,7 +260,7 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
         )}.`,
       );
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Не удалось зафиксировать тех. победу");
+      setError(mutationErrorMessage(err, "Не удалось зафиксировать тех. победу"));
     } finally {
       setBusyId(null);
     }
@@ -268,7 +277,7 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
     setError(null);
     setNotice(null);
     try {
-      const updated = await withFreshMatchVersion(match.id, match.version, (fresh) => {
+      const updated = await withFreshMatchVersion(match.id, match, (fresh) => {
         if (fresh.version === undefined) {
           throw new ApiError(409, "conflict", "Не удалось определить версию матча. Обновите страницу.");
         }
@@ -283,7 +292,7 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
       setEditing(null);
       setNotice("Отказ зафиксирован. Победа присуждена выбранной стороне.");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Не удалось зафиксировать отказ");
+      setError(mutationErrorMessage(err, "Не удалось зафиксировать отказ"));
     } finally {
       setBusyId(null);
     }
@@ -294,7 +303,7 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
     setError(null);
     setNotice(null);
     try {
-      const updated = await withFreshMatchVersion(match.id, match.version, (fresh) => {
+      const updated = await withFreshMatchVersion(match.id, match, (fresh) => {
         if (fresh.version === undefined) {
           throw new ApiError(409, "conflict", "Не удалось определить версию матча. Обновите страницу.");
         }
@@ -308,7 +317,7 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
       setEditing(null);
       setNotice("Дисквалификация зафиксирована.");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Не удалось дисквалифицировать");
+      setError(mutationErrorMessage(err, "Не удалось дисквалифицировать"));
     } finally {
       setBusyId(null);
     }

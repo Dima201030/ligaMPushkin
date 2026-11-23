@@ -220,36 +220,63 @@ export async function fetchOrganizerMatches(opts?: { cookie?: string; absolute?:
   return (data?.matches ?? []).map((item) => mapMatch(item));
 }
 
-/** Fresh match snapshot for optimistic concurrency (version). */
+/**
+ * Fresh match snapshot for optimistic concurrency (version).
+ * Browser must use same-origin `/api` (absolute:false) — never 127.0.0.1:3020.
+ */
 export async function fetchOrganizerMatch(matchId: string): Promise<Match | null> {
-  const all = await fetchOrganizerMatches();
+  const inBrowser = typeof window !== "undefined";
+  const all = await fetchOrganizerMatches({ absolute: !inBrowser });
   return all.find((match) => match.id === matchId) ?? null;
 }
 
 /**
  * Run a match mutation with the latest version. On 409 conflict, refetch once and retry.
  * Keeps the scoring API contract (sets + version) unchanged.
+ * If the version refetch fails (network), falls back to the local match so save still works.
  */
 export async function withFreshMatchVersion<T>(
   matchId: string,
-  version: number | undefined,
+  local: Pick<Match, "id" | "version"> & Partial<Match>,
   run: (fresh: Match) => Promise<T>,
 ): Promise<T> {
-  let fresh = await fetchOrganizerMatch(matchId);
-  if (!fresh) {
-    throw new ApiError(404, "not_found", "Матч не найден — обновите страницу");
+  let fresh: Match = { ...(local as Match), id: matchId };
+  try {
+    const remote = await fetchOrganizerMatch(matchId);
+    if (remote) {
+      fresh = remote;
+      if (
+        local.version !== undefined &&
+        remote.version !== undefined &&
+        remote.version < local.version
+      ) {
+        fresh = { ...remote, version: local.version };
+      }
+    } else if (local.version === undefined) {
+      throw new ApiError(404, "not_found", "Матч не найден — обновите страницу");
+    }
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) throw err;
+    if (local.version === undefined) {
+      throw err instanceof ApiError
+        ? err
+        : new ApiError(502, "upstream", "Не удалось обновить данные матча. Обновите страницу.");
+    }
+    // Keep local version — submitScore still goes through same-origin proxy.
   }
-  if (version !== undefined && fresh.version !== undefined && fresh.version < version) {
-    // Local state ahead of list (rare); still try with the higher known version via overlay.
-    fresh = { ...fresh, version };
-  }
+
   try {
     return await run(fresh);
   } catch (err) {
     if (!(err instanceof ApiError) || err.status !== 409 || err.code !== "conflict") {
       throw err;
     }
-    const again = await fetchOrganizerMatch(matchId);
+    let again: Match | null = null;
+    try {
+      again = await fetchOrganizerMatch(matchId);
+    } catch {
+      throw err;
+    }
     if (!again || again.version === fresh.version) {
       throw err;
     }
