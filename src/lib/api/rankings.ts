@@ -82,7 +82,7 @@ export async function fetchRankings(
     source: string;
     rankings: ApiRanking[];
   }>(`/rankings${qs ? `?${qs}` : ""}`, {
-    absolute: true,
+    absolute: typeof window === "undefined",
     headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
   });
   await throwIfNotOk(response, data as ApiErrorBody | undefined, "Не удалось загрузить рейтинг");

@@ -31,11 +31,21 @@ export function apiPath(path: string): string {
   return `${API_BASE}/api${suffix}`;
 }
 
-/** Absolute API URL for server components (bypass Next relative fetch). */
+/**
+ * Absolute API URL for server components / RSC (bypass Next relative fetch).
+ * Never use from the browser — 127.0.0.1:3020 is unreachable there;
+ * browser traffic must stay same-origin via basePath + nginx `/api`.
+ */
 export function serverApiURL(path: string): string {
   const base = (process.env.API_PROXY_TARGET ?? "http://127.0.0.1:3020").replace(/\/$/, "");
   const suffix = path.startsWith("/") ? path : `/${path}`;
   return `${base}/api${suffix}`;
+}
+
+/** Absolute only on the server. Browser always gets same-origin `apiPath`. */
+export function resolveAbsoluteFlag(absolute?: boolean): boolean {
+  if (typeof window !== "undefined") return false;
+  return Boolean(absolute);
 }
 
 export async function parseJson<T>(response: Response): Promise<T | undefined> {
@@ -75,7 +85,9 @@ export async function apiRequest<T>(
   init?: RequestInit & { absolute?: boolean; clubSlug?: string },
 ): Promise<{ response: Response; data: T | undefined }> {
   const { absolute, clubSlug: explicitClub, ...rest } = init ?? {};
-  const url = absolute ? serverApiURL(path) : apiPath(path);
+  // Hard guard: even if a caller passes absolute:true from a client component
+  // (MatchScoreDesk, TournamentManage, BracketStudio, …), never hit localhost.
+  const url = resolveAbsoluteFlag(absolute) ? serverApiURL(path) : apiPath(path);
 
   const incoming = new Headers(rest.headers);
   const cookieHeader = incoming.get("Cookie") ?? incoming.get("cookie") ?? undefined;

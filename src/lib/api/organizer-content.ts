@@ -61,7 +61,7 @@ function mapEvent(raw: ApiEvent): ClubEvent & { status: string } {
 
 export async function fetchOrganizerNews(opts?: { cookie?: string }) {
   const { response, data } = await apiRequest<{ news: ApiNews[] }>("/organizer/news", {
-    absolute: true,
+    absolute: typeof window === "undefined",
     headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
   });
   if (!response.ok) {
@@ -72,7 +72,7 @@ export async function fetchOrganizerNews(opts?: { cookie?: string }) {
 
 export async function fetchOrganizerEvents(opts?: { cookie?: string }) {
   const { response, data } = await apiRequest<{ events: ApiEvent[] }>("/organizer/events", {
-    absolute: true,
+    absolute: typeof window === "undefined",
     headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
   });
   if (!response.ok) {

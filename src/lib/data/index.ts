@@ -457,7 +457,7 @@ async function apiRequestJson<T>(path: string, cookie?: string): Promise<T | nul
   try {
     const { apiRequest } = await import("@/lib/api/client");
     const { response, data } = await apiRequest<T>(path, {
-      absolute: true,
+      absolute: typeof window === "undefined",
       headers: cookie ? { Cookie: cookie } : undefined,
     });
     if (!response.ok) return null;

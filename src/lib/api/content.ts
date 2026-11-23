@@ -80,7 +80,7 @@ export async function fetchNews(
   const { response, data } = await apiRequest<{ news: ApiNews[] }>(
     `/news${qs ? `?${qs}` : ""}`,
     {
-      absolute: true,
+      absolute: typeof window === "undefined",
       headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
     },
   );
@@ -95,7 +95,7 @@ export async function fetchNewsBySlug(
   const { response, data } = await apiRequest<{ news: ApiNews }>(
     `/news/${encodeURIComponent(slug)}`,
     {
-      absolute: true,
+      absolute: typeof window === "undefined",
       headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
     },
   );
@@ -115,7 +115,7 @@ export async function fetchEvents(
   const { response, data } = await apiRequest<{ events: ApiEvent[] }>(
     `/events${qs ? `?${qs}` : ""}`,
     {
-      absolute: true,
+      absolute: typeof window === "undefined",
       headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
     },
   );
@@ -130,7 +130,7 @@ export async function fetchEventBySlug(
   const { response, data } = await apiRequest<{ event: ApiEvent }>(
     `/events/${encodeURIComponent(slug)}`,
     {
-      absolute: true,
+      absolute: typeof window === "undefined",
       headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
     },
   );
@@ -146,7 +146,7 @@ export async function fetchPage(
   const { response, data } = await apiRequest<{
     page: { slug: string; title: string; body_markdown: string; updated_at: string };
   }>(`/pages/${encodeURIComponent(slug)}`, {
-    absolute: true,
+    absolute: typeof window === "undefined",
     headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
   });
   if (response.status === 404) return null;

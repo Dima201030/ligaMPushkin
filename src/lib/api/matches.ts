@@ -135,7 +135,8 @@ async function throwIfNotOk(response: Response, data: ApiErrorBody | undefined, 
 
 function serverOpts(opts?: { cookie?: string; absolute?: boolean }) {
   return {
-    absolute: opts?.absolute ?? true,
+    // Default absolute on server only; browser must stay same-origin.
+    absolute: opts?.absolute ?? typeof window === "undefined",
     headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
   } as const;
 }
@@ -222,11 +223,10 @@ export async function fetchOrganizerMatches(opts?: { cookie?: string; absolute?:
 
 /**
  * Fresh match snapshot for optimistic concurrency (version).
- * Browser must use same-origin `/api` (absolute:false) — never 127.0.0.1:3020.
+ * Relies on apiRequest / serverOpts: browser → same-origin, server → absolute.
  */
 export async function fetchOrganizerMatch(matchId: string): Promise<Match | null> {
-  const inBrowser = typeof window !== "undefined";
-  const all = await fetchOrganizerMatches({ absolute: !inBrowser });
+  const all = await fetchOrganizerMatches();
   return all.find((match) => match.id === matchId) ?? null;
 }
 
@@ -485,7 +485,7 @@ export async function disqualifyMatch(
 
 export async function fetchMyMatches(opts?: { cookie?: string }): Promise<Match[]> {
   const { response, data } = await apiRequest<{ matches: ApiMatch[] }>("/auth/me/matches", {
-    absolute: true,
+    absolute: typeof window === "undefined",
     headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
   });
   if (!response.ok) return [];

@@ -433,7 +433,7 @@ export function BracketStudio({
     let cancelled = false;
     setLoadingBracket(true);
     setError(null);
-    fetchOrganizerBracket(sourceId, { absolute: false })
+    fetchOrganizerBracket(sourceId)
       .then((payload) => {
         if (cancelled) return;
         setApiMatches(payload.matches);

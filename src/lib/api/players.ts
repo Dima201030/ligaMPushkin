@@ -81,7 +81,7 @@ export async function fetchPlayers(
   const { response, data } = await apiRequest<{ players: ApiPlayer[] }>(
     `/players${listQuery(filters)}`,
     {
-      absolute: true,
+      absolute: typeof window === "undefined",
       headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
     },
   );
@@ -96,7 +96,7 @@ export async function fetchPlayerBySlug(
   const { response, data } = await apiRequest<{ player: ApiPlayer }>(
     `/players/${encodeURIComponent(slug)}`,
     {
-      absolute: true,
+      absolute: typeof window === "undefined",
       headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
     },
   );

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default async function ClubsPage() {
   const jar = await cookies();
   const activeSlug = jar.get(CLUB_COOKIE)?.value || DEFAULT_CLUB_SLUG;
-  const clubs = await fetchClubs({ absolute: true }).catch(() => []);
+  const clubs = await fetchClubs().catch(() => []);
 
   return (
     <>

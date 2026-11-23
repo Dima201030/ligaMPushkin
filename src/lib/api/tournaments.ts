@@ -168,7 +168,7 @@ export async function fetchTournaments(
   const { response, data } = await apiRequest<{ tournaments: ApiTournament[] }>(
     `/tournaments${listQuery(filters)}`,
     {
-      absolute: true,
+      absolute: typeof window === "undefined",
       headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
     },
   );
@@ -184,7 +184,7 @@ export async function fetchTournamentBySlug(
     tournament: ApiTournament;
     registrations: ApiRegistration[];
   }>(`/tournaments/${encodeURIComponent(slug)}`, {
-    absolute: true,
+    absolute: typeof window === "undefined",
     headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
   });
   if (response.status === 404) return null;
@@ -209,7 +209,7 @@ export async function fetchOrganizerTournaments(opts?: { cookie?: string }): Pro
   const { response, data } = await apiRequest<{ tournaments: ApiTournament[] }>(
     "/organizer/tournaments",
     {
-      absolute: true,
+      absolute: typeof window === "undefined",
       headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
     },
   );
@@ -230,7 +230,7 @@ export async function fetchOrganizerTournament(
     registrations: ApiRegistration[];
     counts: { confirmed: number; pending: number; waitlist: number };
   }>(`/organizer/tournaments/${encodeURIComponent(id)}`, {
-    absolute: true,
+    absolute: typeof window === "undefined",
     headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
   });
   if (response.status === 404) return null;
