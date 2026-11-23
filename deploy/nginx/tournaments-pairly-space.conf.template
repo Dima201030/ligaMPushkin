@@ -18,11 +18,11 @@ server {
     http2 on;
     server_name tournaments.pairly.space;
 
+    # Prefer RSA lineage (certbot --key-type rsa) for Safari/macOS; always fullchain.
     ssl_certificate /etc/letsencrypt/live/tournaments.pairly.space/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/tournaments.pairly.space/privkey.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_session_cache shared:SSL:10m;
-    ssl_session_timeout 1d;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
     server_tokens off;
     client_max_body_size 12m;
