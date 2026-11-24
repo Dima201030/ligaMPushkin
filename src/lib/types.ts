@@ -132,6 +132,8 @@ export interface Tournament {
   regulations: string;
   participants: Registration[];
   winners?: TournamentWinner[];
+  suggestedPlaces?: TournamentWinner[];
+  placesMismatch?: boolean;
   images?: TournamentImage[];
   season: number;
   isHidden?: boolean;

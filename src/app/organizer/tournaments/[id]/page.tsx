@@ -178,6 +178,7 @@ export default async function OrganizerTournamentPage({
                 isPairs={isPairs}
                 participants={placeOptions}
                 winners={tournament.winners ?? []}
+                suggestedPlaces={tournament.suggestedPlaces ?? []}
               />
             </Panel>
 

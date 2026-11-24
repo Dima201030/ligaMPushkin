@@ -44,6 +44,8 @@ interface ApiTournament {
   season: number;
   is_hidden?: boolean;
   winners?: { place: number; player_ids: string[] }[];
+  suggested_places?: { place: number; player_ids: string[] }[];
+  places_mismatch?: boolean;
   confirmed_count?: number;
   waitlist_count?: number;
 }
@@ -121,6 +123,11 @@ export function mapTournament(
       place: winner.place as 1 | 2 | 3,
       playerIds: (winner.player_ids ?? []).map((id) => normalizeUuid(id)),
     })),
+    suggestedPlaces: (raw.suggested_places ?? []).map((winner) => ({
+      place: winner.place as 1 | 2 | 3,
+      playerIds: (winner.player_ids ?? []).map((id) => normalizeUuid(id)),
+    })),
+    placesMismatch: Boolean(raw.places_mismatch),
   };
 }
 
@@ -437,7 +444,7 @@ export async function saveTournamentPlaces(
       ok: true,
       winners: (data?.places ?? []).map((place) => ({
         place: place.place as 1 | 2 | 3,
-        playerIds: place.player_ids ?? [],
+        playerIds: (place.player_ids ?? []).map((id) => normalizeUuid(id)),
       })),
     };
   }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CheckCircle2, Plus, Trophy, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Plus, Trophy, X } from "lucide-react";
 import type { TournamentWinner } from "@/lib/types";
 import { saveTournamentPlaces } from "@/lib/api/tournaments";
 import { cn } from "@/lib/utils";
@@ -21,13 +21,14 @@ type Slot = {
   partnerId: string;
 };
 
-function initialSlots(winners: TournamentWinner[]): Record<Place, Slot> {
+function initialSlots(winners: TournamentWinner[], suggested: TournamentWinner[]): Record<Place, Slot> {
   const slots: Record<Place, Slot> = {
     1: { enabled: false, playerId: "", partnerId: "" },
     2: { enabled: false, playerId: "", partnerId: "" },
     3: { enabled: false, playerId: "", partnerId: "" },
   };
-  for (const winner of winners) {
+  const source = winners.length > 0 ? winners : suggested;
+  for (const winner of source) {
     slots[winner.place] = {
       enabled: true,
       playerId: normalizeUuid(winner.playerIds[0]),
@@ -37,18 +38,62 @@ function initialSlots(winners: TournamentWinner[]): Record<Place, Slot> {
   return slots;
 }
 
+function slotPlayerIds(slot: Slot, isPairs: boolean): string[] {
+  if (!slot.enabled || !slot.playerId) return [];
+  const ids = [normalizeUuid(slot.playerId)];
+  const partnerId = normalizeUuid(slot.partnerId);
+  if (partnerId && !uuidsEqual(partnerId, ids[0]) && (isPairs || partnerId)) {
+    ids.push(partnerId);
+  }
+  return ids;
+}
+
+function hasDuplicatePlayers(slots: Record<Place, Slot>, isPairs: boolean): boolean {
+  const seen = new Set<string>();
+  for (const item of PLACES) {
+    for (const id of slotPlayerIds(slots[item.place], isPairs)) {
+      if (seen.has(id)) return true;
+      seen.add(id);
+    }
+  }
+  return false;
+}
+
+function slotsMismatchSuggested(
+  slots: Record<Place, Slot>,
+  suggested: TournamentWinner[],
+  isPairs: boolean,
+): boolean {
+  if (suggested.length === 0) return false;
+  const enabled = PLACES.some((item) => slots[item.place].enabled && slots[item.place].playerId);
+  if (!enabled) return false;
+  for (const item of PLACES) {
+    const current = slotPlayerIds(slots[item.place], isPairs).slice().sort().join(",");
+    const want =
+      (suggested.find((s) => s.place === item.place)?.playerIds ?? [])
+        .map(normalizeUuid)
+        .filter(Boolean)
+        .sort()
+        .join(",") ?? "";
+    if (current !== want) return true;
+  }
+  return false;
+}
+
 export function TournamentPlaces({
   tournamentId,
   isPairs,
   participants,
   winners,
+  suggestedPlaces = [],
 }: {
   tournamentId: string;
   isPairs: boolean;
   participants: { id: string; name: string }[];
   winners: TournamentWinner[];
+  suggestedPlaces?: TournamentWinner[];
 }) {
-  const [slots, setSlots] = useState(() => initialSlots(winners));
+  const [slots, setSlots] = useState(() => initialSlots(winners, suggestedPlaces));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -57,6 +102,14 @@ export function TournamentPlaces({
     () => [...participants].sort((a, b) => a.name.localeCompare(b.name, "ru")),
     [participants],
   );
+
+  const nameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const p of participants) map.set(normalizeUuid(p.id), p.name);
+    return map;
+  }, [participants]);
+
+  const mismatch = slotsMismatchSuggested(slots, suggestedPlaces, isPairs);
 
   function update(place: Place, patch: Partial<Slot>) {
     setSlots((current) => ({ ...current, [place]: { ...current[place], ...patch } }));
@@ -72,21 +125,25 @@ export function TournamentPlaces({
     update(place, { enabled: false, playerId: "", partnerId: "" });
   }
 
+  function applySuggested() {
+    setSlots(initialSlots([], suggestedPlaces));
+    setNotice(null);
+    setError(null);
+  }
+
   async function save() {
     if (busy) return;
+    if (hasDuplicatePlayers(slots, isPairs)) {
+      setError("Один игрок не может занимать несколько мест сразу");
+      return;
+    }
     setBusy(true);
     setError(null);
     setNotice(null);
     const places: { place: Place; playerIds: string[] }[] = [];
     for (const item of PLACES) {
-      const slot = slots[item.place];
-      if (!slot.enabled || !slot.playerId) continue;
-      const playerId = normalizeUuid(slot.playerId);
-      const ids = [playerId];
-      const partnerId = normalizeUuid(slot.partnerId);
-      if (isPairs && partnerId && !uuidsEqual(partnerId, playerId)) {
-        ids.push(partnerId);
-      }
+      const ids = slotPlayerIds(slots[item.place], isPairs);
+      if (ids.length === 0) continue;
       places.push({ place: item.place, playerIds: ids });
     }
     const result = await saveTournamentPlaces(tournamentId, places);
@@ -106,10 +163,44 @@ export function TournamentPlaces({
 
   return (
     <div>
+      {mismatch && suggestedPlaces.length > 0 && (
+        <div
+          role="status"
+          className="mb-4 border border-warning/40 bg-warning/5 px-3 py-3 text-[0.72rem] text-ink"
+        >
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
+            <div className="space-y-2">
+              <p className="font-medium">Места отличаются от результата сетки</p>
+              <p className="text-ink-muted">
+                Алгоритм предлагает:{" "}
+                {suggestedPlaces
+                  .map((slot) => {
+                    const names = slot.playerIds
+                      .map((id) => nameById.get(normalizeUuid(id)) ?? id.slice(0, 8))
+                      .join(" / ");
+                    return `${slot.place} — ${names || "—"}`;
+                  })
+                  .join("; ")}
+                .
+              </p>
+              <button
+                type="button"
+                className="text-[0.64rem] uppercase tracking-[0.1em] text-ink underline-offset-2 hover:underline"
+                onClick={applySuggested}
+              >
+                Подставить по сетке
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-3">
         {PLACES.map((item) => {
           const slot = slots[item.place];
           const isFirst = item.place === 1;
+          const showSecond = isPairs || Boolean(slot.partnerId);
           return (
             <div
               key={item.place}
@@ -160,9 +251,9 @@ export function TournamentPlaces({
               </div>
 
               {slot.enabled && (
-                <div className={cn("mt-4 grid gap-3", isPairs && "sm:grid-cols-2")}>
+                <div className={cn("mt-4 grid gap-3", showSecond && "sm:grid-cols-2")}>
                   <label className="block">
-                    <span className="field-label">{isPairs ? "Игрок" : "Игрок"}</span>
+                    <span className="field-label">Игрок</span>
                     <select
                       className="field min-h-[38px] text-sm"
                       value={slot.playerId}
@@ -176,15 +267,15 @@ export function TournamentPlaces({
                       ))}
                     </select>
                   </label>
-                  {isPairs && (
+                  {showSecond && (
                     <label className="block">
-                      <span className="field-label">Партнёр</span>
+                      <span className="field-label">{isPairs ? "Партнёр" : "Ещё призёр"}</span>
                       <select
                         className="field min-h-[38px] text-sm"
                         value={slot.partnerId}
                         onChange={(event) => update(item.place, { partnerId: event.target.value })}
                       >
-                        <option value="">Без партнёра</option>
+                        <option value="">Без второго</option>
                         {options
                           .filter((option) => !uuidsEqual(option.id, slot.playerId))
                           .map((option) => (
