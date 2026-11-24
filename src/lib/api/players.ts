@@ -1,4 +1,5 @@
 import type { CategorySlug, Player } from "@/lib/types";
+import { normalizeUuid } from "@/lib/uuid";
 import { ApiError, apiRequest, type ApiErrorBody } from "./client";
 
 interface ApiPlayer {
@@ -29,7 +30,7 @@ function mapPlayer(raw: ApiPlayer): Player {
     raw.gender === "female" || raw.gender === "male" ? raw.gender : "male";
   const category = (raw.category || raw.level || "rookies") as CategorySlug;
   return {
-    id: raw.id,
+    id: normalizeUuid(raw.id),
     slug: raw.slug,
     firstName: raw.first_name,
     lastName: raw.last_name,

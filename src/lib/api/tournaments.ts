@@ -11,6 +11,7 @@ import type {
   Venue,
 } from "@/lib/types";
 import { resolveCoverUrl } from "@/lib/media";
+import { normalizeUuid } from "@/lib/uuid";
 import { ApiError, apiRequest, type ApiErrorBody } from "./client";
 
 interface ApiVenue {
@@ -76,7 +77,7 @@ interface ApiRegistration {
 
 function mapVenue(raw: ApiVenue): Venue {
   return {
-    id: raw.id,
+    id: normalizeUuid(raw.id),
     name: raw.name,
     address: raw.address,
     courts: raw.courts,
@@ -85,7 +86,7 @@ function mapVenue(raw: ApiVenue): Venue {
 }
 
 function mapTournamentImage(raw: ApiTournamentImage): TournamentImage {
-  return { id: raw.id, url: resolveCoverUrl(raw.url), createdAt: raw.created_at };
+  return { id: normalizeUuid(raw.id), url: resolveCoverUrl(raw.url), createdAt: raw.created_at };
 }
 
 export function mapTournament(
@@ -94,7 +95,7 @@ export function mapTournament(
   images: ApiTournamentImage[] = [],
 ): Tournament {
   return {
-    id: raw.id,
+    id: normalizeUuid(raw.id),
     slug: raw.slug,
     title: raw.title,
     description: raw.description,
@@ -118,7 +119,7 @@ export function mapTournament(
     isHidden: raw.is_hidden ?? false,
     winners: (raw.winners ?? []).map((winner) => ({
       place: winner.place as 1 | 2 | 3,
-      playerIds: winner.player_ids ?? [],
+      playerIds: (winner.player_ids ?? []).map((id) => normalizeUuid(id)),
     })),
   };
 }
@@ -129,7 +130,7 @@ export function mapRegistration(raw: ApiRegistration): Registration & {
   partner?: { id: string; firstName: string; lastName: string; level: string; slug: string; category: CategorySlug; rating: number };
 } {
   const player = {
-    id: raw.player.id,
+    id: normalizeUuid(raw.player.id),
     firstName: raw.player.first_name,
     lastName: raw.player.last_name,
     level: raw.player.level,
@@ -139,7 +140,7 @@ export function mapRegistration(raw: ApiRegistration): Registration & {
   };
   const partner = raw.partner
     ? {
-        id: raw.partner.id,
+        id: normalizeUuid(raw.partner.id),
         firstName: raw.partner.first_name,
         lastName: raw.partner.last_name,
         level: raw.partner.level,
@@ -149,9 +150,9 @@ export function mapRegistration(raw: ApiRegistration): Registration & {
       }
     : undefined;
   return {
-    id: raw.id,
-    playerId: raw.player_id,
-    partnerId: raw.partner_id ?? undefined,
+    id: normalizeUuid(raw.id),
+    playerId: normalizeUuid(raw.player_id),
+    partnerId: raw.partner_id ? normalizeUuid(raw.partner_id) : undefined,
     lookingForPartner: raw.looking_for_partner,
     status: raw.status as RegistrationStatus,
     seed: raw.seed ?? undefined,

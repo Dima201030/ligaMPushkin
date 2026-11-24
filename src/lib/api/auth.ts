@@ -1,4 +1,5 @@
 import type { CategorySlug } from "@/lib/types";
+import { normalizeUuid } from "@/lib/uuid";
 import { ApiError, apiRequest, parseJson, serverApiURL } from "./client";
 // apiRequest used for /auth/me/* cabinet helpers
 
@@ -116,7 +117,7 @@ async function request<T>(
 
 function mapUser(raw: ApiUser): LeagueUser {
   return {
-    id: raw.id,
+    id: normalizeUuid(raw.id),
     email: raw.email,
     firstName: raw.first_name,
     lastName: raw.last_name,
@@ -132,7 +133,7 @@ function mapUser(raw: ApiUser): LeagueUser {
 
 function mapApplication(raw: ApiApplication): LeagueApplication {
   return {
-    id: raw.id,
+    id: normalizeUuid(raw.id),
     email: raw.email,
     firstName: raw.first_name,
     lastName: raw.last_name,

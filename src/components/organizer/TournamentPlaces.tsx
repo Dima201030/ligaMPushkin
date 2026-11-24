@@ -5,6 +5,7 @@ import { CheckCircle2, Plus, Trophy, X } from "lucide-react";
 import type { TournamentWinner } from "@/lib/types";
 import { saveTournamentPlaces } from "@/lib/api/tournaments";
 import { cn } from "@/lib/utils";
+import { normalizeUuid, uuidsEqual } from "@/lib/uuid";
 
 type Place = 1 | 2 | 3;
 
@@ -29,8 +30,8 @@ function initialSlots(winners: TournamentWinner[]): Record<Place, Slot> {
   for (const winner of winners) {
     slots[winner.place] = {
       enabled: true,
-      playerId: winner.playerIds[0] ?? "",
-      partnerId: winner.playerIds[1] ?? "",
+      playerId: normalizeUuid(winner.playerIds[0]),
+      partnerId: normalizeUuid(winner.playerIds[1]),
     };
   }
   return slots;
@@ -80,9 +81,11 @@ export function TournamentPlaces({
     for (const item of PLACES) {
       const slot = slots[item.place];
       if (!slot.enabled || !slot.playerId) continue;
-      const ids = [slot.playerId];
-      if (isPairs && slot.partnerId && slot.partnerId !== slot.playerId) {
-        ids.push(slot.partnerId);
+      const playerId = normalizeUuid(slot.playerId);
+      const ids = [playerId];
+      const partnerId = normalizeUuid(slot.partnerId);
+      if (isPairs && partnerId && !uuidsEqual(partnerId, playerId)) {
+        ids.push(partnerId);
       }
       places.push({ place: item.place, playerIds: ids });
     }
@@ -183,7 +186,7 @@ export function TournamentPlaces({
                       >
                         <option value="">Без партнёра</option>
                         {options
-                          .filter((option) => option.id !== slot.playerId)
+                          .filter((option) => !uuidsEqual(option.id, slot.playerId))
                           .map((option) => (
                             <option key={option.id} value={option.id}>
                               {option.name}

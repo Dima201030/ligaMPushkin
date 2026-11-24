@@ -12,6 +12,7 @@ import { fetchSession } from "@/lib/api/auth";
 import { getTournamentPage } from "@/lib/data";
 import { CATEGORY_BY_SLUG, FORMAT_LABEL, STATUS_BY_VALUE, SURFACE_LABEL, TYPE_BY_VALUE } from "@/lib/domain";
 import { cn, formatDateTime, formatMoney } from "@/lib/utils";
+import { uuidsEqual } from "@/lib/uuid";
 import { CategoryBadge } from "@/components/ui/Badges";
 import { MatchRow } from "@/components/domain/MatchRow";
 import { TournamentPodium } from "@/components/domain/TournamentPodium";
@@ -44,7 +45,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
   const user = session?.user ?? null;
   const myRegistration = user
     ? tournament.participants.find(
-        (item) => item.playerId === user.id && item.status !== "cancelled",
+        (item) => uuidsEqual(item.playerId, user.id) && item.status !== "cancelled",
       )
     : undefined;
   const registered = Boolean(myRegistration);
@@ -159,7 +160,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
                 entries={winners.map((winner) => ({
                   place: winner.place,
                   names: winner.playerIds
-                    .map((id) => participants.find((item) => item.playerId === id)?.player)
+                    .map((id) => participants.find((item) => uuidsEqual(item.playerId, id))?.player)
                     .filter(Boolean)
                     .map((player) => `${player!.firstName} ${player!.lastName}`),
                 }))}

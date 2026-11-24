@@ -1,4 +1,5 @@
 import type { CategorySlug, Player, RankingEntry } from "@/lib/types";
+import { normalizeUuid } from "@/lib/uuid";
 import { ApiError, apiRequest, type ApiErrorBody } from "./client";
 
 interface ApiRanking {
@@ -40,13 +41,13 @@ function mapRow(raw: ApiRanking): RankingRow {
   return {
     position: raw.position,
     previousPosition: previous,
-    playerId: raw.player_id,
+    playerId: normalizeUuid(raw.player_id),
     points: raw.points,
     rating: raw.rating,
     category,
     calculatedAt: raw.calculated_at,
     player: {
-      id: raw.player_id,
+      id: normalizeUuid(raw.player_id),
       slug: raw.slug,
       firstName: raw.first_name,
       lastName: raw.last_name,

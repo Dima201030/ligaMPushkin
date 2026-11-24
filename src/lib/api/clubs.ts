@@ -1,3 +1,4 @@
+import { normalizeUuid } from "@/lib/uuid";
 import { ApiError, apiRequest, type ApiErrorBody } from "./client";
 
 export interface LeagueClub {
@@ -20,7 +21,7 @@ interface ApiClub {
 
 function mapClub(raw: ApiClub): LeagueClub {
   return {
-    id: raw.id,
+    id: normalizeUuid(raw.id),
     slug: raw.slug,
     name: raw.name,
     city: raw.city,

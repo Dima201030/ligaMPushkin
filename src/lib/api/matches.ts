@@ -1,4 +1,5 @@
 import type { Match, MatchSide, MatchStatus, TournamentFormat, TournamentType } from "@/lib/types";
+import { normalizeUuid, uuidsEqual } from "@/lib/uuid";
 import { ApiError, apiRequest, type ApiErrorBody } from "./client";
 
 interface ApiPlayerBrief {
@@ -92,7 +93,9 @@ function sideLabel(side: ApiMatchSide): string | undefined {
 }
 
 function mapSide(side: ApiMatchSide): MatchSide {
-  const playerIds = [side.player_id, side.partner_id].filter((id): id is string => Boolean(id));
+  const playerIds = [side.player_id, side.partner_id]
+    .filter((id): id is string => Boolean(id))
+    .map((id) => normalizeUuid(id));
   return {
     playerIds,
     seed: side.seed ?? undefined,
@@ -104,8 +107,8 @@ export function mapMatch(raw: ApiMatch, fallbackTitle = "Турнир"): Match {
   const type = (raw.tournament_type ?? "singles") as TournamentType;
   const status = (raw.status === "bye" ? "bye" : raw.status) as MatchStatus;
   return {
-    id: raw.id,
-    tournamentId: raw.tournament_id,
+    id: normalizeUuid(raw.id),
+    tournamentId: normalizeUuid(raw.tournament_id),
     tournamentSlug: raw.tournament_slug,
     tournamentTitle: raw.tournament_title ?? fallbackTitle,
     type,
@@ -227,7 +230,7 @@ export async function fetchOrganizerMatches(opts?: { cookie?: string; absolute?:
  */
 export async function fetchOrganizerMatch(matchId: string): Promise<Match | null> {
   const all = await fetchOrganizerMatches();
-  return all.find((match) => match.id === matchId) ?? null;
+  return all.find((match) => uuidsEqual(match.id, matchId)) ?? null;
 }
 
 /**
