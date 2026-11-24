@@ -107,7 +107,9 @@ export async function apiRequest<T>(
     ...rest,
     headers: {
       Accept: "application/json",
-      ...(rest.body ? { "Content-Type": "application/json" } : {}),
+      ...(rest.body && !(rest.body instanceof FormData)
+        ? { "Content-Type": "application/json" }
+        : {}),
       ...Object.fromEntries(incoming.entries()),
     },
   });

@@ -2,14 +2,15 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import type { Tournament } from "@/lib/types";
 import { CATEGORIES, FORMAT_LABEL, STATUS_BY_VALUE, TYPE_BY_VALUE } from "@/lib/domain";
 import { cn, formatDateShort, formatMoney } from "@/lib/utils";
 import { CategoryBadge, StatusPill } from "@/components/ui/Badges";
 import { EmptyState } from "@/components/ui/Section";
+import { TournamentRowActions } from "./TournamentRowActions";
 
-type Filter = "all" | "live" | "registration" | "upcoming" | "completed" | "draft";
+type Filter = "all" | "live" | "registration" | "upcoming" | "completed" | "draft" | "hidden";
 
 const FILTERS: { value: Filter; label: string }[] = [
   { value: "all", label: "Все" },
@@ -18,6 +19,7 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: "upcoming", label: "Скоро" },
   { value: "completed", label: "Завершены" },
   { value: "draft", label: "Черновики" },
+  { value: "hidden", label: "Скрытые" },
 ];
 
 function matchesFilter(tournament: Tournament, filter: Filter) {
@@ -32,6 +34,8 @@ function matchesFilter(tournament: Tournament, filter: Filter) {
       return tournament.status === "completed";
     case "draft":
       return tournament.status === "draft";
+    case "hidden":
+      return Boolean(tournament.isHidden);
     default:
       return true;
   }
@@ -157,7 +161,12 @@ export function OrganizerTournamentTable({ tournaments }: { tournaments: Tournam
                       </div>
                     </td>
                     <td>
-                      <StatusPill status={tournament.status} />
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <StatusPill status={tournament.status} />
+                        {tournament.isHidden && (
+                          <span className="badge badge-warning text-[0.55rem]">Скрыт</span>
+                        )}
+                      </div>
                     </td>
                     <td className="whitespace-nowrap text-[0.72rem] text-ink-soft">
                       {formatDateShort(tournament.startsAt)}
@@ -190,22 +199,12 @@ export function OrganizerTournamentTable({ tournaments }: { tournaments: Tournam
                       {tournament.entryFee ? formatMoney(tournament.entryFee) : "—"}
                     </td>
                     <td>
-                      <div className="flex items-center justify-end gap-2">
-                        <Link
-                          href={`/organizer/tournaments/${tournament.id}`}
-                          className="btn btn-secondary btn-sm"
-                        >
-                          Управлять
-                        </Link>
-                        <Link
-                          href={`/tournaments/${tournament.slug}`}
-                          className="grid size-8 place-items-center text-ink-faint transition-colors hover:text-ink"
-                          title="Открыть публичную страницу"
-                          aria-label={`Публичная страница ${tournament.title}`}
-                        >
-                          <ArrowUpRight className="size-3.5" />
-                        </Link>
-                      </div>
+                      <TournamentRowActions
+                        id={tournament.id}
+                        slug={tournament.slug}
+                        title={tournament.title}
+                        hidden={Boolean(tournament.isHidden)}
+                      />
                     </td>
                   </tr>
                 );

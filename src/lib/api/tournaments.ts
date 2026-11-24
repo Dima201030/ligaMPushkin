@@ -4,11 +4,13 @@ import type {
   RegistrationStatus,
   Surface,
   Tournament,
+  TournamentImage,
   TournamentFormat,
   TournamentStatus,
   TournamentType,
   Venue,
 } from "@/lib/types";
+import { resolveCoverUrl } from "@/lib/media";
 import { ApiError, apiRequest, type ApiErrorBody } from "./client";
 
 interface ApiVenue {
@@ -39,8 +41,16 @@ interface ApiTournament {
   cover_url?: string | null;
   regulations: string;
   season: number;
+  is_hidden?: boolean;
+  winners?: { place: number; player_ids: string[] }[];
   confirmed_count?: number;
   waitlist_count?: number;
+}
+
+interface ApiTournamentImage {
+  id: string;
+  url: string;
+  created_at: string;
 }
 
 interface ApiPlayerBrief {
@@ -74,7 +84,15 @@ function mapVenue(raw: ApiVenue): Venue {
   };
 }
 
-export function mapTournament(raw: ApiTournament, participants: Registration[] = []): Tournament {
+function mapTournamentImage(raw: ApiTournamentImage): TournamentImage {
+  return { id: raw.id, url: resolveCoverUrl(raw.url), createdAt: raw.created_at };
+}
+
+export function mapTournament(
+  raw: ApiTournament,
+  participants: Registration[] = [],
+  images: ApiTournamentImage[] = [],
+): Tournament {
   return {
     id: raw.id,
     slug: raw.slug,
@@ -92,10 +110,16 @@ export function mapTournament(raw: ApiTournament, participants: Registration[] =
     venue: mapVenue(raw.venue),
     entryFee: raw.entry_fee,
     maxParticipants: raw.max_participants,
-    coverUrl: raw.cover_url ?? undefined,
+    coverUrl: raw.cover_url ? resolveCoverUrl(raw.cover_url) : undefined,
     regulations: raw.regulations,
     participants,
+    images: images.map(mapTournamentImage),
     season: raw.season,
+    isHidden: raw.is_hidden ?? false,
+    winners: (raw.winners ?? []).map((winner) => ({
+      place: winner.place as 1 | 2 | 3,
+      playerIds: winner.player_ids ?? [],
+    })),
   };
 }
 
@@ -183,6 +207,7 @@ export async function fetchTournamentBySlug(
   const { response, data } = await apiRequest<{
     tournament: ApiTournament;
     registrations: ApiRegistration[];
+    images: ApiTournamentImage[];
   }>(`/tournaments/${encodeURIComponent(slug)}`, {
     absolute: typeof window === "undefined",
     headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
@@ -200,7 +225,7 @@ export async function fetchTournamentBySlug(
     registeredAt: item.registeredAt,
   }));
   return {
-    tournament: mapTournament(data.tournament, participants),
+    tournament: mapTournament(data.tournament, participants, data.images ?? []),
     registrations,
   };
 }
@@ -228,6 +253,7 @@ export async function fetchOrganizerTournament(
   const { response, data } = await apiRequest<{
     tournament: ApiTournament;
     registrations: ApiRegistration[];
+    images: ApiTournamentImage[];
     counts: { confirmed: number; pending: number; waitlist: number };
   }>(`/organizer/tournaments/${encodeURIComponent(id)}`, {
     absolute: typeof window === "undefined",
@@ -246,7 +272,7 @@ export async function fetchOrganizerTournament(
     registeredAt: item.registeredAt,
   }));
   return {
-    tournament: mapTournament(data.tournament, participants),
+    tournament: mapTournament(data.tournament, participants, data.images ?? []),
     registrations,
     counts: data.counts ?? { confirmed: 0, pending: 0, waitlist: 0 },
   };
@@ -357,6 +383,69 @@ export async function updateOrganizerTournament(
   };
 }
 
+export async function deleteOrganizerTournament(
+  id: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { response, data } = await apiRequest<ApiErrorBody & { message?: string }>(
+    `/organizer/tournaments/${encodeURIComponent(id)}`,
+    { method: "DELETE" },
+  );
+  if (response.status === 204 || response.ok) return { ok: true };
+  return {
+    ok: false,
+    error: (data as ApiErrorBody | undefined)?.message ?? "Не удалось удалить турнир",
+  };
+}
+
+export async function setOrganizerTournamentVisibility(
+  id: string,
+  hidden: boolean,
+): Promise<{ ok: true; hidden: boolean } | { ok: false; error: string }> {
+  const { response, data } = await apiRequest<{ hidden: boolean } & ApiErrorBody>(
+    `/organizer/tournaments/${encodeURIComponent(id)}/visibility`,
+    {
+      method: "POST",
+      body: JSON.stringify({ hidden }),
+    },
+  );
+  if (response.ok && data && typeof data.hidden === "boolean") {
+    return { ok: true, hidden: data.hidden };
+  }
+  return {
+    ok: false,
+    error: (data as ApiErrorBody | undefined)?.message ?? "Не удалось изменить видимость",
+  };
+}
+
+export async function saveTournamentPlaces(
+  id: string,
+  places: { place: 1 | 2 | 3; playerIds: string[] }[],
+): Promise<{ ok: true; winners: { place: 1 | 2 | 3; playerIds: string[] }[] } | { ok: false; error: string }> {
+  const { response, data } = await apiRequest<{
+    places?: { place: number; player_ids: string[] }[];
+  } & ApiErrorBody>(`/organizer/tournaments/${encodeURIComponent(id)}/places`, {
+    method: "PUT",
+    body: JSON.stringify({
+      places: places
+        .filter((place) => place.playerIds.length > 0)
+        .map((place) => ({ place: place.place, player_ids: place.playerIds })),
+    }),
+  });
+  if (response.ok) {
+    return {
+      ok: true,
+      winners: (data?.places ?? []).map((place) => ({
+        place: place.place as 1 | 2 | 3,
+        playerIds: place.player_ids ?? [],
+      })),
+    };
+  }
+  return {
+    ok: false,
+    error: (data as ApiErrorBody | undefined)?.message ?? "Не удалось сохранить призёров",
+  };
+}
+
 export async function createRegistration(
   slug: string,
   body?: { partnerId?: string; lookingForPartner?: boolean },
@@ -447,4 +536,34 @@ export async function addOrganizerRegistration(
     ok: false,
     error: (data as ApiErrorBody | undefined)?.message ?? "Не удалось добавить участника",
   };
+}
+
+export async function uploadTournamentImage(
+  tournamentId: string,
+  file: File,
+): Promise<{ ok: true; image: TournamentImage } | { ok: false; error: string }> {
+  const body = new FormData();
+  body.append("file", file);
+  const { response, data } = await apiRequest<{ image: ApiTournamentImage } & ApiErrorBody>(
+    `/organizer/tournaments/${encodeURIComponent(tournamentId)}/images`,
+    { method: "POST", body },
+  );
+  if (!response.ok || !data?.image) {
+    return { ok: false, error: data?.message ?? "Не удалось загрузить изображение" };
+  }
+  return { ok: true, image: mapTournamentImage(data.image) };
+}
+
+export async function deleteTournamentImage(
+  tournamentId: string,
+  imageId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { response, data } = await apiRequest<ApiErrorBody>(
+    `/organizer/tournaments/${encodeURIComponent(tournamentId)}/images/${encodeURIComponent(imageId)}`,
+    { method: "DELETE" },
+  );
+  if (!response.ok) {
+    return { ok: false, error: data?.message ?? "Не удалось удалить изображение" };
+  }
+  return { ok: true };
 }

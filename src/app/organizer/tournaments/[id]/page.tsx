@@ -8,7 +8,7 @@ import {
   CalendarClock,
   MapPin,
   Network,
-  Trophy,
+  Pencil,
   UserCheck,
   Users,
   Wallet,
@@ -19,8 +19,11 @@ import { formatDateTime, formatMoney } from "@/lib/utils";
 import { CategoryBadge, StatusPill, SurfaceBadge, TypeBadge } from "@/components/ui/Badges";
 import { EmptyState } from "@/components/ui/Section";
 import { MatchRow } from "@/components/domain/MatchRow";
-import { OrganizerHeader, OrgStat, Panel, MiniLabel } from "@/components/organizer/OrganizerUI";
+import { OrganizerHeader, OrgStat, Panel } from "@/components/organizer/OrganizerUI";
 import { ParticipantsManager, TournamentStatusPanel } from "@/components/organizer/TournamentManage";
+import { TournamentGallery } from "@/components/organizer/TournamentGallery";
+import { TournamentDangerZone } from "@/components/organizer/TournamentDangerZone";
+import { TournamentPlaces } from "@/components/organizer/TournamentPlaces";
 
 export async function generateMetadata({
   params,
@@ -41,7 +44,25 @@ export default async function OrganizerTournamentPage({
   const data = await getOrganizerTournament(id);
   if (!data) notFound();
 
-  const { tournament, participants, matches, confirmed, pending, waitlist, revenue, winners } = data;
+  const { tournament, participants, matches, confirmed, pending, waitlist, revenue } = data;
+  const isPairs = ["doubles", "mixed", "teams"].includes(tournament.type);
+  const placeOptions = (() => {
+    const byId = new Map<string, { id: string; name: string }>();
+    for (const entry of participants) {
+      if (entry.status !== "confirmed") continue;
+      if (entry.playerId) {
+        const name = `${entry.player.firstName} ${entry.player.lastName}`.trim();
+        byId.set(entry.playerId, { id: entry.playerId, name: name || entry.playerId });
+      }
+      if (entry.partnerId) {
+        const name = entry.partner
+          ? `${entry.partner.firstName} ${entry.partner.lastName}`.trim()
+          : entry.partnerId;
+        byId.set(entry.partnerId, { id: entry.partnerId, name: name || entry.partnerId });
+      }
+    }
+    return [...byId.values()];
+  })();
 
   return (
     <>
@@ -61,6 +82,10 @@ export default async function OrganizerTournamentPage({
             <Link href="/organizer/tournaments" className="btn btn-secondary btn-sm">
               <ArrowLeft className="size-3.5" aria-hidden="true" />
               Все турниры
+            </Link>
+            <Link href={`/organizer/tournaments/${tournament.id}/edit`} className="btn btn-secondary btn-sm">
+              <Pencil className="size-3.5" aria-hidden="true" />
+              Редактировать
             </Link>
             <Link href={`/tournaments/${tournament.slug}`} className="btn btn-primary btn-sm">
               Публичная страница
@@ -125,10 +150,42 @@ export default async function OrganizerTournamentPage({
             </Panel>
 
             <Panel
+              title="Галерея"
+              description="Фотографии турнира видны на публичной странице"
+              action={
+                <span className="text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted">
+                  до 12 изображений
+                </span>
+              }
+            >
+              <TournamentGallery
+                tournamentId={tournament.id}
+                images={tournament.images ?? []}
+              />
+            </Panel>
+
+            <Panel
+              title="Призёры и места"
+              description="Красивое оформление первого, второго и третьего места на публичной странице"
+              action={
+                <span className="text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted">
+                  {tournament.winners?.length ?? 0} из 3
+                </span>
+              }
+            >
+              <TournamentPlaces
+                tournamentId={tournament.id}
+                isPairs={isPairs}
+                participants={placeOptions}
+                winners={tournament.winners ?? []}
+              />
+            </Panel>
+
+            <Panel
               title="Матчи турнира"
               description={`${matches.length} матчей в расписании`}
               action={
-                <Link href="/organizer/matches" className="link-arrow text-xs">
+                <Link href={`/organizer/matches?tournament=${tournament.id}`} className="link-arrow text-xs">
                   Внести счёт
                   <ArrowRight className="size-3.5" aria-hidden="true" />
                 </Link>
@@ -147,7 +204,7 @@ export default async function OrganizerTournamentPage({
                     title="Матчи ещё не созданы"
                     description="Сгенерируйте сетку после закрытия регистрации — матчи появятся в расписании автоматически."
                     action={
-                      <Link href="/organizer/bracket" className="btn btn-primary btn-sm">
+                      <Link href={`/organizer/bracket?tournament=${tournament.id}`} className="btn btn-primary btn-sm">
                         <Network className="size-3.5" aria-hidden="true" />
                         Сгенерировать сетку
                       </Link>
@@ -228,42 +285,12 @@ export default async function OrganizerTournamentPage({
               </Link>
             </Panel>
 
-            {winners.length > 0 && (
-              <Panel title="Победители" description="Опубликованные результаты">
-                <ul className="space-y-3">
-                  {winners.map((winner) => (
-                    <li key={winner.place} className="flex items-start gap-2.5">
-                      <span className="mt-0.5 grid size-5 shrink-0 place-items-center border border-warning/40 text-[0.6rem] tabular-nums text-warning">
-                        {winner.place}
-                      </span>
-                      <div>
-                        <p className="text-[0.76rem] font-medium text-ink">
-                          {winner.players.map((player) => `${player!.firstName} ${player!.lastName}`).join(" / ")}
-                        </p>
-                        <p className="text-[0.62rem] text-ink-muted">{winner.place === 1 ? "Победитель" : "Призовое место"}</p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </Panel>
-            )}
-
-            <Panel title="Служебное">
-              <MiniLabel>Идентификатор</MiniLabel>
-              <p className="mt-1 font-mono text-xs text-ink-soft">{tournament.id} · {tournament.slug}</p>
-              <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
-                <Link href={`/tournaments/${tournament.slug}`} className="btn btn-secondary btn-sm">
-                  <Trophy className="size-3.5" aria-hidden="true" />
-                  Страница турнира
-                </Link>
-                <button type="button" className="btn btn-ghost btn-sm" disabled title="Доступно после подключения базы данных">
-                  В архив
-                </button>
-              </div>
-              <p className="mt-2 text-[0.62rem] leading-relaxed text-ink-faint">
-                Перенос в архив и удаление доступны после подключения базы данных и проверки прав.
-              </p>
-            </Panel>
+            <TournamentDangerZone
+              id={tournament.id}
+              slug={tournament.slug}
+              title={tournament.title}
+              hidden={Boolean(tournament.isHidden)}
+            />
           </aside>
         </div>
       </div>

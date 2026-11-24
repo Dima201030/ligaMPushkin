@@ -105,6 +105,12 @@ export interface TournamentWinner {
   playerIds: string[];
 }
 
+export interface TournamentImage {
+  id: string;
+  url: string;
+  createdAt: string;
+}
+
 export interface Tournament {
   id: string;
   slug: string;
@@ -126,7 +132,9 @@ export interface Tournament {
   regulations: string;
   participants: Registration[];
   winners?: TournamentWinner[];
+  images?: TournamentImage[];
   season: number;
+  isHidden?: boolean;
 }
 
 export interface MatchSide {
