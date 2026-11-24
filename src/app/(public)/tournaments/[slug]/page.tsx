@@ -60,7 +60,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
             // eslint-disable-next-line @next/next/no-img-element
             <img src={tournament.coverUrl} alt="" className="size-full object-cover" />
           ) : (
-            <div className="size-full court-pattern" />
+            <div className="size-full court-pattern-static" aria-hidden="true" />
           )}
         </div>
         <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/90 to-navy/50" aria-hidden="true" />

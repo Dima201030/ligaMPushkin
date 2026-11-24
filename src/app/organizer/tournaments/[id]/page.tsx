@@ -21,6 +21,7 @@ import { EmptyState } from "@/components/ui/Section";
 import { MatchRow } from "@/components/domain/MatchRow";
 import { OrganizerHeader, OrgStat, Panel } from "@/components/organizer/OrganizerUI";
 import { ParticipantsManager, TournamentStatusPanel } from "@/components/organizer/TournamentManage";
+import { TournamentCover } from "@/components/organizer/TournamentCover";
 import { TournamentGallery } from "@/components/organizer/TournamentGallery";
 import { TournamentDangerZone } from "@/components/organizer/TournamentDangerZone";
 import { TournamentPlaces } from "@/components/organizer/TournamentPlaces";
@@ -146,6 +147,16 @@ export default async function OrganizerTournamentPage({
                     : undefined,
                   registeredAt: entry.registeredAt,
                 }))}
+              />
+            </Panel>
+
+            <Panel
+              title="Фото профиля"
+              description="Обложка для списка турниров и шапки публичной страницы"
+            >
+              <TournamentCover
+                tournamentId={tournament.id}
+                coverUrl={tournament.coverUrl}
               />
             </Panel>
 
