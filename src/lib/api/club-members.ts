@@ -123,17 +123,23 @@ export async function patchClubMember(
   return { ok: false, error: data?.message ?? "Не удалось обновить участника" };
 }
 
-/** Soft-remove club membership (status=left). Does not delete the Pairly account. */
+/** Remove from club and erase the Pairly player account (anonymize everywhere). */
 export async function deleteClubMember(
   id: string,
   opts?: { clubSlug?: string },
-): Promise<{ ok: true; member: ClubMember } | { ok: false; error: string; code?: string }> {
-  const { response, data } = await apiRequest<{ member: ApiMember } & ApiErrorBody>(
-    `/organizer/members/${encodeURIComponent(id)}`,
-    { method: "DELETE", clubSlug: opts?.clubSlug },
-  );
+): Promise<{ ok: true; member: ClubMember; accountErased?: boolean } | { ok: false; error: string; code?: string }> {
+  const { response, data } = await apiRequest<
+    { member: ApiMember; account_erased?: boolean } & ApiErrorBody
+  >(`/organizer/members/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    clubSlug: opts?.clubSlug,
+  });
   if (response.ok && data?.member) {
-    return { ok: true, member: mapMember(data.member) };
+    return {
+      ok: true,
+      member: mapMember(data.member),
+      accountErased: Boolean(data.account_erased),
+    };
   }
   return {
     ok: false,
