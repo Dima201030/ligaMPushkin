@@ -331,6 +331,64 @@ export async function resendConfirmEmail(
   };
 }
 
+/** Request password reset email (anti-enumeration; 202 even if email unknown). */
+export async function requestPasswordReset(
+  email: string,
+): Promise<{ ok: true; message: string } | { ok: false; error: string }> {
+  const { response, data } = await request<{ ok?: boolean; message?: string } & ApiErrorBody>(
+    "/auth/forgot-password",
+    {
+      method: "POST",
+      body: JSON.stringify({ email: email.trim().toLowerCase() }),
+    },
+  );
+  if (response.status === 202 || (response.ok && data?.ok)) {
+    return {
+      ok: true,
+      message:
+        data?.message ??
+        "Если аккаунт существует, мы отправили письмо со ссылкой для сброса пароля",
+    };
+  }
+  if (response.status === 429) {
+    return {
+      ok: false,
+      error: data?.message ?? "Слишком много попыток. Подождите несколько минут.",
+    };
+  }
+  return {
+    ok: false,
+    error: data?.message ?? "Не удалось отправить письмо",
+  };
+}
+
+/** Set a new password using the token from the reset email. */
+export async function resetPasswordWithToken(
+  token: string,
+  newPassword: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { response, data } = await request<{ ok?: boolean } & ApiErrorBody>("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({
+      token: token.trim(),
+      new_password: newPassword,
+    }),
+  });
+  if (response.ok && data?.ok) {
+    return { ok: true };
+  }
+  if (response.status === 429) {
+    return {
+      ok: false,
+      error: data?.message ?? "Слишком много попыток. Подождите несколько минут.",
+    };
+  }
+  return {
+    ok: false,
+    error: data?.message ?? "Ссылка сброса недействительна или устарела",
+  };
+}
+
 /** Right-to-erasure: anonymize account and clear session. */
 export async function deleteMyAccount(): Promise<{ ok: true } | { ok: false; error: string }> {
   const { response, data } = await request<{ ok?: boolean; message?: string } & ApiErrorBody>("/auth/me", {
