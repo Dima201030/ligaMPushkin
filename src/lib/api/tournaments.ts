@@ -107,20 +107,17 @@ function mapTournamentImage(raw: ApiTournamentImage): TournamentImage {
 
 function mapTournamentCreator(raw?: ApiCreator | null): TournamentCreator | undefined {
   if (!raw?.id) return undefined;
-  const email = raw.email?.trim();
   return {
     id: normalizeUuid(raw.id),
     firstName: raw.first_name?.trim() || "",
     lastName: raw.last_name?.trim() || "",
-    email: email || undefined,
   };
 }
 
+/** Public-safe creator label: name only (never email). */
 export function formatTournamentCreatorLabel(creator?: TournamentCreator | null): string {
   if (!creator) return "";
-  const name = `${creator.firstName} ${creator.lastName}`.trim();
-  if (name && creator.email) return `${name} · ${creator.email}`;
-  return name || creator.email || "";
+  return `${creator.firstName} ${creator.lastName}`.trim();
 }
 
 export function mapTournament(
