@@ -97,3 +97,17 @@ curl -u pairly:<PASSWORD> -s -o /dev/null -w '%{http_code}\n' \
 - Публичные турниры/рейтинг ещё из mock; auth уже на Go API (см. `docs/LOCAL_API.md`).
 - Basic Auth — временная защита на время разработки, не замена ролям и 2FA.
 - Сертификат продлевается certbot.timer; HTTP-блок с ACME-путём оставлен включённым.
+
+## Поддомен tournaments.pairly.space
+
+Параллельно с duckdns: тот же UI (`127.0.0.1:3010`) и API (`:3020`), тот же
+`/etc/nginx/mrpushkin.htpasswd`. DuckDNS-vhost не трогаем.
+
+```bash
+# DNS у REG.RU: A-запись tournaments.pairly.space → 91.223.89.199
+sudo bash deploy/configure-tournaments-pairly-space.sh
+```
+
+Публичный URL клуба: `https://tournaments.pairly.space/mp-7f3a9c2e5b8d4106/`  
+Корень поддомена редиректит на этот basePath.  
+`pairly.space/tournaments` → `NEXT_PUBLIC_LIGA_PUBLIC_BASE` (pairly-web).
