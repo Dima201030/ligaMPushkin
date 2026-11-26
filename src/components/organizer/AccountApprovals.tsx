@@ -68,7 +68,7 @@ export function AccountApprovals() {
       setLoadState("ready");
     } catch {
       setLoadState("error");
-      setLoadError("Не удалось загрузить заявки. Проверьте, что API лиги запущен и вы вошли как организатор.");
+      setLoadError("Не удалось загрузить заявки. Проверьте, что API платформы запущен и вы вошли как организатор.");
     }
   }, []);
 
@@ -122,7 +122,7 @@ export function AccountApprovals() {
 
   async function reject(account: LeagueApplication) {
     const name = `${account.firstName} ${account.lastName}`;
-    if (!window.confirm(`Отклонить заявку ${name}? Игрок не сможет войти в лигу.`)) return;
+    if (!window.confirm(`Отклонить заявку ${name}? Игрок не сможет войти на платформу.`)) return;
 
     setBusyId(account.id);
     setNotice(null);
@@ -215,7 +215,7 @@ export function AccountApprovals() {
             <span className="ml-2 text-ink-faint">{pending.length}</span>
           </h2>
           <p className="text-[0.68rem] text-ink-muted">
-            Сверьте имя, фамилию и уровень — эти данные увидит лига.
+            Сверьте имя, фамилию и уровень — эти данные увидит организатор.
           </p>
         </div>
 

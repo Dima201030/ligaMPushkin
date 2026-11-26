@@ -37,9 +37,9 @@ export default async function ArchivePage({
   return (
     <>
       <PageHeader
-        eyebrow="История лиги"
+        eyebrow="История турниров"
         title="Архив турниров"
-        description="Все завершённые соревнования клуба. Победители, призёры и полные результаты по годам и категориям."
+        description="Все завершённые турниры платформы. Победители, призёры и полные результаты по годам и категориям."
       >
         <div className="mt-8 flex flex-wrap gap-x-8 gap-y-2 border-t border-white/15 pt-5 text-xs text-white/55">
           <span><span className="font-bold text-white">{tournaments.length}</span> турниров по фильтру</span>

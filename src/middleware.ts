@@ -1,11 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import {
-  CLUB_COOKIE,
-  DEFAULT_CLUB_SLUG,
-  normalizeClubSlug,
-  resolveClubSlug,
-  stripClubPrefix,
-} from "@/lib/club/tenant";
+import { CLUB_COOKIE, DEFAULT_CLUB_SLUG, stripClubPrefix } from "@/lib/club/tenant";
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
@@ -20,33 +14,18 @@ function withClubCookie(response: NextResponse, slug: string) {
 
 export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
-  const fromQuery = normalizeClubSlug(searchParams.get("club"));
-  const fromCookie = normalizeClubSlug(request.cookies.get(CLUB_COOKIE)?.value);
-  const { clubSlug: fromPath, restPath } = stripClubPrefix(pathname);
 
-  // /c/:slug[/...] → set tenant cookie and land on the clean app path
-  if (fromPath) {
+  // Single-tenant install: /c/:slug and ?club= are accepted for old links but
+  // never switch tenants. A stale cookie is overwritten with the default club.
+  const { restPath } = stripClubPrefix(pathname);
+  if (restPath !== pathname || searchParams.has("club")) {
     const url = request.nextUrl.clone();
     url.pathname = restPath;
-    const response = NextResponse.redirect(url);
-    return withClubCookie(response, fromPath);
-  }
-
-  // ?club=slug → set cookie and drop the query param (clean URL)
-  if (fromQuery) {
-    const url = request.nextUrl.clone();
     url.searchParams.delete("club");
-    const response = NextResponse.redirect(url);
-    return withClubCookie(response, fromQuery);
+    return withClubCookie(NextResponse.redirect(url), DEFAULT_CLUB_SLUG);
   }
 
-  // Ensure a tenant cookie exists for API client / server reads
-  if (!fromCookie) {
-    const response = NextResponse.next();
-    return withClubCookie(response, resolveClubSlug(DEFAULT_CLUB_SLUG));
-  }
-
-  return NextResponse.next();
+  return withClubCookie(NextResponse.next(), DEFAULT_CLUB_SLUG);
 }
 
 export const config = {

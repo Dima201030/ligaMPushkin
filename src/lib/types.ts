@@ -139,8 +139,16 @@ export interface Tournament {
   isHidden?: boolean;
 }
 
+export interface MatchSidePlayer {
+  id: string;
+  slug?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
 export interface MatchSide {
   playerIds: string[];
+  players?: MatchSidePlayer[];
   seed?: number;
   label?: string;
 }

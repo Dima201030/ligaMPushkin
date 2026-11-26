@@ -637,7 +637,7 @@ export function BracketStudio({
               <span className="field-label">Посев</span>
               <select className="field text-xs" value={seeding} onChange={(event) => setSeeding(event.target.value as Seeding)}>
                 <option value="seed">По заявленному посеву</option>
-                <option value="rating">По рейтингу клуба</option>
+                <option value="rating">По рейтингу</option>
                 <option value="random">Случайная жеребьёвка</option>
               </select>
             </label>

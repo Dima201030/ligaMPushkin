@@ -159,10 +159,13 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
               <TournamentPodium
                 entries={winners.map((winner) => ({
                   place: winner.place,
-                  names: winner.playerIds
+                  players: winner.playerIds
                     .map((id) => participants.find((item) => uuidsEqual(item.playerId, id))?.player)
                     .filter(Boolean)
-                    .map((player) => `${player!.firstName} ${player!.lastName}`),
+                    .map((player) => ({
+                      name: `${player!.firstName} ${player!.lastName}`,
+                      slug: player!.slug,
+                    })),
                 }))}
               />
             )}
@@ -235,10 +238,19 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
                       <span className="w-6 text-xs font-bold tabular-nums text-ink-faint">{registration.seed ?? "—"}</span>
                       <Avatar firstName={player.firstName} lastName={player.lastName} size="sm" />
                       <div className="min-w-0 flex-1">
-                        <Link href={`/players/${player.slug}`} className="text-sm font-semibold hover:text-accent">
-                          {player.firstName} {player.lastName}
-                          {partner && <span className="font-normal text-ink-muted"> / {partner.firstName} {partner.lastName}</span>}
-                        </Link>
+                        <p className="text-sm font-semibold">
+                          <Link href={`/players/${player.slug}`} className="hover:text-accent">
+                            {player.firstName} {player.lastName}
+                          </Link>
+                          {partner ? (
+                            <>
+                              <span className="font-normal text-ink-muted"> / </span>
+                              <Link href={`/players/${partner.slug}`} className="font-normal text-ink-muted hover:text-accent">
+                                {partner.firstName} {partner.lastName}
+                              </Link>
+                            </>
+                          ) : null}
+                        </p>
                         <p className="mt-0.5 text-[0.66rem] text-ink-muted">{player.category} · {player.rating}</p>
                       </div>
                       <span

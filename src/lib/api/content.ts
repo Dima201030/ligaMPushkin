@@ -1,4 +1,5 @@
 import type { ClubEvent, NewsPost } from "@/lib/types";
+import { resolveCoverUrl } from "@/lib/media";
 import { ApiError, apiRequest, type ApiErrorBody } from "./client";
 
 interface ApiNews {
@@ -47,9 +48,9 @@ function mapNews(raw: ApiNews): NewsPost {
     title: raw.title,
     excerpt: raw.excerpt,
     body: raw.body ?? [],
-    coverUrl: raw.cover_url || "/images/hero.jpg",
+    coverUrl: resolveCoverUrl(raw.cover_url),
     publishedAt: raw.published_at || "",
-    tag: raw.tag || "Лига",
+    tag: raw.tag || "Pairly",
     author: raw.author || "",
     readingTime: raw.reading_time || 1,
   };
@@ -64,7 +65,7 @@ function mapEvent(raw: ApiEvent): ClubEvent {
     description: raw.description,
     startsAt: raw.starts_at,
     location: raw.location,
-    coverUrl: raw.cover_url ?? undefined,
+    coverUrl: raw.cover_url ? resolveCoverUrl(raw.cover_url) : undefined,
     seatsLeft: raw.seats_left ?? undefined,
   };
 }

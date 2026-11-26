@@ -20,8 +20,8 @@ export default async function PlayersPage() {
     <>
       <PageHeader
         eyebrow="Сообщество"
-        title="Игроки лиги"
-        description="Все участники клуба: рейтинг, категория мастерства и соревновательная статистика. Найдите игрока или сравните свой прогресс."
+        title="Игроки"
+        description="Все участники турниров: рейтинг, категория мастерства и соревновательная статистика. Найдите игрока или сравните свой прогресс."
       >
         <div className="mt-8 grid max-w-2xl grid-cols-2 gap-6 border-t border-white/15 pt-5 sm:grid-cols-4">
           <div>
@@ -30,7 +30,7 @@ export default async function PlayersPage() {
           </div>
           <div>
             <p className="display text-[1.65rem] leading-none tabular-nums text-white">{formatNumber(rows.length)}</p>
-            <p className="mt-2 text-[0.66rem] text-white/45">всего в лиге</p>
+            <p className="mt-2 text-[0.66rem] text-white/45">всего на платформе</p>
           </div>
           <div>
             <p className="display text-[1.65rem] leading-none tabular-nums text-white">{formatNumber(averageRating)}</p>

@@ -171,7 +171,7 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
                 <th className="text-right">Матчи</th>
                 <th className="text-right">Процент побед</th>
                 <th className="text-right">Турниры</th>
-                <th>В лиге с</th>
+                <th>На платформе с</th>
                 <th />
               </tr>
             </thead>

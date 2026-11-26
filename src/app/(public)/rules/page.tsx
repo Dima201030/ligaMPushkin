@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Download, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import { getCmsPage } from "@/lib/data";
 import { CATEGORIES, FORMATS, RATING_RULES, TOURNAMENT_STATUSES, TOURNAMENT_TYPES } from "@/lib/domain";
 import { PageHeader } from "@/components/ui/Section";
@@ -8,8 +8,8 @@ import { CategoryBadge } from "@/components/ui/Badges";
 import { CmsBody } from "@/components/domain/CmsBody";
 
 export const metadata: Metadata = {
-  title: "Правила лиги",
-  description: "Регламент турниров Pairly: категории, форматы, регистрация, начисление рейтинга и поведение на корте.",
+  title: "Правила и регламент",
+  description: "Регламент турниров на платформе Pairly: категории, форматы, регистрация и начисление рейтинга.",
 };
 
 export default async function RulesPage() {
@@ -20,12 +20,11 @@ export default async function RulesPage() {
       <PageHeader
         eyebrow="Документы"
         title={page?.title || "Правила и регламент"}
-        description="Как проходят турниры лиги, как начисляется рейтинг и что важно знать перед первым матчем."
+        description="Как организатор ведёт турнир, как начисляется рейтинг и что важно знать перед первым матчем."
         actions={
-          <button type="button" className="btn btn-on-dark">
-            <Download className="size-4" aria-hidden="true" />
-            Скачать PDF
-          </button>
+          <Link href="/contacts" className="btn btn-on-dark">
+            Контакты
+          </Link>
         }
         compact
       />
@@ -36,7 +35,7 @@ export default async function RulesPage() {
             <div className="border-y border-line py-4">
               <p className="text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted">Справка</p>
               <p className="mt-3 text-xs leading-relaxed text-ink-soft">
-                Ниже — актуальный текст регламента и справочник категорий/форматов лиги.
+                Ниже — актуальный текст регламента и справочник категорий и форматов.
               </p>
             </div>
             <div className="mt-6 border-t border-line pt-5">

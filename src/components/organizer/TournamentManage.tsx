@@ -273,7 +273,7 @@ export function ParticipantsManager({
         );
       })
       .catch(() => {
-        if (!cancelled) setPlayersError("Не удалось загрузить игроков клуба");
+        if (!cancelled) setPlayersError("Не удалось загрузить игроков");
       })
       .finally(() => {
         if (!cancelled) setPlayersLoading(false);
@@ -384,7 +384,7 @@ export function ParticipantsManager({
         <form onSubmit={addPlayer} className="space-y-3 border-b border-line px-1 py-4 sm:px-2">
           <div className="flex flex-wrap items-end gap-3">
             <label className="block min-w-[12rem] flex-1">
-              <span className="field-label">Игрок клуба / заготовка</span>
+              <span className="field-label">Игрок платформы / заготовка</span>
               <input
                 className="field mb-2 min-h-[36px] text-xs"
                 placeholder="Фильтр по ФИО"

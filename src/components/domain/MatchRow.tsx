@@ -3,41 +3,76 @@ import type { Match } from "@/lib/types";
 import { cn, formatDateShort, formatTime } from "@/lib/utils";
 import { MatchStatusPill } from "@/components/ui/Badges";
 
-function sideLabel(side: Match["side1"]) {
-  if (side.label) return side.label;
-  if (!side.playerIds.length) return "Победитель пары матчей";
-  return side.playerIds.map((id) => id.slice(0, 8)).join(" / ");
+function sidePlayers(side: Match["side1"]): NonNullable<Match["side1"]["players"]> {
+  if (side.players && side.players.length > 0) return side.players;
+  return side.playerIds.map((id) => ({ id }));
 }
 
-function sideFullLabel(side: Match["side1"]) {
+function sideLabel(side: Match["side1"]) {
   if (side.label) return side.label;
-  if (!side.playerIds.length) return "Победитель пары матчей";
-  return side.playerIds.map((id) => id.slice(0, 8)).join(" / ");
+  const players = sidePlayers(side);
+  if (!players.length) return "Победитель пары матчей";
+  return players
+    .map((player) =>
+      player.firstName && player.lastName
+        ? `${player.lastName} ${player.firstName.charAt(0)}.`
+        : player.id.slice(0, 8),
+    )
+    .join(" / ");
 }
 
 function Side({
   side,
   winner,
   align = "left",
-  full = false,
 }: {
   side: Match["side1"];
   winner: boolean;
   align?: "left" | "right";
-  full?: boolean;
 }) {
+  const players = sidePlayers(side);
+  const empty = !side.label && players.length === 0;
+
   return (
     <div className={cn("flex min-w-0 items-center gap-2", align === "right" && "justify-end text-right")}>
       {align === "right" && side.seed && <Seed seed={side.seed} />}
-      <span
+      <div
         className={cn(
-          "truncate text-sm",
+          "min-w-0 truncate text-sm",
           winner ? "font-bold text-ink" : "font-medium text-ink-soft",
-          !side.playerIds.length && "italic text-ink-faint",
+          empty && "italic text-ink-faint",
         )}
       >
-        {full ? sideFullLabel(side) : sideLabel(side)}
-      </span>
+        {side.label ? (
+          side.label
+        ) : empty ? (
+          "Победитель пары матчей"
+        ) : (
+          players.map((player, index) => {
+            const name =
+              player.firstName && player.lastName
+                ? `${player.lastName} ${player.firstName.charAt(0)}.`
+                : player.id.slice(0, 8);
+            const node = player.slug ? (
+              <Link
+                key={player.id}
+                href={`/players/${player.slug}`}
+                className="hover:text-accent"
+              >
+                {name}
+              </Link>
+            ) : (
+              <span key={player.id}>{name}</span>
+            );
+            return (
+              <span key={player.id}>
+                {index > 0 ? " / " : null}
+                {node}
+              </span>
+            );
+          })
+        )}
+      </div>
       {align === "left" && side.seed && <Seed seed={side.seed} />}
     </div>
   );

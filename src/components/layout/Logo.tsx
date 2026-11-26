@@ -32,7 +32,7 @@ export function Logo({
             variant === "light" ? "text-white/45" : "text-ink-muted",
           )}
         >
-          Теннисная лига
+          Платформа турниров
         </span>
       )}
     </Link>

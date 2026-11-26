@@ -1,5 +1,5 @@
 [Unit]
-Description=Pairly League UI (Next.js)
+Description=Pairly UI (Next.js)
 Requires=docker.service
 After=docker.service network-online.target mrpushkin-api.service
 Wants=network-online.target

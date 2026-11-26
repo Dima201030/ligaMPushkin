@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarDays, CheckCircle2, CircleDot, Trophy } from "lucide-react";
-import { listTournaments } from "@/lib/data";
+import { listTournamentsChecked } from "@/lib/data";
 import { PageHeader } from "@/components/ui/Section";
 import { TournamentsExplorer } from "@/components/domain/TournamentsExplorer";
 import type { Tournament } from "@/lib/types";
@@ -18,11 +18,12 @@ export default async function TournamentsPage({
 }) {
   const params = await searchParams;
   const [upcoming, completed] = await Promise.all([
-    listTournaments({ status: "upcoming" }),
-    listTournaments({ status: "completed" }),
+    listTournamentsChecked({ status: "upcoming" }),
+    listTournamentsChecked({ status: "completed" }),
   ]);
-  const tournaments = upcoming as Tournament[];
-  const finished = completed as Tournament[];
+  const loadFailed = !upcoming.ok || !completed.ok;
+  const tournaments = upcoming.items as Tournament[];
+  const finished = completed.items as Tournament[];
   const open = tournaments.filter((item) => item.status === "registration_open").length;
   const live = tournaments.filter((item) => item.status === "live").length;
   const initialView = params.view === "completed" ? "completed" as const : undefined;

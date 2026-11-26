@@ -11,6 +11,7 @@ import type {
   Venue,
 } from "@/lib/types";
 import { CLUB } from "@/lib/domain";
+import { publicCity } from "@/lib/utils";
 import {
   fetchOrganizerTournament,
   fetchOrganizerTournaments,
@@ -47,10 +48,10 @@ export interface TournamentFilters {
 
 export const CLUB_VENUES: Venue[] = [
   {
-    id: "club-default",
-    name: CLUB.name,
-    address: CLUB.address,
-    courts: 9,
+    id: "organizer-venue",
+    name: "Площадка организатора",
+    address: "",
+    courts: 1,
     surface: "hard",
   },
 ];
@@ -92,7 +93,7 @@ export async function getHomeData() {
       players: players.length || rankings?.totalPlayers || 0,
       tournaments: allTournaments.length,
       matches: 0,
-      courts: 9,
+      courts: 0,
     },
   };
 }
@@ -113,6 +114,29 @@ export async function listTournaments(filters: TournamentFilters = {}) {
   } catch {
     return [];
   }
+}
+
+/** Same as listTournaments, but reports whether the API request succeeded. */
+export async function listTournamentsChecked(
+  filters: TournamentFilters = {},
+): Promise<{ items: Tournament[]; ok: boolean }> {
+  const cookie = await requestCookieHeader();
+  const query = {
+    status: filters.status ?? "upcoming",
+    category: filters.category,
+    type: filters.type,
+    year: filters.year,
+    query: filters.query,
+  };
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const items = await fetchTournaments(query, { cookie });
+      return { items, ok: true };
+    } catch {
+      if (attempt === 1) return { items: [], ok: false };
+    }
+  }
+  return { items: [], ok: false };
 }
 
 export async function getTournamentBySlug(slug: string): Promise<Tournament | null> {
@@ -226,7 +250,7 @@ export async function listPlayersWithRank() {
     const rankById = new Map(rankings.rows.map((row) => [row.playerId, row.position]));
     return players
       .map((player) => ({
-        player,
+        player: { ...player, city: publicCity(player.city) },
         rank: rankById.get(player.id) ?? 0,
       }))
       .sort((a, b) => {
@@ -243,8 +267,9 @@ export async function listPlayersWithRank() {
 export async function getPlayerProfile(slug: string) {
   const cookie = await requestCookieHeader();
   try {
-    const player = await fetchPlayerBySlug(slug, { cookie });
-    if (!player) return null;
+    const rawPlayer = await fetchPlayerBySlug(slug, { cookie });
+    if (!rawPlayer) return null;
+    const player = { ...rawPlayer, city: publicCity(rawPlayer.city) };
 
     const [globalRankings, categoryRankings] = await Promise.all([
       fetchRankings({}, { cookie }),
@@ -561,27 +586,35 @@ export async function getOrganizerTournament(id: string) {
   }
 }
 
-export async function getMatchDesk() {
+export async function getMatchDeskSelection(tournamentId?: string) {
   const cookie = await requestCookieHeader();
   try {
-    const [allMatches, organizerTournaments] = await Promise.all([
+    const [matches, tournaments] = await Promise.all([
       fetchOrganizerMatches({ cookie }),
       fetchOrganizerTournaments({ cookie }),
     ]);
-    return {
-      live: allMatches.filter((match) => match.status === "live"),
-      scheduled: allMatches.filter((match) => match.status === "scheduled"),
-      completed: allMatches.filter(
-        (match) => match.status === "completed" || match.status === "walkover",
-      ),
-      tournaments: organizerTournaments,
-    };
+    const counts = new Map<string, { live: number; scheduled: number; completed: number; total: number }>();
+    for (const match of matches) {
+      const entry = counts.get(match.tournamentId) ?? { live: 0, scheduled: 0, completed: 0, total: 0 };
+      entry.total += 1;
+      if (match.status === "live") entry.live += 1;
+      else if (match.status === "scheduled") entry.scheduled += 1;
+      else if (match.status === "completed" || match.status === "walkover") entry.completed += 1;
+      counts.set(match.tournamentId, entry);
+    }
+    const selected = tournamentId
+      ? tournaments.find((item) => item.id === tournamentId) ?? null
+      : null;
+    const scoped = selected
+      ? matches.filter((match) => match.tournamentId === selected.id)
+      : [];
+    return { tournaments, matches: scoped, selected, counts };
   } catch {
     return {
-      live: [],
-      scheduled: [],
-      completed: [],
-      tournaments: [],
+      tournaments: [] as Tournament[],
+      matches: [] as Awaited<ReturnType<typeof fetchOrganizerMatches>>,
+      selected: null,
+      counts: new Map<string, { live: number; scheduled: number; completed: number; total: number }>(),
     };
   }
 }
@@ -682,6 +715,13 @@ export async function getOrganizerDashboard() {
         activeTournaments: tournaments.filter((item) => item.status === "live").length,
         upcoming: upcoming.length,
         newRegistrations: 0,
+        completedMatches: matches.filter(
+          (match) => match.status === "completed" || match.status === "walkover",
+        ).length,
+        missingScores: matches.filter((match) => match.status === "completed" && !match.score).length,
+        drafts: tournaments.filter((item) => item.status === "draft").length,
+        totalTournaments: tournaments.length,
+        hiddenTournaments: tournaments.filter((item) => item.isHidden).length,
       },
       registrations: [] as {
         id: string;
@@ -716,7 +756,7 @@ export async function getOrganizerDashboard() {
     };
   } catch {
     return {
-      stats: { players: 0, activeTournaments: 0, upcoming: 0, newRegistrations: 0 },
+      stats: { players: 0, activeTournaments: 0, upcoming: 0, newRegistrations: 0, completedMatches: 0, missingScores: 0, drafts: 0, totalTournaments: 0, hiddenTournaments: 0 },
       registrations: [],
       tournaments: [] as Tournament[],
       results: [],

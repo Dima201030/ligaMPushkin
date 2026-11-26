@@ -813,6 +813,102 @@
   }
 }
 
+  /* ── Motion: editorial stagger, lift, drift ───────────── */
+
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes page-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes court-drift {
+    from {
+      background-position: 0 0, 0 0;
+    }
+    to {
+      background-position: 0 56px, 56px 0;
+    }
+  }
+
+  @keyframes soft-pulse {
+    0%, 100% {
+      opacity: 0.55;
+    }
+    50% {
+      opacity: 0.95;
+    }
+  }
+
+  main {
+    animation: page-fade 380ms var(--ease-out) both;
+  }
+
+  .stagger > * {
+    opacity: 0;
+  }
+
+  [data-revealed="true"] .stagger > * {
+    animation: rise-in 640ms var(--ease-out) both;
+  }
+
+  [data-revealed="true"] .stagger > *:nth-child(1) { animation-delay: 40ms; }
+  [data-revealed="true"] .stagger > *:nth-child(2) { animation-delay: 110ms; }
+  [data-revealed="true"] .stagger > *:nth-child(3) { animation-delay: 180ms; }
+  [data-revealed="true"] .stagger > *:nth-child(4) { animation-delay: 250ms; }
+  [data-revealed="true"] .stagger > *:nth-child(5) { animation-delay: 320ms; }
+  [data-revealed="true"] .stagger > *:nth-child(6) { animation-delay: 390ms; }
+  [data-revealed="true"] .stagger > *:nth-child(7) { animation-delay: 460ms; }
+  [data-revealed="true"] .stagger > *:nth-child(8) { animation-delay: 530ms; }
+
+  .feature-item {
+    transition:
+      transform 420ms var(--ease-out),
+      border-color 420ms var(--ease-out);
+  }
+
+  .feature-item:hover {
+    transform: translateY(-3px);
+    border-color: var(--color-line-strong);
+  }
+
+  .feature-item:hover .feature-icon {
+    transform: rotate(-6deg) scale(1.08);
+  }
+
+  .feature-icon {
+    transition: transform 420ms cubic-bezier(0.22, 1.2, 0.36, 1);
+  }
+
+  .btn svg {
+    transition: transform var(--dur-fast) var(--ease-out);
+  }
+
+  .btn:hover svg {
+    transform: translateX(3px);
+  }
+
+  .court-pattern {
+    animation: court-drift 26s linear infinite;
+  }
+
+  .pulse-dot {
+    animation: soft-pulse 2.4s ease-in-out infinite;
+  }
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

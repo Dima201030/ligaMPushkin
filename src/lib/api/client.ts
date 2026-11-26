@@ -3,8 +3,6 @@ import {
   CLUB_HEADER,
   DEFAULT_CLUB_SLUG,
   normalizeClubSlug,
-  parseClubCookie,
-  resolveClubSlug,
 } from "@/lib/club/tenant";
 
 const API_BASE =
@@ -58,26 +56,13 @@ export async function parseJson<T>(response: Response): Promise<T | undefined> {
   }
 }
 
-function clubSlugFromDocumentCookie(): string | null {
-  if (typeof document === "undefined") return null;
-  return parseClubCookie(document.cookie);
-}
-
-/** Resolve active club slug for the current request / browser. */
-export async function getRequestClubSlug(cookieHeader?: string): Promise<string> {
-  if (cookieHeader) {
-    return resolveClubSlug(parseClubCookie(cookieHeader), DEFAULT_CLUB_SLUG);
-  }
-  if (typeof window !== "undefined") {
-    return resolveClubSlug(clubSlugFromDocumentCookie(), DEFAULT_CLUB_SLUG);
-  }
-  try {
-    const { cookies } = await import("next/headers");
-    const jar = await cookies();
-    return resolveClubSlug(jar.get(CLUB_COOKIE)?.value, DEFAULT_CLUB_SLUG);
-  } catch {
-    return DEFAULT_CLUB_SLUG;
-  }
+/**
+ * Single-tenant install: always use the configured club. A stale pairly_club
+ * cookie (for example from a test tenant) must never scope the platform to an
+ * empty club and make tournaments or players disappear.
+ */
+export async function getRequestClubSlug(_cookieHeader?: string): Promise<string> {
+  return DEFAULT_CLUB_SLUG;
 }
 
 export async function apiRequest<T>(

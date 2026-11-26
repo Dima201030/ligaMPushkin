@@ -11,7 +11,7 @@ const KIND_LABEL = {
   tournament: "Турнир",
   camp: "Кэмп",
   school: "Школа",
-  club: "Клуб",
+  club: "Организатор",
 } as const;
 
 export async function generateMetadata({
@@ -41,7 +41,7 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
         description={event.description}
         compact
         actions={
-          <Link href="/contacts" className="btn btn-light">Записаться</Link>
+          <Link href="/contacts" className="btn btn-light">Спросить организатора</Link>
         }
       />
 
@@ -68,8 +68,9 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
               <h2 className="text-lg">О мероприятии</h2>
               <p className="mt-3 text-sm leading-relaxed text-ink-soft">{event.description}</p>
               <p className="mt-3 text-sm leading-relaxed text-ink-soft">
-                Участие доступно членам клуба и гостям. Организатор поможет подобрать формат и
-                ответит на вопросы по расписанию. Запись — через ресепшен или по телефону клуба.
+                Условия участия, запись и расписание определяет организатор события.
+                Уточните формат и свободные места в карточке турнира или напишите
+                организатору.
               </p>
             </div>
           </div>

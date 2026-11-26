@@ -100,7 +100,7 @@ function mutationErrorMessage(err: unknown, fallback: string): string {
   return fallback;
 }
 
-export function MatchScoreDesk({ matches }: { matches: Match[] }) {
+export function MatchScoreDesk({ matches, lockTournament = false }: { matches: Match[]; lockTournament?: boolean }) {
   const [items, setItems] = useState(matches);
   const [tab, setTab] = useState<Tab>("all");
   const [query, setQuery] = useState("");
@@ -391,20 +391,22 @@ export function MatchScoreDesk({ matches }: { matches: Match[] }) {
               onChange={(event) => setQuery(event.target.value)}
             />
           </label>
-          <label className="relative block w-full sm:w-auto">
-            <span className="sr-only">Турнир</span>
-            <Filter className="pointer-events-none absolute left-0 top-1/2 size-3.5 -translate-y-1/2 text-ink-faint" aria-hidden="true" />
-            <select
-              className="field min-h-[32px] w-full border-0 border-b border-line bg-transparent pl-5 text-xs focus:border-ink sm:w-48"
-              value={tournament}
-              onChange={(event) => setTournament(event.target.value)}
-            >
-              <option value="all">Все турниры</option>
-              {tournamentOptions.map(([id, title]) => (
-                <option key={id} value={id}>{title}</option>
-              ))}
-            </select>
-          </label>
+          {!lockTournament && tournamentOptions.length > 1 && (
+            <label className="relative block w-full sm:w-auto">
+              <span className="sr-only">Турнир</span>
+              <Filter className="pointer-events-none absolute left-0 top-1/2 size-3.5 -translate-y-1/2 text-ink-faint" aria-hidden="true" />
+              <select
+                className="field min-h-[32px] w-full border-0 border-b border-line bg-transparent pl-5 text-xs focus:border-ink sm:w-48"
+                value={tournament}
+                onChange={(event) => setTournament(event.target.value)}
+              >
+                <option value="all">Все турниры</option>
+                {tournamentOptions.map(([id, title]) => (
+                  <option key={id} value={id}>{title}</option>
+                ))}
+              </select>
+            </label>
+          )}
         </div>
       </div>
 

@@ -1,166 +1,142 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Clock, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
-import { getCmsPage } from "@/lib/data";
+import { ArrowRight, HelpCircle, Send, Settings2, Users } from "lucide-react";
 import { CLUB } from "@/lib/domain";
 import { PageHeader } from "@/components/ui/Section";
-import { ContactForm } from "@/components/domain/ContactForm";
-import { CmsBody } from "@/components/domain/CmsBody";
 
 export const metadata: Metadata = {
   title: "Контакты",
-  description: `Адрес, телефоны и схема проезда теннисного клуба ${CLUB.name} в Пушкине.`,
+  description:
+    "Связаться с Pairly: вопросы по платформе, турнирам, доступам и запуску организатора. Telegram @lliwago.",
 };
 
-const MAP_URL =
-  "https://yandex.ru/maps/?text=" +
-  encodeURIComponent("Санкт-Петербург, Пушкинский район, Волхонское шоссе, 79А");
+const TOPICS = [
+  {
+    icon: Users,
+    title: "Запуск для организатора",
+    text: "Расскажите про сезон, форматы и количество турниров. Подберём роли, покажем кабинет и поможем с первым запуском.",
+  },
+  {
+    icon: Settings2,
+    title: "Платформа и доступы",
+    text: "Вопросы по кабинету, регистрации, подтверждению профилей, сеткам, рейтингу и публичной части.",
+  },
+  {
+    icon: HelpCircle,
+    title: "Игрокам",
+    text: "Поможем разобраться с заявкой, листом ожидания, матчем или отображением рейтинга.",
+  },
+];
 
-export default async function ContactsPage() {
-  const page = await getCmsPage("contacts");
-
+export default function ContactsPage() {
   return (
     <>
       <PageHeader
         eyebrow="Контакты"
-        title={page?.title === "Контакты" ? "Приезжайте в клуб" : page?.title || "Приезжайте в клуб"}
-        description="Мы находимся в Пушкинском районе, в 900 метрах от Пулковского шоссе. Бронирование кортов — по телефону или на ресепшен."
+        title="Написать в Telegram"
+        description="Единственный канал связи — личный Telegram. Здесь отвечают на вопросы по платформе, турнирам и доступам."
         actions={
-          <a href={MAP_URL} target="_blank" rel="noreferrer" className="btn btn-light">
-            Открыть в Яндекс Картах
+          <a
+            href={CLUB.telegramUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="btn btn-light"
+          >
+            <Send className="size-4" aria-hidden="true" />
+            @{CLUB.telegram}
           </a>
         }
         compact
       />
 
       <div className="page-shell section">
-        {page?.bodyMarkdown ? (
-          <div className="mb-8 border-b border-line pb-6">
-            <CmsBody markdown={page.bodyMarkdown} />
-          </div>
-        ) : null}
-        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
           <div>
-            {[
-              {
-                icon: MapPin,
-                title: "Адрес",
-                value: CLUB.address,
-                note: "Пушкинский район, пос. Александровская",
-              },
-              {
-                icon: Phone,
-                title: "Бронирование кортов",
-                value: CLUB.phoneBookings,
-                note: "Ежедневно с 08:00 до 23:00",
-                href: `tel:${CLUB.phoneBookings.replace(/\D/g, "")}`,
-              },
-              {
-                icon: Phone,
-                title: "Школа тенниса",
-                value: CLUB.phoneSchool,
-                note: "Запись на пробное занятие",
-                href: `tel:${CLUB.phoneSchool.replace(/\D/g, "")}`,
-              },
-              {
-                icon: Mail,
-                title: "Почта лиги",
-                value: CLUB.email,
-                note: "Вопросы по турнирам и рейтингу",
-                href: `mailto:${CLUB.email}`,
-              },
-              {
-                icon: Clock,
-                title: "Режим работы",
-                value: CLUB.hours,
-                note: "Корт-хаус и кафе работают по графику клуба",
-              },
-            ].map((item) => {
-              const Icon = item.icon;
+            <div className="border-y border-line py-8">
+              <p className="text-[0.58rem] uppercase tracking-[0.14em] text-ink-muted">Telegram</p>
+              <a
+                href={CLUB.telegramUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="display mt-3 block text-[clamp(2rem,5vw,3.4rem)] leading-none transition-opacity hover:opacity-60"
+              >
+                @{CLUB.telegram}
+              </a>
+              <p className="mt-4 max-w-[42ch] text-sm leading-relaxed text-ink-muted">
+                Личный канал связи. Без формы, почты и телефона: одно сообщение —
+                и можно обсудить детали.
+              </p>
+              <a
+                href={CLUB.telegramUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-primary mt-6"
+              >
+                Открыть Telegram
+                <ArrowRight className="size-4" aria-hidden="true" />
+              </a>
+            </div>
+
+            <div className="mt-8">
+              <h2 className="text-base">Что стоит написать сразу</h2>
+              <ul className="mt-4 space-y-3 text-sm leading-relaxed text-ink-soft">
+                {[
+                  "Сколько турниров планируете в сезоне и какие форматы используете.",
+                  "Кто ведёт заявки и результаты сейчас: клуб, академия, тренер или сообщество.",
+                  "Нужен ли публичный календарь и рейтинг или только внутренний кабинет.",
+                  "Сколько организаторов будет работать с платформой.",
+                ].map((item) => (
+                  <li key={item} className="flex gap-2.5 border-b border-line pb-3 last:border-b-0">
+                    <span className="mt-1.5 size-1 shrink-0 rounded-full bg-ink" aria-hidden="true" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <p className="mt-8 text-[0.65rem] leading-relaxed text-ink-faint">
+              Платформа не проводит турниры сама и не принимает взносы. Она даёт
+              организатору инструменты для заявок, сеток, матчей, счёта и рейтинга.
+            </p>
+          </div>
+
+          <div>
+            {TOPICS.map((topic) => {
+              const Icon = topic.icon;
               return (
-                <div key={item.title} className="flex gap-4 border-b border-line py-4 first:border-t">
-                  <Icon className="mt-0.5 size-4 shrink-0 text-ink-muted" aria-hidden="true" />
-                  <div className="min-w-0">
-                    <p className="text-[0.58rem] uppercase tracking-[0.14em] text-ink-muted">{item.title}</p>
-                    {item.href ? (
-                      <a href={item.href} className="mt-1.5 block text-sm font-medium transition-opacity hover:opacity-60">{item.value}</a>
-                    ) : (
-                      <p className="mt-1.5 text-sm font-medium">{item.value}</p>
-                    )}
-                    <p className="mt-1 text-xs leading-relaxed text-ink-muted">{item.note}</p>
+                <div key={topic.title} className="flex gap-4 border-b border-line py-5 first:border-t">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-full border border-line text-ink">
+                    <Icon className="size-4" aria-hidden="true" />
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-medium">{topic.title}</h3>
+                    <p className="mt-2 max-w-[52ch] text-xs leading-relaxed text-ink-muted">
+                      {topic.text}
+                    </p>
                   </div>
                 </div>
               );
             })}
 
-            <div className="pt-6">
-              <p className="text-[0.58rem] uppercase tracking-[0.14em] text-ink-muted">Соцсети</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {CLUB.vk ? (
-                  <a href={CLUB.vk} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm">
-                    <MessageCircle className="size-4" aria-hidden="true" />
-                    ВКонтакте
-                  </a>
-                ) : null}
-                <Link href="/tournaments" className="btn btn-secondary btn-sm">Турниры</Link>
+            <div className="mt-8 bg-navy p-7 text-white">
+              <p className="text-[0.6rem] uppercase tracking-[0.16em] text-sky">Перед сообщением</p>
+              <h2 className="mt-4 text-[1.6rem] leading-[1.1] text-white">
+                Посмотрите, как устроен маршрут турнира
+              </h2>
+              <p className="mt-3 text-sm leading-relaxed text-white/60">
+                Короткая страница о возможностях и этапах поможет задать точные
+                вопросы вместо общего «расскажите про платформу».
+              </p>
+              <div className="mt-6 flex flex-wrap gap-2 border-t border-white/15 pt-5">
+                <Link href="/about" className="btn btn-on-dark btn-sm">
+                  О платформе
+                </Link>
+                <Link href="/#faq" className="btn btn-on-dark btn-sm">
+                  Вопросы
+                </Link>
               </div>
             </div>
           </div>
-
-          <div className="space-y-8">
-            <div className="relative min-h-[300px] overflow-hidden bg-navy">
-              <div className="absolute inset-0 opacity-70 court-pattern" aria-hidden="true" />
-              <div className="absolute inset-0 bg-gradient-to-br from-navy/40 via-transparent to-navy/80" aria-hidden="true" />
-              <div className="relative flex h-full min-h-[300px] flex-col items-center justify-center p-8 text-center text-white">
-                <MapPin className="size-6 text-sky" aria-hidden="true" />
-                <p className="display mt-5 text-[1.6rem] leading-none">{CLUB.name}</p>
-                <p className="mt-3 max-w-[30ch] text-xs leading-relaxed text-white/60">{CLUB.address}</p>
-                <a href={MAP_URL} target="_blank" rel="noreferrer" className="btn btn-on-dark btn-sm mt-6">
-                  Построить маршрут
-                </a>
-              </div>
-            </div>
-
-            <div className="border-t border-line pt-6">
-              <h2 className="text-base">Как добраться</h2>
-              <div className="mt-4 grid gap-6 text-xs leading-relaxed text-ink-soft sm:grid-cols-2">
-                <div>
-                  <p className="font-medium text-ink">На автомобиле</p>
-                  <p className="mt-1.5 text-ink-muted">
-                    900 метров от Пулковского шоссе. Поворот на Волхонское шоссе, 79А. Бесплатная парковка на территории.
-                  </p>
-                </div>
-                <div>
-                  <p className="font-medium text-ink">На общественном транспорте</p>
-                  <p className="mt-1.5 text-ink-muted">
-                    От метро «Московская» — автобусы до остановки «Александровская». Далее 7 минут пешком.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-12 grid gap-8 border-t border-line pt-10 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="bg-navy p-7 text-white md:p-8">
-            <p className="text-[0.6rem] uppercase tracking-[0.16em] text-sky">Лига</p>
-            <h2 className="mt-4 text-[1.9rem] leading-[1.05] text-white">Есть вопрос по турниру?</h2>
-            <p className="mt-4 text-sm leading-relaxed text-white/60">
-              Напишите организатору лиги: поможем выбрать категорию, разобраться с регистрацией и
-              подскажем ближайший подходящий турнир.
-            </p>
-            <div className="mt-6 space-y-2.5 border-t border-white/15 pt-5 text-sm">
-              <a href={`tel:${CLUB.phoneBookings.replace(/\D/g, "")}`} className="flex items-center gap-2 text-white/75 transition-colors hover:text-white">
-                <Phone className="size-4 text-sky" aria-hidden="true" />
-                {CLUB.phoneBookings}
-              </a>
-              <a href={`mailto:${CLUB.email}`} className="flex items-center gap-2 text-white/75 transition-colors hover:text-white">
-                <Mail className="size-4 text-sky" aria-hidden="true" />
-                {CLUB.email}
-              </a>
-            </div>
-          </div>
-          <ContactForm />
         </div>
       </div>
     </>

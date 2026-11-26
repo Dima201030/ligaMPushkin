@@ -20,18 +20,27 @@ const prata = Prata({
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
   process.env.PUBLIC_URL?.trim() ||
-  "https://pairly.app";
+  "https://pairly.space";
 
 export const metadata: Metadata = {
   title: {
-    default: `${CLUB.leagueName} — теннисные турниры и рейтинг клуба`,
+    default: `${CLUB.leagueName} — платформа для организации турниров`,
     template: `%s · ${CLUB.leagueName}`,
   },
-  description: `Любительская теннисная лига ${CLUB.name}: расписание турниров, рейтинг игроков, результаты матчей и запись на соревнования.`,
+  description:
+    "Pairly — платформа для создания и проведения турниров: заявки, сетки, расписание, счёт, рейтинг и кабинет организатора.",
   metadataBase: new URL(siteUrl),
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+  },
   openGraph: {
     title: CLUB.leagueName,
-    description: `Турниры, рейтинг и игровое сообщество теннисного клуба ${CLUB.name}.`,
+    description:
+      "Заявки, сетки, матчи, рейтинг и контент турнира в одном рабочем контуре.",
     type: "website",
     locale: "ru_RU",
   },

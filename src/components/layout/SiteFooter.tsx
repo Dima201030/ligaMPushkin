@@ -3,21 +3,22 @@ import { CLUB } from "@/lib/domain";
 
 const LINK_GROUPS = [
   {
-    title: "Лига",
+    title: "Турниры",
     links: [
-      { href: "/tournaments", label: "Турниры" },
+      { href: "/tournaments", label: "Расписание" },
       { href: "/rating", label: "Рейтинг" },
       { href: "/players", label: "Игроки" },
       { href: "/archive", label: "Архив" },
+      { href: "/rules", label: "Регламент" },
     ],
   },
   {
-    title: "Клуб",
+    title: "Платформа",
     links: [
-      { href: "/club", label: "О клубе" },
-      { href: "/clubs", label: "Клубы" },
-      { href: "/news", label: "Новости" },
-      { href: "/rules", label: "Правила лиги" },
+      { href: "/about", label: "Организаторам" },
+      { href: "/#features", label: "Возможности" },
+      { href: "/#how", label: "Как это работает" },
+      { href: "/#faq", label: "Вопросы" },
       { href: "/contacts", label: "Контакты" },
     ],
   },
@@ -30,12 +31,12 @@ export function SiteFooter() {
         <div className="grid gap-10 py-12 md:grid-cols-[1.4fr_0.7fr_0.7fr_1.1fr]">
           <div>
             <p className="text-[0.78rem] font-medium uppercase tracking-[0.16em]">{CLUB.productName}</p>
-            <p className="mt-4 max-w-[32ch] text-sm leading-relaxed text-ink-soft">
-              Любительская теннисная лига {CLUB.name}. Турниры, рейтинг и игровое
-              сообщество Пушкинского района.
+            <p className="mt-4 max-w-[34ch] text-sm leading-relaxed text-ink-soft">
+              Платформа для создания и проведения турниров: заявки, сетки, расписание,
+              счёт, рейтинг и контент в одном месте.
             </p>
             <Link href="/register" className="link-arrow mt-6">
-              Стать игроком лиги
+              Создать аккаунт игрока
               <span aria-hidden="true">→</span>
             </Link>
           </div>
@@ -59,17 +60,16 @@ export function SiteFooter() {
           ))}
 
           <div>
-            <p className="micro text-ink-muted">Контакты</p>
+            <p className="micro text-ink-muted">Связь</p>
             <ul className="mt-4 space-y-3 text-sm leading-relaxed text-ink-soft">
-              <li>{CLUB.address}</li>
-              <li>{CLUB.hours}</li>
+              <li>Вопросы по платформе, турнирам и доступам.</li>
               <li>
-                <a
+                <Link
                   className="text-ink transition-opacity hover:opacity-60"
-                  href={`tel:${CLUB.phoneBookings.replace(/\D/g, "")}`}
+                  href="/contacts"
                 >
-                  {CLUB.phoneBookings}
-                </a>
+                  Контакты
+                </Link>
               </li>
             </ul>
           </div>
@@ -82,9 +82,9 @@ export function SiteFooter() {
           <div className="flex flex-col gap-2 text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted md:items-end">
             <div className="flex flex-wrap gap-x-5 gap-y-2">
               <Link href="/rules" className="transition-colors hover:text-ink">Регламент</Link>
-              <Link href="/contacts" className="transition-colors hover:text-ink">Конфиденциальность</Link>
+              <Link href="/contacts" className="transition-colors hover:text-ink">Контакты</Link>
             </div>
-            <p>© 2026 {CLUB.fullName} · Сезон {CLUB.season}</p>
+            <p>© 2026 {CLUB.productName} · Платформа для организации турниров</p>
           </div>
         </div>
       </div>

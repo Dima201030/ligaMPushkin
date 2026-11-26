@@ -38,7 +38,7 @@ export function RecalculateRating({
       </p>
       <dl className="mt-4 grid grid-cols-1 gap-3 border-t border-line pt-4 text-[0.7rem]">
         <div>
-          <dt className="stat-label">Игроков в лиге</dt>
+          <dt className="stat-label">Игроков на платформе</dt>
           <dd className="mt-1 text-sm tabular-nums">{formatNumber(playersCount)}</dd>
         </div>
       </dl>

@@ -11,7 +11,6 @@ import {
   UserCheck,
   UserPlus,
   Users,
-  Wallet,
 } from "lucide-react";
 import { getOrganizerDashboard } from "@/lib/data";
 import { STATUS_BY_VALUE } from "@/lib/domain";
@@ -24,17 +23,20 @@ import { RegistrationsInbox } from "@/components/organizer/RegistrationsInbox";
 export default async function OrganizerDashboardPage() {
   const data = await getOrganizerDashboard();
   const live = data.matches.filter((match) => match.status === "live");
+  const nextTournament = data.tournaments
+    .filter((item) => new Date(item.startsAt).getTime() > Date.now())
+    .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())[0];
 
   return (
     <>
       <OrganizerHeader
         eyebrow={`Оперативный штаб · ${formatDate(new Date())}`}
-        title="Обзор лиги"
+        title="Обзор турниров"
         description="Всё, что требует внимания сегодня: новые заявки, матчи на корте и турниры, которые готовятся к старту."
         meta={
           <span className="inline-flex items-center gap-2 text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted">
             <CircleDot className="size-3.5 text-positive" aria-hidden="true" />
-            Сезон 2026
+            Сезон {new Date().getFullYear()}
           </span>
         }
         actions={
@@ -58,33 +60,31 @@ export default async function OrganizerDashboardPage() {
       <div className="space-y-8 px-4 py-7 md:px-8 lg:px-10">
         <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2 xl:grid-cols-4">
           <OrgStat
-            label="Игроки лиги"
+            label="Игроки"
             value={data.stats.players}
-            hint="+12 за последний месяц"
+            hint="в базе платформы"
             icon={<Users className="size-4" />}
-            trend={{ value: "+4%", positive: true }}
           />
           <OrgStat
             label="Активные турниры"
             value={data.stats.activeTournaments}
-            hint="1 идёт прямо сейчас"
+            hint={live.length > 0 ? `${live.length} матчей идут сейчас` : "Матчи не начаты"}
             icon={<Trophy className="size-4" />}
             tone="warning"
           />
           <OrgStat
             label="В расписании"
             value={data.stats.upcoming}
-            hint="Ближайший старт — через 3 дня"
+            hint={nextTournament ? `Ближайший старт — ${formatDateShort(nextTournament.startsAt)}` : "Даты не назначены"}
             icon={<CalendarPlus className="size-4" />}
             tone="neutral"
           />
           <OrgStat
-            label="Новые заявки"
-            value={data.stats.newRegistrations}
-            hint="за последние 7 дней"
+            label="Завершено матчей"
+            value={data.stats.completedMatches}
+            hint={data.stats.missingScores > 0 ? `${data.stats.missingScores} без счёта` : "Все результаты внесены"}
             icon={<UserPlus className="size-4" />}
             tone="positive"
-            trend={{ value: "+8", positive: true }}
           />
         </div>
 
@@ -92,7 +92,7 @@ export default async function OrganizerDashboardPage() {
           <div className="min-w-0 space-y-8">
             <Panel
               title="Заявки на подтверждение"
-              description="Свежие регистрации по всем турнирам лиги"
+              description="Свежие регистрации по всем турнирам"
               action={
                 <Link href="/organizer/tournaments" className="link-arrow text-xs">
                   Все турниры
@@ -101,18 +101,24 @@ export default async function OrganizerDashboardPage() {
               }
               flush
             >
-              <RegistrationsInbox
-                items={data.registrations.map((entry) => ({
-                  id: entry.id,
-                  playerName: `${entry.player.firstName} ${entry.player.lastName}`,
-                  firstName: entry.player.firstName,
-                  lastName: entry.player.lastName,
-                  tournamentSlug: entry.tournamentSlug,
-                  tournamentTitle: entry.tournamentTitle,
-                  status: entry.status,
-                  createdAt: entry.createdAt,
-                }))}
-              />
+              {data.registrations.length > 0 ? (
+                <RegistrationsInbox
+                  items={data.registrations.map((entry) => ({
+                    id: entry.id,
+                    playerName: `${entry.player.firstName} ${entry.player.lastName}`,
+                    firstName: entry.player.firstName,
+                    lastName: entry.player.lastName,
+                    tournamentSlug: entry.tournamentSlug,
+                    tournamentTitle: entry.tournamentTitle,
+                    status: entry.status,
+                    createdAt: entry.createdAt,
+                  }))}
+                />
+              ) : (
+                <p className="px-5 py-10 text-center text-sm text-ink-muted">
+                  Новых заявок нет. Заявки на аккаунты проверяются в разделе «Заявки игроков».
+                </p>
+              )}
             </Panel>
 
             <div className="grid gap-8 lg:grid-cols-2">
@@ -218,13 +224,16 @@ export default async function OrganizerDashboardPage() {
                     href: "/organizer/matches",
                     icon: ClipboardList,
                     label: "Внести результаты",
-                    hint: "3 матча без счёта",
+                    hint:
+                      data.stats.missingScores > 0
+                        ? `${data.stats.missingScores} матчей без счёта`
+                        : "Все счёты внесены",
                   },
                   {
                     href: "/organizer/content",
                     icon: Newspaper,
                     label: "Опубликовать новость",
-                    hint: "2 черновика",
+                    hint: "Новости и страницы платформы",
                   },
                 ].map((action) => {
                   const Icon = action.icon;
@@ -300,29 +309,36 @@ export default async function OrganizerDashboardPage() {
             </Panel>
 
             <Panel className="pt-4">
-              <MiniLabel>Финансы сезона</MiniLabel>
-              <div className="mt-3 flex items-end justify-between gap-3">
-                <div>
-                  <p className="display text-[1.9rem] leading-none tabular-nums">412 500 ₽</p>
-                  <p className="mt-2 text-[0.64rem] text-ink-muted">собрано взносов в 2026</p>
+              <MiniLabel>Сезон {new Date().getFullYear()}</MiniLabel>
+              <dl className="mt-3 space-y-2 text-[0.72rem]">
+                <div className="flex justify-between gap-3">
+                  <dt className="text-ink-muted">Всего турниров</dt>
+                  <dd className="tabular-nums text-ink">{data.stats.totalTournaments}</dd>
                 </div>
-                <Wallet className="size-4 text-ink-muted" aria-hidden="true" />
-              </div>
-              <div className="mt-4 h-px bg-line">
-                <div className="h-px w-[72%] bg-ink" />
-              </div>
-              <p className="mt-2 text-[0.62rem] text-ink-faint">72% от плана сезона</p>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-ink-muted">Идут сейчас</dt>
+                  <dd className="tabular-nums text-ink">{data.stats.activeTournaments}</dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-ink-muted">Черновики</dt>
+                  <dd className="tabular-nums text-ink">{data.stats.drafts}</dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-ink-muted">Скрыто с сайта</dt>
+                  <dd className="tabular-nums text-ink">{data.stats.hiddenTournaments}</dd>
+                </div>
+              </dl>
             </Panel>
           </aside>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4 text-[0.66rem] text-ink-muted">
-          <span>
-            Данные обновлены {formatTime(new Date())} · демо-режим на мок-данных
-          </span>
+          <span>Данные обновлены {formatTime(new Date())}</span>
           <span className="inline-flex items-center gap-1.5">
             <Trophy className="size-3.5 text-ink-faint" aria-hidden="true" />
-            {STATUS_BY_VALUE.live.label}: Pairly Open 2026
+            {data.stats.activeTournaments > 0
+              ? `${STATUS_BY_VALUE.live.label}: ${data.stats.activeTournaments}`
+              : "Активных турниров нет"}
           </span>
         </div>
       </div>

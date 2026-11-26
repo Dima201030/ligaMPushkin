@@ -5,7 +5,7 @@ import { EventCard } from "@/components/domain/EventRow";
 
 export const metadata: Metadata = {
   title: "Мероприятия",
-  description: "Календарь клубных мероприятий Pairly: турниры, открытые тренировки и встречи лиги.",
+  description: "Календарь Pairly: турниры, матчевые встречи и события организаторов платформы.",
 };
 
 export default async function EventsPage() {
@@ -16,7 +16,7 @@ export default async function EventsPage() {
       <PageHeader
         eyebrow="Календарь"
         title="Ближайшие мероприятия"
-        description="Турниры, клубные вечера и открытые тренировки. Выберите событие и присоединяйтесь."
+        description="Турниры, матчевые встречи и события, которые организаторы опубликовали на платформе."
       />
       <div className="page-shell section">
         {events.length === 0 ? (

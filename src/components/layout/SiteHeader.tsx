@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CLUB } from "@/lib/domain";
 import { cn } from "@/lib/utils";
-import { ClubSwitcher } from "./ClubSwitcher";
 import { Logo } from "./Logo";
 import { SessionLinks } from "./SessionLinks";
 
@@ -13,13 +12,13 @@ const NAV = [
   { href: "/tournaments", label: "Турниры" },
   { href: "/rating", label: "Рейтинг" },
   { href: "/players", label: "Игроки" },
-  { href: "/news", label: "Новости" },
-  { href: "/archive", label: "Архив" },
-  { href: "/club", label: "Клуб" },
+  { href: "/news", label: "Журнал" },
+  { href: "/about", label: "Организаторам" },
+  { href: "/contacts", label: "Контакты" },
 ];
 
 function isActive(pathname: string, href: string) {
-  if (href === "/club") return ["/club", "/rules", "/contacts"].some((path) => pathname.startsWith(path));
+  if (href === "/about") return ["/about", "/rules"].some((path) => pathname.startsWith(path));
   return pathname.startsWith(href);
 }
 
@@ -64,16 +63,14 @@ export function SiteHeader() {
 
         <div className="hidden flex-col items-end gap-1.5 pt-1 lg:flex">
           <div className="flex items-center gap-3">
-            <ClubSwitcher />
             <span className="text-[0.66rem] uppercase tracking-[0.16em] text-ink-muted">
-              Сезон {CLUB.season}
+              Турниры и рейтинг
             </span>
           </div>
           <SessionLinks />
         </div>
 
         <div className="flex items-center gap-3 lg:hidden">
-          <ClubSwitcher />
           <SessionLinks compact />
           <button
             type="button"
@@ -107,7 +104,7 @@ export function SiteHeader() {
             {[
               { href: "/", label: "Главная" },
               ...NAV,
-              { href: "/clubs", label: "Клубы" },
+              { href: "/archive", label: "Архив" },
               { href: "/cabinet", label: "Кабинет" },
               { href: "/login", label: "Войти" },
             ].map((item, index) => (
@@ -126,11 +123,10 @@ export function SiteHeader() {
           </nav>
 
           <div className="mt-8 grid gap-1 text-[0.62rem] uppercase tracking-[0.14em] text-ink-muted">
-            <span>{CLUB.address}</span>
-            <span>{CLUB.hours}</span>
-            <a href={`tel:${CLUB.phoneBookings.replace(/\D/g, "")}`} className="text-ink">
-              {CLUB.phoneBookings}
-            </a>
+            <span>{CLUB.tagline}</span>
+            <Link href="/contacts" className="text-ink">
+              Контакты
+            </Link>
           </div>
         </div>
       )}

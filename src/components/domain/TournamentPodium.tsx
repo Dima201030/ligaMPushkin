@@ -1,9 +1,10 @@
+import Link from "next/link";
 import { Medal, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type PodiumEntry = {
   place: 1 | 2 | 3;
-  names: string[];
+  players: { name: string; slug?: string }[];
 };
 
 const META: Record<
@@ -57,12 +58,22 @@ function PodiumCard({ entry, featured }: { entry: PodiumEntry; featured: boolean
       <p className="mt-5 text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted">{meta.title}</p>
       <p className="mt-1 text-[0.66rem] text-ink-faint">{meta.note}</p>
       <div className="mt-3 space-y-1 border-t border-line pt-3">
-        {entry.names.length > 0 ? (
-          entry.names.map((name) => (
-            <p key={name} className="text-[0.92rem] font-medium leading-snug text-ink">
-              {name}
-            </p>
-          ))
+        {entry.players.length > 0 ? (
+          entry.players.map((player) =>
+            player.slug ? (
+              <Link
+                key={`${player.slug}-${player.name}`}
+                href={`/players/${player.slug}`}
+                className="block text-[0.92rem] font-medium leading-snug text-ink hover:text-accent"
+              >
+                {player.name}
+              </Link>
+            ) : (
+              <p key={player.name} className="text-[0.92rem] font-medium leading-snug text-ink">
+                {player.name}
+              </p>
+            ),
+          )
         ) : (
           <p className="text-[0.82rem] text-ink-muted">Имя не указано</p>
         )}

@@ -7,7 +7,7 @@ const KIND_LABEL = {
   tournament: "Турнир",
   camp: "Кэмп",
   school: "Школа",
-  club: "Клуб",
+  club: "Сообщество",
 } as const;
 
 export function EventRow({ event }: { event: ClubEvent }) {

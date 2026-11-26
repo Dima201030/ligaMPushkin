@@ -32,7 +32,7 @@ const GROUPS = [
     ],
   },
   {
-    label: "Лига",
+    label: "База",
     items: [
       { href: "/organizer/players", label: "Игроки", icon: Users },
       { href: "/organizer/ratings", label: "Рейтинг", icon: BarChart3 },
@@ -71,7 +71,7 @@ function SidebarContent({
 
       <div className="mb-6 mt-6 border-t border-white/12 px-5 pt-5">
         <p className="text-[0.56rem] uppercase tracking-[0.16em] text-sky/80">Организатор</p>
-        <p className="mt-2 text-xs text-white/70">Сезон 2026 · лига клуба</p>
+        <p className="mt-2 text-xs text-white/70">Сезон 2026 · платформа</p>
       </div>
 
       <nav className="flex-1 space-y-7 overflow-y-auto px-5 pb-6" aria-label="Навигация организатора">
@@ -125,7 +125,7 @@ function SidebarContent({
           onClick={onNavigate}
           className="mt-4 flex items-center justify-between text-[0.6rem] uppercase tracking-[0.14em] text-white/45 transition-colors hover:text-white"
         >
-          На сайт клуба
+          На публичный сайт
           <ArrowUpRight className="size-3.5" aria-hidden="true" />
         </Link>
       </div>

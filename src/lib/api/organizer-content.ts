@@ -1,4 +1,5 @@
 import type { ClubEvent, NewsPost } from "@/lib/types";
+import { resolveCoverUrl } from "@/lib/media";
 import { ApiError, apiRequest, type ApiErrorBody } from "./client";
 
 interface ApiNews {
@@ -35,9 +36,9 @@ function mapNews(raw: ApiNews): NewsPost & { status: string } {
     title: raw.title,
     excerpt: raw.excerpt,
     body: raw.body ?? [],
-    coverUrl: raw.cover_url || "/images/hero.jpg",
+    coverUrl: resolveCoverUrl(raw.cover_url),
     publishedAt: raw.published_at || "",
-    tag: raw.tag || "Лига",
+    tag: raw.tag || "Pairly",
     author: raw.author || "",
     readingTime: raw.reading_time || 1,
     status: raw.status,
@@ -94,7 +95,7 @@ export async function createNews(input: {
       title: input.title,
       excerpt: input.excerpt,
       body: input.body,
-      tag: input.tag ?? "Лига",
+      tag: input.tag ?? "Pairly",
       status: input.status ?? "published",
     }),
   });

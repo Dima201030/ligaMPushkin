@@ -18,7 +18,6 @@ import {
   Users,
 } from "lucide-react";
 import { cn, formatDateShort, timeAgo } from "@/lib/utils";
-import { CLUB } from "@/lib/domain";
 import {
   createEvent,
   createNews,
@@ -54,7 +53,7 @@ const KIND = {
   tournament: { label: "Турнир", icon: Trophy },
   camp: { label: "Кэмп", icon: Tent },
   school: { label: "Школа", icon: GraduationCap },
-  club: { label: "Клуб", icon: Users },
+  club: { label: "Сообщество", icon: Users },
 } as const;
 
 export function ContentManager({ news, events }: { news: NewsRow[]; events: EventRow[] }) {
@@ -70,7 +69,7 @@ export function ContentManager({ news, events }: { news: NewsRow[]; events: Even
   const [body, setBody] = useState("");
   const [kind, setKind] = useState<EventRow["kind"]>("club");
   const [startsAt, setStartsAt] = useState("");
-  const [location, setLocation] = useState(CLUB.name);
+  const [location, setLocation] = useState("");
 
   const archivedNews = useMemo(
     () => new Set(news.filter((item) => item.status === "archived" || item.status === "draft").map((item) => item.id)),
@@ -138,7 +137,7 @@ export function ContentManager({ news, events }: { news: NewsRow[]; events: Even
         kind,
         description: body.trim() || excerpt.trim() || title.trim(),
         startsAt: iso,
-        location: location.trim() || CLUB.name,
+        location: location.trim(),
         status: "published",
       });
       setBusy(false);
@@ -238,7 +237,7 @@ export function ContentManager({ news, events }: { news: NewsRow[]; events: Even
                 </label>
                 <label className="block">
                   <span className="field-label">Место</span>
-                  <input className="field" value={location} onChange={(e) => setLocation(e.target.value)} />
+                  <input className="field" value={location} placeholder="Площадка и город" onChange={(e) => setLocation(e.target.value)} />
                 </label>
               </div>
               <label className="block">

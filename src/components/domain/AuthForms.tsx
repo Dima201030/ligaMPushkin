@@ -66,14 +66,14 @@ export function LoginForm() {
       });
     } catch {
       setChecking(false);
-      setState({ kind: "error", message: "Не удалось связаться с сервером лиги" });
+      setState({ kind: "error", message: "Не удалось связаться с сервером платформы" });
     }
   }
 
   return (
     <div>
       <p className="eyebrow">Личный кабинет</p>
-      <h1 className="mt-3 text-3xl text-navy">Вход в лигу</h1>
+      <h1 className="mt-3 text-3xl text-navy">Вход на платформу</h1>
       <p className="mt-3 text-sm leading-relaxed text-ink-muted">
         Следите за регистрацией, рейтингом и историей матчей.
       </p>
@@ -85,7 +85,7 @@ export function LoginForm() {
           </span>
           <h2 className="mt-4 text-xl text-navy">Заявка на подтверждении</h2>
           <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-            {state.name}, аккаунт ещё не подтверждён администратором лиги. Проверяем имя,
+            {state.name}, аккаунт ещё не подтверждён администратором платформы. Проверяем имя,
             фамилию и уровень — обычно это занимает несколько часов.
           </p>
           <p className="mt-3 text-xs leading-relaxed text-ink-muted">
@@ -158,7 +158,7 @@ export function LoginForm() {
 
           {state.kind === "rejected" && (
             <p role="alert" className="rounded-md bg-negative-soft px-3 py-2 text-xs font-medium text-negative">
-              Заявка {state.name} отклонена. Свяжитесь с организатором лиги, чтобы обсудить причину.
+              Заявка {state.name} отклонена. Свяжитесь с организатором платформы, чтобы обсудить причину.
             </p>
           )}
 
@@ -176,7 +176,7 @@ export function LoginForm() {
       </div>
 
       <p className="text-center text-sm text-ink-muted">
-        Ещё не в лиге?{" "}
+        Ещё нет аккаунта?{" "}
         <Link href="/register" className="font-semibold text-accent hover:underline">
           Зарегистрироваться
         </Link>
@@ -242,7 +242,7 @@ export function RegisterForm() {
       setStep("done");
     } catch {
       setSubmitting(false);
-      setError("Не удалось связаться с сервером лиги");
+      setError("Не удалось связаться с сервером платформы");
     }
   }
 
@@ -263,7 +263,7 @@ export function RegisterForm() {
             <span className="grid size-5 shrink-0 place-items-center rounded-full bg-positive-soft text-positive">
               <Check className="size-3" aria-hidden="true" />
             </span>
-            Регистрация завершена — заявка в базе лиги.
+            Регистрация завершена — заявка в базе платформы.
           </li>
           <li className="flex gap-3">
             <span className="grid size-5 shrink-0 place-items-center rounded-full bg-warning-soft text-warning">
@@ -290,7 +290,7 @@ export function RegisterForm() {
   return (
     <div>
       <p className="eyebrow">Новый игрок</p>
-      <h1 className="mt-3 text-3xl text-navy">Регистрация в лиге</h1>
+      <h1 className="mt-3 text-3xl text-navy">Регистрация на платформе</h1>
       <p className="mt-3 text-sm leading-relaxed text-ink-muted">
         Создайте аккаунт. Администратор подтвердит имя, фамилию и уровень — только после
         этого вход в личный кабинет станет доступен.
@@ -359,7 +359,7 @@ export function RegisterForm() {
         </p>
         <label className="flex items-start gap-2 text-[0.68rem] leading-relaxed text-ink-muted">
           <input type="checkbox" required className="mt-0.5 size-4 accent-[var(--color-accent)]" />
-          Согласен с правилами лиги и обработкой персональных данных
+          Согласен с правилами платформы и обработкой персональных данных
         </label>
 
         {error && (

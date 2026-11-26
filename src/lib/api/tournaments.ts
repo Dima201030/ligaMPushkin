@@ -58,6 +58,7 @@ interface ApiTournamentImage {
 
 interface ApiPlayerBrief {
   id: string;
+  slug?: string;
   first_name: string;
   last_name: string;
   level: string;
@@ -141,7 +142,7 @@ export function mapRegistration(raw: ApiRegistration): Registration & {
     firstName: raw.player.first_name,
     lastName: raw.player.last_name,
     level: raw.player.level,
-    slug: raw.player.id,
+    slug: raw.player.slug?.trim() || normalizeUuid(raw.player.id),
     category: raw.player.level as CategorySlug,
     rating: 0,
   };
@@ -151,7 +152,7 @@ export function mapRegistration(raw: ApiRegistration): Registration & {
         firstName: raw.partner.first_name,
         lastName: raw.partner.last_name,
         level: raw.partner.level,
-        slug: raw.partner.id,
+        slug: raw.partner.slug?.trim() || normalizeUuid(raw.partner.id),
         category: raw.partner.level as CategorySlug,
         rating: 0,
       }

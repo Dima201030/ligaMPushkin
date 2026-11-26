@@ -8,7 +8,7 @@ export default function OrganizerApplicationsPage() {
   return (
     <>
       <OrganizerHeader
-        eyebrow="Доступ в лигу"
+        eyebrow="Доступ на платформу"
         title="Заявки на подтверждение"
         description="Игрок регистрируется сам, а администратор проверяет имя, фамилию и уровень. Только после подтверждения аккаунт может войти в личный кабинет."
       />

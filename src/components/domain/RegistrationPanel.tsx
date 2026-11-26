@@ -136,7 +136,7 @@ export function RegistrationPanel({
             <p className="text-center text-[0.68rem] text-ink-muted">
               Нет аккаунта?{" "}
               <Link href="/register" className="font-semibold text-accent">
-                Заявка в лигу
+                Заявка на турнир
               </Link>
             </p>
           </div>

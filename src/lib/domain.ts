@@ -9,27 +9,24 @@ import type {
   TournamentType,
 } from "@/lib/types";
 
-/** Product brand (SaaS). Club-specific display name can override via env. */
+/** Product brand. The platform is not tied to a single club. */
 const productName = process.env.NEXT_PUBLIC_PRODUCT_NAME?.trim() || "Pairly";
-const clubName = process.env.NEXT_PUBLIC_CLUB_NAME?.trim() || productName;
 
 export const CLUB = {
   productName,
-  name: clubName,
-  fullName: `Теннисный клуб ${clubName}`,
+  name: productName,
+  fullName: productName,
   leagueName: productName,
-  address: "Санкт-Петербург, Пушкинский район, Волхонское шоссе, 79А",
-  phoneBookings: "+7 (911) 969-15-84",
-  phoneSchool: "+7 (921) 966-20-20",
-  hours: "Ежедневно с 08:00 до 23:00",
-  email: process.env.NEXT_PUBLIC_CLUB_EMAIL?.trim() || "league@pairly.app",
-  vk: process.env.NEXT_PUBLIC_CLUB_VK?.trim() || "",
-  courts: "7 крытых кортов и 2 открытых грунтовых",
+  tagline: "Платформа для организации турниров",
+  description:
+    "Заявки, сетки, расписание, счёт, рейтинг и кабинет организатора — в одном рабочем контуре.",
+  telegram: "lliwago",
+  telegramUrl: "https://t.me/lliwago",
   season: 2026,
 } as const;
 
 export const CATEGORIES: Category[] = [
-  { slug: "masters", name: "Masters", shortName: "M", color: "#071b2b", note: "Высшая категория клуба" },
+  { slug: "masters", name: "Masters", shortName: "M", color: "#071b2b", note: "Высшая категория" },
   { slug: "challenger", name: "Challenger", shortName: "CH", color: "#1b46f0", note: "Сильные игроки, турнирный опыт" },
   { slug: "futures", name: "Futures", shortName: "F", color: "#2f5acf", note: "Уверенная игра и стабильный результат" },
   { slug: "rookies", name: "Rookies", shortName: "R", color: "#4e6e8a", note: "Первый соревновательный опыт" },

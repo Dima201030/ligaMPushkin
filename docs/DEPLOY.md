@@ -1,7 +1,7 @@
 # Деплой на Raspberry Pi 5
 
-Текущая площадка: Raspberry Pi 5 (8 ГБ), `rpi58`, публичный адрес `91.223.89.199`,
-DuckDNS-домен `mrpushkin.duckdns.org`.
+Текущая площадка: Raspberry Pi 5 (8 ГБ), `rpi58`, публичный адрес `91.223.89.199`.
+Публичный сайт — `pairly.space`, API и кабинет организатора — `tournaments.pairly.space`.
 
 На Pi уже работает nginx на 80/443 (другие проекты), поэтому приложение не занимает
 эти порты: контейнер слушает `127.0.0.1:3010`, а nginx проксирует на него секретный
@@ -13,15 +13,15 @@ DuckDNS-домен `mrpushkin.duckdns.org`.
 интернет
   └─ 80/443 → nginx (host)
        ├─ /.well-known/acme-challenge/ → certbot webroot
-       ├─ /images/                    → /var/www/mrpushkin/images
+       ├─ /images/                    → /var/www/pairly/images
        ├─ /__BASE_PATH__/             → 127.0.0.1:3010 (Basic Auth)
        └─ всё остальное               → 404
-            └─ Docker: mr-pushkin-league-web (Next.js standalone)
+            └─ Docker: pairly-web (Next.js standalone)
 ```
 
 Доступ закрыт двумя слоями:
 
-1. Basic Auth на весь домен, длинный пароль (файл `/etc/nginx/mrpushkin.htpasswd`).
+1. Basic Auth на весь домен, длинный пароль (файл `/etc/nginx/pairly.htpasswd`).
 2. Секретный префикс пути: без него сайт отдаёт 404.
 
 Параметры доступа хранятся только на машине разработчика в `.env.deploy`
@@ -52,13 +52,13 @@ Docker-образ и перезапускает контейнер. Секрет
 
 ```bash
 sudo NEXT_BASE_PATH=/mp-xxxxxxxxxxxxxxxx \
-  bash deploy/configure-pi-nginx.sh /tmp/mrpushkin.htpasswd
+  bash deploy/configure-pi-nginx.sh /tmp/pairly.htpasswd
 ```
 
 Скрипт:
 
-- копирует изображения в `/var/www/mrpushkin/images`;
-- ставит htpasswd в `/etc/nginx/mrpushkin.htpasswd`;
+- копирует изображения в `/var/www/pairly/images`;
+- ставит htpasswd в `/etc/nginx/pairly.htpasswd`;
 - включает HTTP-конфиг для ACME и выпускает сертификат Let's Encrypt;
 - включает HTTPS-конфиг с секретным путём и перезагружает nginx.
 
@@ -66,29 +66,25 @@ sudo NEXT_BASE_PATH=/mp-xxxxxxxxxxxxxxxx \
 
 ```bash
 openssl passwd -apr1 'НОВЫЙ_ПАРОЛЬ'        # локально
-printf 'pushkin:%s\n' '<hash>' > /tmp/mrpushkin.htpasswd
-scp /tmp/mrpushkin.htpasswd dima@91.223.89.199:/tmp/
-ssh dima@91.223.89.199 'sudo install -o root -g www-data -m 640 /tmp/mrpushkin.htpasswd /etc/nginx/mrpushkin.htpasswd && sudo systemctl reload nginx'
+printf 'pairly:%s\n' '<hash>' > /tmp/pairly.htpasswd
+scp /tmp/pairly.htpasswd dima@91.223.89.199:/tmp/
+ssh dima@91.223.89.199 'sudo install -o root -g www-data -m 640 /tmp/pairly.htpasswd /etc/nginx/pairly.htpasswd && sudo systemctl reload nginx'
 ```
 
-## DuckDNS
+## Домены
 
-Домен уже указывает на публичный IP. Если IP сменится, обновить запись:
-
-```bash
-curl "https://www.duckdns.org/update?domains=mrpushkin&token=<TOKEN>&ip="
-```
-
-Для смены самого поддомена нужен токен аккаунта DuckDNS: создать новую запись,
+Публичный сайт — `pairly.space`, API и кабинет организатора — `tournaments.pairly.space`.
+Домены уже указывают на публичный IP. Если IP сменится, обновить A-записи у регистратора.
+Для смены домена нужен токен аккаунта у регистратора: создать новые записи,
 затем повторить выпуск сертификата и поправить `server_name` в nginx-конфиге.
 
 ## Проверка
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' https://mrpushkin.duckdns.org/            # 404
-curl -s -o /dev/null -w '%{http_code}\n' https://mrpushkin.duckdns.org/__BASE_PATH__/  # 401
-curl -u pushkin:<PASSWORD> -s -o /dev/null -w '%{http_code}\n' \
-  https://mrpushkin.duckdns.org/__BASE_PATH__/                                     # 200
+curl -s -o /dev/null -w '%{http_code}\n' https://pairly.space/            # 404
+curl -s -o /dev/null -w '%{http_code}\n' https://pairly.space/__BASE_PATH__/  # 401
+curl -u pairly:<PASSWORD> -s -o /dev/null -w '%{http_code}\n' \
+  https://pairly.space/__BASE_PATH__/                                     # 200
 ```
 
 ## API proxy (`/api/`)

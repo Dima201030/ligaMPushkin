@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
 import type { CategorySlug, Player } from "@/lib/types";
 import { CATEGORIES, CATEGORY_BY_SLUG } from "@/lib/domain";
-import { cn, formatNumber, winRate } from "@/lib/utils";
+import { cn, formatNumber, publicCity, winRate } from "@/lib/utils";
 import { Avatar } from "@/components/ui/Avatar";
 import { CategoryBadge } from "@/components/ui/Badges";
 
@@ -129,7 +129,9 @@ export function PlayersExplorer({ rows }: { rows: { player: Player; rank: number
                         <Link href={`/players/${player.slug}`} className="font-semibold text-ink group-hover:text-accent">
                           {player.firstName} {player.lastName}
                         </Link>
-                        <p className="text-[0.68rem] text-ink-muted">{player.city}</p>
+                        {publicCity(player.city) ? (
+                          <p className="text-[0.68rem] text-ink-muted">{publicCity(player.city)}</p>
+                        ) : null}
                       </div>
                     </div>
                   </td>

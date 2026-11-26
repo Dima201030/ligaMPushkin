@@ -11,7 +11,7 @@ import {
 import { getCabinetData } from "@/lib/data";
 import { isOrganizerRole } from "@/lib/api/auth";
 import { CATEGORY_BY_SLUG, CLUB } from "@/lib/domain";
-import { formatDate, formatNumber, winRate } from "@/lib/utils";
+import { formatDate, formatNumber, publicCity, publicPhone, winRate } from "@/lib/utils";
 import { Avatar } from "@/components/ui/Avatar";
 import { CategoryBadge } from "@/components/ui/Badges";
 import { MatchRow } from "@/components/domain/MatchRow";
@@ -24,7 +24,7 @@ import { PageHeader } from "@/components/ui/Section";
 
 export const metadata: Metadata = {
   title: "Личный кабинет",
-  description: `Заявки на турниры, матчи, рейтинг и настройки игрока ${CLUB.leagueName}.`,
+  description: `Заявки на турниры, матчи, рейтинг и настройки игрока на платформе ${CLUB.productName}.`,
 };
 
 const NAV = [
@@ -88,7 +88,7 @@ export default async function CabinetPage() {
                   Кабинет организатора
                 </Link>
               ) : (
-                <span className="hidden sm:inline">Игрок лиги</span>
+                <span className="hidden sm:inline">Игрок</span>
               )}
             </div>
           </div>
@@ -101,7 +101,7 @@ export default async function CabinetPage() {
               </h1>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <CategoryBadge category={player.category} />
-                {player.city ? (
+                {publicCity(player.city) ? (
                   <span className="inline-flex items-center gap-1.5 text-xs text-white/55">
                     <MapPin className="size-3.5" aria-hidden="true" />
                     {player.city}
@@ -109,7 +109,7 @@ export default async function CabinetPage() {
                 ) : null}
               </div>
               <p className="mt-3 max-w-[48ch] text-sm text-white/60">
-                {player.bio || category?.note || `Профиль игрока ${CLUB.leagueName}.`}
+                {player.bio || category?.note || `Профиль игрока на платформе ${CLUB.productName}.`}
               </p>
             </div>
             <div className="flex gap-8 border-t border-white/15 pt-5 sm:border-l sm:border-t-0 sm:pl-8 sm:pt-0">
@@ -182,7 +182,7 @@ export default async function CabinetPage() {
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
               <h2 className="text-xl">Мои заявки</h2>
-              <p className="mt-1 text-sm text-ink-muted">Активные регистрации на турниры лиги.</p>
+              <p className="mt-1 text-sm text-ink-muted">Активные регистрации на турниры.</p>
             </div>
             <Link href="/tournaments" className="link-arrow text-xs">К турнирам</Link>
           </div>
@@ -252,7 +252,7 @@ export default async function CabinetPage() {
               </div>
               <div className="flex justify-between gap-4 border-b border-line pb-3">
                 <dt className="text-ink-muted">Телефон</dt>
-                <dd>{session.user.phone || "—"}</dd>
+                <dd>{publicPhone(session.user.phone) || "—"}</dd>
               </div>
               <div className="flex justify-between gap-4 border-b border-line pb-3">
                 <dt className="text-ink-muted">Категория</dt>

@@ -117,7 +117,7 @@ const NOTIFICATIONS = [
   { id: "tournaments", label: "Новые турниры", hint: "Когда открывается регистрация" },
   { id: "reminders", label: "Напоминания о матчах", hint: "За 24 часа до игры" },
   { id: "results", label: "Результаты и рейтинг", hint: "После публикации результатов" },
-  { id: "news", label: "Дайджест клуба", hint: "Раз в две недели" },
+  { id: "news", label: "Дайджест платформы", hint: "Раз в две недели" },
 ];
 
 export function NotificationSettings() {

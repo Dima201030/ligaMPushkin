@@ -4,8 +4,8 @@ import { PageHeader } from "@/components/ui/Section";
 import { NewsCard } from "@/components/domain/NewsCard";
 
 export const metadata: Metadata = {
-  title: "Новости",
-  description: "Новости лиги и клуба Pairly: турниры, результаты, школа тенниса и жизнь клуба.",
+  title: "Журнал",
+  description: "Журнал Pairly: турниры, результаты, обновления платформы и заметки организаторов.",
 };
 
 export default async function NewsPage() {
@@ -15,9 +15,9 @@ export default async function NewsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Жизнь клуба"
+        eyebrow="Журнал платформы"
         title="Новости и публикации"
-        description="Результаты турниров, анонсы соревнований и заметки тренеров клуба Pairly."
+        description="Результаты турниров, обновления продукта и заметки организаторов о том, как устроен турнирный процесс."
       />
 
       <div className="page-shell section">

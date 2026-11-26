@@ -18,7 +18,7 @@ export default async function OrganizerPlayersPage() {
   return (
     <>
       <OrganizerHeader
-        eyebrow="База лиги"
+        eyebrow="База игроков"
         title="Игроки"
         description="Добавляйте участников без регистрации, затем связывайте заготовку с заявкой, когда человек зарегистрируется."
       />
@@ -27,7 +27,7 @@ export default async function OrganizerPlayersPage() {
           <OrgStat label="Игроков в базе" value={players.length} hint="активные профили" icon={<Users className="size-4" />} tone="neutral" />
           <OrgStat label="Средний рейтинг" value={averageRating} hint={`${formatNumber(totalMatches)} матчей сыграно`} icon={<TrendingUp className="size-4" />} />
           <OrgStat label="Без аккаунта" value={placeholders} hint="ждут объединения с заявкой" icon={<UserPlus className="size-4" />} tone="positive" />
-          <OrgStat label="Титулы" value={titles || newcomers} hint={titles ? "за всё время в лиге" : "новички в базе"} icon={<Award className="size-4" />} tone="warning" />
+          <OrgStat label="Титулы" value={titles || newcomers} hint={titles ? "за всё время на платформе" : "новички в базе"} icon={<Award className="size-4" />} tone="warning" />
         </div>
 
         <AddPlaceholderPlayerForm />

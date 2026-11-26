@@ -4,6 +4,7 @@ import { ApiError, apiRequest, type ApiErrorBody } from "./client";
 
 interface ApiPlayerBrief {
   id: string;
+  slug?: string;
   first_name: string;
   last_name: string;
   level: string;
@@ -93,11 +94,18 @@ function sideLabel(side: ApiMatchSide): string | undefined {
 }
 
 function mapSide(side: ApiMatchSide): MatchSide {
+  const briefs = [side.player, side.partner].filter(Boolean) as ApiPlayerBrief[];
   const playerIds = [side.player_id, side.partner_id]
     .filter((id): id is string => Boolean(id))
     .map((id) => normalizeUuid(id));
   return {
     playerIds,
+    players: briefs.map((brief) => ({
+      id: normalizeUuid(brief.id),
+      slug: brief.slug?.trim() || undefined,
+      firstName: brief.first_name,
+      lastName: brief.last_name,
+    })),
     seed: side.seed ?? undefined,
     label: sideLabel(side),
   };
