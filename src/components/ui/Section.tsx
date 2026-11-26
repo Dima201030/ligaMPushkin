@@ -107,7 +107,8 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center border border-line px-6 py-16 text-center">
+    <div className="empty-state flex flex-col items-center justify-center border border-line px-6 py-16 text-center">
+      <span className="empty-state-orb" aria-hidden="true" />
       <p className="text-lg font-medium">{title}</p>
       {description && <p className="mt-2 max-w-[42ch] text-sm text-ink-muted">{description}</p>}
       {action && <div className="mt-6">{action}</div>}

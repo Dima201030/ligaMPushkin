@@ -52,7 +52,14 @@ export function StatusPill({
 }) {
   const item = STATUS_BY_VALUE[status];
   return (
-    <span className={cn("badge", STATUS_TONE[item.tone], className)}>
+    <span
+      className={cn(
+        "badge",
+        STATUS_TONE[item.tone],
+        status === "registration_open" && "badge-breathe",
+        className,
+      )}
+    >
       {dot && <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />}
       {item.label}
     </span>

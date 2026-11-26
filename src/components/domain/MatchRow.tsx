@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import type { Match } from "@/lib/types";
 import { cn, formatDateShort, formatTime } from "@/lib/utils";
 import { MatchStatusPill } from "@/components/ui/Badges";
+import { ScoreFlip } from "@/components/motion/ScoreFlip";
 
 function sidePlayers(side: Match["side1"]): NonNullable<Match["side1"]["players"]> {
   if (side.players && side.players.length > 0) return side.players;
@@ -96,7 +99,13 @@ export function MatchRow({ match, showTournament = true }: { match: Match; showT
   const date = new Date(match.scheduledAt);
 
   return (
-    <div className="px-4 py-4">
+    <div
+      className={cn(
+        "px-4 py-4 transition-colors",
+        match.status === "live" && "match-live-glow",
+        match.winner && match.status === "completed" && "winner-path-soft",
+      )}
+    >
       <div className="mb-2.5 flex items-center justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[0.7rem] font-medium text-ink-muted">
           {showTournament ? (
@@ -129,14 +138,13 @@ export function MatchRow({ match, showTournament = true }: { match: Match; showT
         <Side side={match.side1} winner={match.winner === 1} />
         <div className="min-w-[78px] text-center">
           {match.score ? (
-            <span
+            <ScoreFlip
+              value={match.score}
               className={cn(
-                "inline-block text-[0.82rem] font-medium tabular-nums tracking-tight",
+                "inline-block text-[0.82rem] font-medium tracking-tight",
                 match.status === "live" ? "text-negative" : "text-ink",
               )}
-            >
-              {match.score}
-            </span>
+            />
           ) : (
             <span className="text-[0.72rem] font-medium text-ink-faint">
               {match.status === "cancelled" ? "—" : formatTime(date)}

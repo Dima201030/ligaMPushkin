@@ -48,7 +48,7 @@ export function RegistrationsInbox({ items }: { items: InboxRegistration[] }) {
           const status = decisions[item.id] ?? item.status;
           const actionable = status === "pending" || status === "waitlist";
           return (
-            <li key={item.id} className="flex flex-wrap items-center gap-3 py-3">
+            <li key={item.id} className="registrant-join flex flex-wrap items-center gap-3 py-3">
               <Avatar firstName={item.firstName} lastName={item.lastName} size="sm" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[0.8rem] font-medium text-ink">{item.playerName}</p>

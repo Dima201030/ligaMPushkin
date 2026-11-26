@@ -626,6 +626,7 @@ export function TournamentWizard({
       <aside className="space-y-8">
         <div className="sticky top-20 space-y-8">
           <Panel title="Предпросмотр карточки">
+            <div className="wizard-card-preview" key={`${form.title}-${form.category}-${form.type}-${form.startsAt}`}>
             <div className="flex flex-wrap items-center gap-1.5">
               <CategoryBadge category={form.category} />
               <span className="badge badge-neutral">{TYPE_BY_VALUE[form.type].label}</span>
@@ -662,12 +663,13 @@ export function TournamentWizard({
                 <p className="stat-label mt-1">мест</p>
               </div>
             </div>
+            </div>
           </Panel>
 
           <Panel title="Готовность" description={`${ready} из ${checklist.length} пунктов`}>
-            <div className="h-px bg-line">
+            <div className="wizard-progress-track">
               <div
-                className={cn("h-px transition-all", ready === checklist.length ? "bg-positive" : "bg-ink")}
+                className={cn("wizard-progress-fill", ready === checklist.length && "bg-positive")}
                 style={{ width: `${(ready / checklist.length) * 100}%` }}
               />
             </div>

@@ -161,7 +161,7 @@ export default async function HomePage() {
       <section
         data-reveal
         data-revealed="true"
-        className="page-shell flex min-h-[calc(100svh-96px)] flex-col justify-between pb-8 pt-2 md:min-h-[calc(100svh-112px)] md:pb-12"
+        className="hero-parallax-lite page-shell flex min-h-[calc(100svh-96px)] flex-col justify-between pb-8 pt-2 md:min-h-[calc(100svh-112px)] md:pb-12"
       >
         <div className="flex flex-1 flex-col items-center justify-center py-12 md:py-16">
           <HeroWordmark />

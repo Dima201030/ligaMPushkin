@@ -4,20 +4,25 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
 import type { CategorySlug, Player } from "@/lib/types";
-import { CATEGORIES, CATEGORY_BY_SLUG } from "@/lib/domain";
+import { CATEGORIES } from "@/lib/domain";
 import { cn, formatNumber, publicCity, winRate } from "@/lib/utils";
 import { Avatar } from "@/components/ui/Avatar";
 import { CategoryBadge } from "@/components/ui/Badges";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { PlayerCardFlip } from "@/components/polish/PlayerCardFlip";
+import { VirtualList } from "@/components/motion/VirtualList";
+import { EmptyState } from "@/components/ui/Section";
 
 type Sort = "rank" | "rating" | "name" | "winrate" | "tournaments";
 
 export function PlayersExplorer({ rows }: { rows: { player: Player; rank: number }[] }) {
   const [query, setQuery] = useState("");
+  const debouncedQuery = useDebouncedValue(query, 160);
   const [category, setCategory] = useState<CategorySlug | "all">("all");
   const [sort, setSort] = useState<Sort>("rank");
 
   const filtered = useMemo(() => {
-    const needle = query.trim().toLowerCase();
+    const needle = debouncedQuery.trim().toLowerCase();
     const result = rows.filter(({ player }) => {
       const matchesQuery = needle
         ? `${player.firstName} ${player.lastName}`.toLowerCase().includes(needle)
@@ -35,7 +40,7 @@ export function PlayersExplorer({ rows }: { rows: { player: Player; rank: number
       if (sort === "rating") return b.player.rating - a.player.rating;
       return a.rank - b.rank;
     });
-  }, [rows, query, category, sort]);
+  }, [rows, debouncedQuery, category, sort]);
 
   return (
     <div>
@@ -103,89 +108,101 @@ export function PlayersExplorer({ rows }: { rows: { player: Player; rank: number
       </div>
 
       <div className="card-flat mt-4 hidden overflow-hidden md:block">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th className="w-12">#</th>
-              <th>Игрок</th>
-              <th>Категория</th>
-              <th className="text-right">Рейтинг</th>
-              <th className="text-right">Очки</th>
-              <th className="text-right">Побед / пор.</th>
-              <th className="w-36">Процент побед</th>
-              <th className="w-10" />
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(({ player, rank }) => {
+        {filtered.length > 40 ? (
+          <VirtualList
+            items={filtered}
+            height={560}
+            estimateRowHeight={56}
+            getKey={(row) => row.player.id}
+            renderRow={({ player, rank }) => {
               const rate = winRate(player.wins, player.losses);
               return (
-                <tr key={player.id} className="row-link group">
-                  <td className="text-xs font-bold tabular-nums text-ink-faint">{rank}</td>
-                  <td>
-                    <div className="flex items-center gap-3">
-                      <Avatar
-                        firstName={player.firstName}
-                        lastName={player.lastName}
-                        src={player.avatarUrl}
-                        size="sm"
-                      />
-                      <div className="min-w-0">
-                        <Link href={`/players/${player.slug}`} className="font-semibold text-ink group-hover:text-accent">
-                          {player.firstName} {player.lastName}
-                        </Link>
-                        {publicCity(player.city) ? (
-                          <p className="text-[0.68rem] text-ink-muted">{publicCity(player.city)}</p>
-                        ) : null}
-                      </div>
-                    </div>
-                  </td>
-                  <td><CategoryBadge category={player.category} /></td>
-                  <td className="text-right font-bold tabular-nums text-navy">{player.rating}</td>
-                  <td className="text-right tabular-nums text-ink-soft">{formatNumber(player.points)}</td>
-                  <td className="text-right text-xs tabular-nums text-ink-muted">
-                    {player.wins} / {player.losses}
-                  </td>
-                  <td>
-                    <div className="flex items-center gap-2">
-                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-hover">
-                        <div className="h-full rounded-full bg-accent" style={{ width: `${rate}%` }} />
-                      </div>
-                      <span className="w-8 text-right text-xs font-bold tabular-nums text-ink">{rate}%</span>
-                    </div>
-                  </td>
-                  <td className="text-ink-faint transition-transform group-hover:translate-x-0.5 group-hover:text-accent">→</td>
-                </tr>
+                <div className="flex items-center gap-3 border-b border-divider px-3 py-3">
+                  <span className="w-8 text-xs font-bold tabular-nums text-ink-faint">{rank}</span>
+                  <Avatar firstName={player.firstName} lastName={player.lastName} src={player.avatarUrl} size="sm" />
+                  <Link href={`/players/${player.slug}`} className="min-w-0 flex-1 font-semibold text-ink hover:text-accent">
+                    {player.firstName} {player.lastName}
+                  </Link>
+                  <CategoryBadge category={player.category} />
+                  <span className="w-14 text-right font-bold tabular-nums text-navy">{player.rating}</span>
+                  <span className="w-12 text-right text-xs tabular-nums text-ink-muted">{rate}%</span>
+                </div>
               );
-            })}
-          </tbody>
-        </table>
+            }}
+          />
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th className="w-12">#</th>
+                <th>Игрок</th>
+                <th>Категория</th>
+                <th className="text-right">Рейтинг</th>
+                <th className="text-right">Очки</th>
+                <th className="text-right">Побед / пор.</th>
+                <th className="w-36">Процент побед</th>
+                <th className="w-10" />
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(({ player, rank }) => {
+                const rate = winRate(player.wins, player.losses);
+                const needle = debouncedQuery.trim();
+                const fullName = `${player.firstName} ${player.lastName}`;
+                const hit = needle ? fullName.toLowerCase().indexOf(needle.toLowerCase()) : -1;
+                return (
+                  <tr key={player.id} className="row-link group">
+                    <td className="text-xs font-bold tabular-nums text-ink-faint">{rank}</td>
+                    <td>
+                      <div className="flex items-center gap-3">
+                        <Avatar firstName={player.firstName} lastName={player.lastName} src={player.avatarUrl} size="sm" />
+                        <div className="min-w-0">
+                          <Link href={`/players/${player.slug}`} className="font-semibold text-ink group-hover:text-accent">
+                            {hit >= 0 ? (
+                              <>
+                                {fullName.slice(0, hit)}
+                                <mark className="search-hit">{fullName.slice(hit, hit + needle.length)}</mark>
+                                {fullName.slice(hit + needle.length)}
+                              </>
+                            ) : (
+                              fullName
+                            )}
+                          </Link>
+                          {publicCity(player.city) ? (
+                            <p className="text-[0.68rem] text-ink-muted">{publicCity(player.city)}</p>
+                          ) : null}
+                        </div>
+                      </div>
+                    </td>
+                    <td><CategoryBadge category={player.category} /></td>
+                    <td className="text-right font-bold tabular-nums text-navy">{player.rating}</td>
+                    <td className="text-right tabular-nums text-ink-soft">{formatNumber(player.points)}</td>
+                    <td className="text-right text-xs tabular-nums text-ink-muted">
+                      {player.wins} / {player.losses}
+                    </td>
+                    <td>
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-hover">
+                          <div className="h-full rounded-full bg-accent" style={{ width: `${rate}%` }} />
+                        </div>
+                        <span className="w-8 text-right text-xs font-bold tabular-nums text-ink">{rate}%</span>
+                      </div>
+                    </td>
+                    <td className="text-ink-faint transition-transform group-hover:translate-x-0.5 group-hover:text-accent">→</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
         {filtered.length === 0 && (
-          <div className="px-6 py-16 text-center">
-            <p className="font-bold">Игроки не найдены</p>
-            <p className="mt-1 text-sm text-ink-muted">Попробуйте изменить запрос или категорию.</p>
-          </div>
+          <EmptyState title="Игроки не найдены" description="Попробуйте изменить запрос или категорию." />
         )}
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 md:hidden">
-        {filtered.map(({ player, rank }) => (
-          <Link key={player.id} href={`/players/${player.slug}`} className="card-flat flex items-center gap-3 p-3.5">
-            <span className="w-5 text-xs font-bold tabular-nums text-ink-faint">{rank}</span>
-            <Avatar
-              firstName={player.firstName}
-              lastName={player.lastName}
-              src={player.avatarUrl}
-              size="md"
-            />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold">{player.firstName} {player.lastName}</p>
-              <p className="mt-0.5 text-[0.68rem] text-ink-muted">
-                {CATEGORY_BY_SLUG[player.category].name} · рейтинг {formatNumber(player.rating)}
-              </p>
-            </div>
-            <span className="text-sm font-bold tabular-nums text-accent">{winRate(player.wins, player.losses)}%</span>
-          </Link>
+      <div className="stagger-grid mt-4 grid gap-3 sm:grid-cols-2 md:hidden">
+        {filtered.map(({ player }) => (
+          <PlayerCardFlip key={player.id} player={player} className="card-stagger-item" />
         ))}
       </div>
     </div>

@@ -261,8 +261,15 @@ export function RegisterForm() {
   const [consentPublic, setConsentPublic] = useState(false);
   const [consentMarketing, setConsentMarketing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [shake, setShake] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [applicantName, setApplicantName] = useState("");
+
+  function fail(message: string) {
+    setError(message);
+    setShake(true);
+    window.setTimeout(() => setShake(false), 480);
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -275,23 +282,23 @@ export function RegisterForm() {
     const passwordRepeat = String(form.get("passwordRepeat") ?? "");
 
     if (!firstName || !lastName || !email) {
-      setError("Заполните имя, фамилию и email");
+      fail("Заполните имя, фамилию и email");
       return;
     }
     if (password.length < 8) {
-      setError("Пароль должен содержать минимум 8 символов");
+      fail("Пароль должен содержать минимум 8 символов");
       return;
     }
     if (password !== passwordRepeat) {
-      setError("Пароли не совпадают");
+      fail("Пароли не совпадают");
       return;
     }
     if (!consentPdn) {
-      setError("Нужно согласие на обработку персональных данных");
+      fail("Нужно согласие на обработку персональных данных");
       return;
     }
     if (!consentPublic) {
-      setError("Нужно согласие на публикацию профиля и результатов");
+      fail("Нужно согласие на публикацию профиля и результатов");
       return;
     }
 
@@ -314,7 +321,7 @@ export function RegisterForm() {
       setSubmitting(false);
 
       if (!result.ok) {
-        setError(result.error);
+        fail(result.error);
         return;
       }
 
@@ -322,7 +329,7 @@ export function RegisterForm() {
       setStep("done");
     } catch {
       setSubmitting(false);
-      setError("Не удалось связаться с сервером платформы");
+      fail("Не удалось связаться с сервером платформы");
     }
   }
 
@@ -368,7 +375,7 @@ export function RegisterForm() {
   }
 
   return (
-    <div>
+    <div className={shake ? "form-shake" : undefined}>
       <p className="eyebrow">Новый игрок</p>
       <h1 className="mt-3 text-3xl text-navy">Регистрация на платформе</h1>
       <p className="mt-3 text-sm leading-relaxed text-ink-muted">

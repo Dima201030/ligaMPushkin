@@ -17,7 +17,8 @@ import { STATUS_BY_VALUE } from "@/lib/domain";
 import { cn, formatDate, formatDateShort, formatTime, timeAgo } from "@/lib/utils";
 import { CategoryBadge, StatusPill } from "@/components/ui/Badges";
 import { MatchRow } from "@/components/domain/MatchRow";
-import { OrganizerHeader, OrgStat, Panel, MiniLabel } from "@/components/organizer/OrganizerUI";
+import { OrganizerHeader, Panel, MiniLabel } from "@/components/organizer/OrganizerUI";
+import { OrgStatCount } from "@/components/organizer/OrgStatCount";
 import { RegistrationsInbox } from "@/components/organizer/RegistrationsInbox";
 import { hasFullOrganizerAccess } from "@/lib/api/auth";
 import { requireOrganizerSession } from "@/lib/organizer-access";
@@ -69,27 +70,27 @@ export default async function OrganizerDashboardPage() {
 
       <div className="space-y-8 px-4 py-7 md:px-8 lg:px-10">
         <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2 xl:grid-cols-4">
-          <OrgStat
+          <OrgStatCount
             label="Игроки"
             value={data.stats.players}
             hint="в базе платформы"
             icon={<Users className="size-4" />}
           />
-          <OrgStat
+          <OrgStatCount
             label="Активные турниры"
             value={data.stats.activeTournaments}
             hint={live.length > 0 ? `${live.length} матчей идут сейчас` : "Матчи не начаты"}
             icon={<Trophy className="size-4" />}
             tone="warning"
           />
-          <OrgStat
+          <OrgStatCount
             label="В расписании"
             value={data.stats.upcoming}
             hint={nextTournament ? `Ближайший старт — ${formatDateShort(nextTournament.startsAt)}` : "Даты не назначены"}
             icon={<CalendarPlus className="size-4" />}
             tone="neutral"
           />
-          <OrgStat
+          <OrgStatCount
             label="Завершено матчей"
             value={data.stats.completedMatches}
             hint={data.stats.missingScores > 0 ? `${data.stats.missingScores} без счёта` : "Все результаты внесены"}

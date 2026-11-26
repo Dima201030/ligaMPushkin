@@ -1,10 +1,12 @@
-import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import type { Tournament } from "@/lib/types";
 import { formatTournamentCreatorLabel } from "@/lib/api/tournaments";
 import { tournamentPath } from "@/lib/club/tenant";
-import { CATEGORY_BY_SLUG, STATUS_BY_VALUE, TYPE_BY_VALUE } from "@/lib/domain";
+import { CATEGORY_BY_SLUG, TYPE_BY_VALUE } from "@/lib/domain";
 import { cn, formatMoney, weekday } from "@/lib/utils";
+import { PrefetchLink } from "@/components/motion/PrefetchLink";
+import { BlurImage } from "@/components/motion/BlurImage";
+import { StatusPill } from "@/components/ui/Badges";
 
 const MONTHS_GENITIVE = [
   "января",
@@ -41,17 +43,16 @@ export function TournamentCard({
   const creatorLabel = formatTournamentCreatorLabel(tournament.createdBy);
 
   return (
-    <article className={cn("group flex h-full flex-col", className)}>
-      <Link href={tournamentPath(tournament.clubSlug, tournament.slug)} className="flex h-full flex-col">
-        <div className="cover-image relative aspect-[4/3] shrink-0">
+    <article className={cn("group flex h-full flex-col card-stagger-item", className)}>
+      <PrefetchLink href={tournamentPath(tournament.clubSlug, tournament.slug)} className="flex h-full flex-col">
+        <div className="cover-image relative aspect-[4/3] shrink-0 overflow-hidden">
           {tournament.coverUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={tournament.coverUrl} alt="" loading="lazy" />
+            <BlurImage src={tournament.coverUrl} alt="" className="size-full" imgClassName="cover-kenburns size-full object-cover" />
           ) : (
             <div className="size-full court-pattern-static" aria-hidden="true" />
           )}
-          <span className="absolute left-0 top-0 bg-canvas px-2.5 py-1.5 text-[0.54rem] uppercase tracking-[0.14em] text-ink">
-            {STATUS_BY_VALUE[tournament.status].label}
+          <span className="absolute left-0 top-0 bg-canvas px-2.5 py-1.5">
+            <StatusPill status={tournament.status} className="border-0 bg-transparent px-0" />
           </span>
         </div>
 
@@ -97,7 +98,7 @@ export function TournamentCard({
             </div>
           </div>
         </div>
-      </Link>
+      </PrefetchLink>
     </article>
   );
 }
@@ -106,7 +107,7 @@ export function TournamentRow({ tournament }: { tournament: Tournament }) {
   const startsAt = new Date(tournament.startsAt);
   const creatorLabel = formatTournamentCreatorLabel(tournament.createdBy);
   return (
-    <Link
+    <PrefetchLink
       href={tournamentPath(tournament.clubSlug, tournament.slug)}
       className="group flex items-center gap-4 border-b border-line px-1 py-4 transition-colors last:border-b-0 hover:bg-white/40"
     >
@@ -129,6 +130,6 @@ export function TournamentRow({ tournament }: { tournament: Tournament }) {
         </p>
       </div>
       <ArrowUpRight className="size-4 shrink-0 text-ink-faint transition-colors group-hover:text-ink" aria-hidden="true" />
-    </Link>
+    </PrefetchLink>
   );
 }

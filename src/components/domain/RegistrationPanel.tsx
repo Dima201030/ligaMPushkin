@@ -6,6 +6,10 @@ import { Check, Clock, Users } from "lucide-react";
 import type { Tournament } from "@/lib/types";
 import { cancelRegistration, createRegistration } from "@/lib/api/tournaments";
 import { formatDateTime, relativeDeadline } from "@/lib/utils";
+import { SuccessBurst } from "@/components/motion/SuccessBurst";
+import { Countdown } from "@/components/motion/Countdown";
+import { playUiTick } from "@/lib/polish/sounds";
+import { readPolishPrefs } from "@/lib/polish/prefs";
 
 export function RegistrationPanel({
   tournament,
@@ -33,6 +37,8 @@ export function RegistrationPanel({
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [burst, setBurst] = useState(false);
+  const [shake, setShake] = useState(false);
 
   const confirmed = tournament.participants.filter(
     (item) => item.status === "confirmed" || item.status === "pending",
@@ -41,21 +47,35 @@ export function RegistrationPanel({
   const isOpen = tournament.status === "registration_open";
   const isCompleted = tournament.status === "completed";
 
+  function fail(message: string) {
+    setError(message);
+    setShake(true);
+    window.setTimeout(() => setShake(false), 480);
+    if (readPolishPrefs().sounds) playUiTick("err");
+  }
+
   async function register() {
     setBusy(true);
     setError(null);
     setNotice(null);
+    // Optimistic: show pending success shell while request flies.
+    setRegistered(true);
+    setStatus("pending");
     const result = await createRegistration(tournament.slug, {
       lookingForPartner: isPairs ? lookingForPartner : false,
       clubSlug: tournament.clubSlug,
     });
     setBusy(false);
     if (!result.ok) {
-      setError(result.error);
+      setRegistered(false);
+      setStatus(undefined);
+      fail(result.error);
       return;
     }
     setRegistered(true);
     setStatus(result.status);
+    setBurst(true);
+    if (readPolishPrefs().sounds) playUiTick("ok");
     setNotice(
       result.status === "waitlist"
         ? "Мест нет — вы добавлены в лист ожидания."
@@ -67,21 +87,24 @@ export function RegistrationPanel({
     setBusy(true);
     setError(null);
     setNotice(null);
+    const previous = { registered, status };
+    setRegistered(false);
+    setStatus(undefined);
     const result = await cancelRegistration(tournament.slug, {
       clubSlug: tournament.clubSlug,
     });
     setBusy(false);
     if (!result.ok) {
-      setError(result.error);
+      setRegistered(previous.registered);
+      setStatus(previous.status);
+      fail(result.error);
       return;
     }
-    setRegistered(false);
-    setStatus(undefined);
     setNotice("Регистрация отменена. Место освобождено для другого игрока.");
   }
 
   return (
-    <aside className="card p-5 md:p-6">
+    <aside className={`card p-5 md:p-6 ${shake ? "form-shake" : ""}`}>
       <p className="eyebrow eyebrow-plain text-[0.65rem]">Участие</p>
       <div className="mt-4 flex items-end justify-between gap-4">
         <div>
@@ -96,9 +119,13 @@ export function RegistrationPanel({
         </div>
       </div>
 
+      {isOpen ? (
+        <Countdown targetIso={tournament.startsAt} className="mt-5 border-t border-divider pt-5" />
+      ) : null}
+
       <div className="mt-5 space-y-3 border-t border-divider pt-5 text-xs text-ink-muted">
         <p className="flex items-start gap-2">
-          <Clock className="mt-0.5 size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
+          <Clock className="mt-0.5 size-3.5 shrink-0 text-ink-faint icon-bounce" aria-hidden="true" />
           <span>
             Дедлайн регистрации:{" "}
             <span className="font-semibold text-ink">{formatDateTime(tournament.registrationClosesAt)}</span>
@@ -108,7 +135,7 @@ export function RegistrationPanel({
           </span>
         </p>
         <p className="flex items-start gap-2">
-          <Users className="mt-0.5 size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
+          <Users className="mt-0.5 size-3.5 shrink-0 text-ink-faint icon-bounce" aria-hidden="true" />
           <span>
             Уже заявлено:{" "}
             <span className="font-semibold text-ink">
@@ -130,6 +157,7 @@ export function RegistrationPanel({
               <Check className="size-4" aria-hidden="true" />
               {status === "waitlist" ? "Вы в листе ожидания" : "Вы записаны на турнир"}
             </div>
+            <SuccessBurst active={burst} label="Заявка отправлена" />
             <button type="button" className="btn btn-secondary w-full" onClick={cancel} disabled={busy}>
               Отменить регистрацию
             </button>

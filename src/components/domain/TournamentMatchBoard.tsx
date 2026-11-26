@@ -1,8 +1,11 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import type { Match } from "@/lib/types";
 import { useTournamentMatchesLive } from "@/lib/live/useTournamentMatchesLive";
 import { MatchRow } from "./MatchRow";
+import { EmptyState } from "@/components/ui/Section";
+import { cn } from "@/lib/utils";
 
 export function TournamentMatchBoard({
   slug,
@@ -17,6 +20,18 @@ export function TournamentMatchBoard({
     { kind: "public", slug, clubSlug },
     { initialMatches, enabled: true },
   );
+  const [pulse, setPulse] = useState(false);
+  const prevUpdated = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!updatedAt) return;
+    if (prevUpdated.current && prevUpdated.current !== updatedAt) {
+      setPulse(true);
+      const id = window.setTimeout(() => setPulse(false), 900);
+      return () => window.clearTimeout(id);
+    }
+    prevUpdated.current = updatedAt;
+  }, [updatedAt]);
 
   const liveHint =
     mode === "sse"
@@ -26,7 +41,7 @@ export function TournamentMatchBoard({
         : null;
 
   return (
-    <section className="card overflow-hidden">
+    <section className={cn("card overflow-hidden", pulse && "live-board-pulse")}>
       <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4 md:px-6">
         <div className="min-w-0">
           <h2 className="text-lg">Матчи турнира</h2>
@@ -58,12 +73,10 @@ export function TournamentMatchBoard({
           ))}
         </div>
       ) : (
-        <div className="px-6 py-12 text-center">
-          <p className="font-bold">Сетка ещё не опубликована</p>
-          <p className="mt-1 text-sm text-ink-muted">
-            Матчи появятся после жеребьёвки и публикации расписания организатором.
-          </p>
-        </div>
+        <EmptyState
+          title="Сетка ещё не опубликована"
+          description="Матчи появятся после жеребьёвки и публикации расписания организатором."
+        />
       )}
     </section>
   );
