@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, CheckCircle2, Plus, Search, ShieldCheck, Trophy } from "lucide-react";
 import type { CategorySlug, Player, ProfileVerificationStatus } from "@/lib/types";
@@ -15,12 +15,23 @@ type Sort = "rating" | "name" | "points" | "matches";
 function verificationLabel(status?: ProfileVerificationStatus) {
   switch (status) {
     case "approved":
-      return "Верифицирован";
+      return "Подтверждён";
     case "rejected":
       return "Отклонён";
     default:
       return "Ожидает";
   }
+}
+
+function resolveBirthDate(
+  player: Player,
+  birthDates: Record<string, string>,
+): string {
+  return (
+    birthDates[player.id] ||
+    player.birthDate ||
+    (player.birthYear > 1900 ? `${player.birthYear}-01-01` : "")
+  );
 }
 
 export function OrganizerPlayersTable({ players }: { players: Player[] }) {
@@ -32,7 +43,10 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
   const [birthDates, setBirthDates] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorPlayerId, setErrorPlayerId] = useState<string | null>(null);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
+  const birthInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const feedbackRef = useRef<HTMLDivElement | null>(null);
 
   const rows = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -64,55 +78,103 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
       });
   }, [players, categories, verification, birthDates, query, category, sort]);
 
+  function showFeedback(message: string, kind: "error" | "notice", playerId?: string) {
+    if (kind === "error") {
+      setNotice(null);
+      setError(message);
+      setErrorPlayerId(playerId ?? null);
+    } else {
+      setError(null);
+      setErrorPlayerId(null);
+      setNotice(message);
+    }
+    requestAnimationFrame(() => {
+      feedbackRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  }
+
   async function changeCategory(player: Player, next: CategorySlug) {
     setError(null);
-    const result = await updateOrganizerPlayer(player.id, { level: next });
-    if (!result.ok) {
-      setError(result.error);
-      return;
+    setErrorPlayerId(null);
+    try {
+      const result = await updateOrganizerPlayer(player.id, { level: next });
+      if (!result.ok) {
+        showFeedback(result.error, "error", player.id);
+        return;
+      }
+      setCategories((current) => ({ ...current, [player.id]: next }));
+      showFeedback(
+        `${player.firstName} ${player.lastName} переведён в категорию ${CATEGORY_BY_SLUG[next].name}.`,
+        "notice",
+      );
+    } catch {
+      showFeedback("Не удалось сменить категорию. Проверьте соединение и сессию организатора.", "error", player.id);
     }
-    setCategories((current) => ({ ...current, [player.id]: next }));
-    setNotice(
-      `${player.firstName} ${player.lastName} переведён в категорию ${CATEGORY_BY_SLUG[next].name}.`,
-    );
   }
 
   async function verifyPlayer(player: Player, status: "approved" | "rejected") {
-    setError(null);
     setVerifyingId(player.id);
-    const birthDate =
-      birthDates[player.id] ||
-      player.birthDate ||
-      (player.birthYear > 1900 ? `${player.birthYear}-01-01` : "");
+    const birthDate = resolveBirthDate(player, birthDates);
     if (status === "approved" && !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
-      setError("Укажите дату рождения в формате ГГГГ-ММ-ДД перед подтверждением.");
+      showFeedback(
+        `Укажите дату рождения для ${player.lastName} ${player.firstName}, затем нажмите «Подтвердить» ещё раз.`,
+        "error",
+        player.id,
+      );
+      birthInputRefs.current[player.id]?.focus();
       setVerifyingId(null);
       return;
     }
-    const result = await confirmPlayerVerification(player.id, {
-      firstName: player.firstName,
-      lastName: player.lastName,
-      birthDate: birthDate || "1970-01-01",
-      level: categories[player.id] ?? player.category,
-      phone: player.phone,
-      status,
-    });
-    setVerifyingId(null);
-    if (!result.ok) {
-      setError(result.error);
-      return;
+    try {
+      const result = await confirmPlayerVerification(player.id, {
+        firstName: player.firstName,
+        lastName: player.lastName,
+        birthDate: birthDate || "1970-01-01",
+        level: categories[player.id] ?? player.category,
+        phone: player.phone,
+        status,
+      });
+      if (!result.ok) {
+        showFeedback(result.error, "error", player.id);
+        return;
+      }
+      setVerification((current) => ({ ...current, [player.id]: status }));
+      if (birthDate) setBirthDates((current) => ({ ...current, [player.id]: birthDate }));
+      showFeedback(
+        status === "approved"
+          ? `${player.lastName} ${player.firstName}: профиль подтверждён, игрок может записываться на турниры.`
+          : `${player.lastName} ${player.firstName}: подтверждение профиля отклонено.`,
+        "notice",
+      );
+    } catch {
+      showFeedback(
+        "Не удалось подтвердить профиль. Проверьте соединение и что вы вошли как организатор.",
+        "error",
+        player.id,
+      );
+    } finally {
+      setVerifyingId(null);
     }
-    setVerification((current) => ({ ...current, [player.id]: status }));
-    if (birthDate) setBirthDates((current) => ({ ...current, [player.id]: birthDate }));
-    setNotice(
-      status === "approved"
-        ? `${player.lastName} ${player.firstName}: профиль подтверждён.`
-        : `${player.lastName} ${player.firstName}: верификация отклонена.`,
-    );
   }
 
   return (
     <div className="space-y-6">
+      <div ref={feedbackRef} className="space-y-2">
+        {error && (
+          <DemoNote className="text-negative">
+            {error}
+          </DemoNote>
+        )}
+        {notice && (
+          <DemoNote>
+            <span className="inline-flex items-start gap-1.5">
+              <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+              <span>{notice}</span>
+            </span>
+          </DemoNote>
+        )}
+      </div>
+
       <div className="flex flex-wrap items-center gap-3 border-b border-line pb-3">
         <label className="relative block w-full sm:w-64">
           <span className="sr-only">Поиск игрока</span>
@@ -217,12 +279,22 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
                       <label className="block">
                         <span className="sr-only">Дата рождения {player.firstName} {player.lastName}</span>
                         <input
+                          ref={(node) => {
+                            birthInputRefs.current[player.id] = node;
+                          }}
                           type="date"
-                          className="field min-h-[28px] w-[132px] border-0 border-b border-line bg-transparent px-1 py-0.5 text-[0.66rem] focus:border-ink"
+                          className={cn(
+                            "field min-h-[28px] w-[132px] border-0 border-b bg-transparent px-1 py-0.5 text-[0.66rem] focus:border-ink",
+                            errorPlayerId === player.id ? "border-negative text-negative" : "border-line",
+                          )}
                           value={player.birthDate || ""}
-                          onChange={(event) =>
-                            setBirthDates((current) => ({ ...current, [player.id]: event.target.value }))
-                          }
+                          onChange={(event) => {
+                            setBirthDates((current) => ({ ...current, [player.id]: event.target.value }));
+                            if (errorPlayerId === player.id) {
+                              setError(null);
+                              setErrorPlayerId(null);
+                            }
+                          }}
                         />
                       </label>
                     </td>
@@ -244,21 +316,26 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
                               type="button"
                               className="btn btn-secondary btn-sm"
                               disabled={verifyingId === player.id}
-                              onClick={() => verifyPlayer(player, "approved")}
+                              onClick={() => void verifyPlayer(player, "approved")}
                             >
                               <ShieldCheck className="size-3" aria-hidden="true" />
-                              Подтвердить
+                              {verifyingId === player.id ? "Сохраняем…" : "Подтвердить"}
                             </button>
                             <button
                               type="button"
                               className="btn btn-secondary btn-sm"
                               disabled={verifyingId === player.id}
-                              onClick={() => verifyPlayer(player, "rejected")}
+                              onClick={() => void verifyPlayer(player, "rejected")}
                             >
                               Отклонить
                             </button>
                           </div>
                         )}
+                        {errorPlayerId === player.id && error ? (
+                          <p role="alert" className="max-w-[180px] text-[0.58rem] leading-snug text-negative">
+                            {error}
+                          </p>
+                        ) : null}
                       </div>
                     </td>
                     <td className="text-right text-[0.76rem] tabular-nums text-ink">{player.rating}</td>
@@ -321,15 +398,6 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
         })}
       </div>
 
-      {error && <DemoNote>{error}</DemoNote>}
-      {notice && (
-        <DemoNote>
-          <span className="inline-flex items-start gap-1.5">
-            <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-            <span>{notice}</span>
-          </span>
-        </DemoNote>
-      )}
     </div>
   );
 }

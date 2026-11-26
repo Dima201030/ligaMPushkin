@@ -18,9 +18,11 @@ import { MatchRow } from "@/components/domain/MatchRow";
 import {
   MyRegistrations,
   NotificationSettings,
+  ProfileSettingsForm,
   RatingHistoryTable,
 } from "@/components/domain/CabinetPanels";
 import { DeleteAccountPanel } from "@/components/domain/DeleteAccountPanel";
+import { DEFAULT_NOTIFICATION_PREFS } from "@/lib/api/auth";
 import { PageHeader } from "@/components/ui/Section";
 
 export const metadata: Metadata = {
@@ -244,35 +246,16 @@ export default async function CabinetPage() {
         </section>
 
         <section id="settings" className="scroll-mt-24 grid gap-8 border-t border-line pt-10 lg:grid-cols-2">
-          <div>
-            <h2 className="text-xl">Контакты аккаунта</h2>
-            <dl className="mt-4 space-y-3 text-sm">
-              <div className="flex justify-between gap-4 border-b border-line pb-3">
-                <dt className="text-ink-muted">Email</dt>
-                <dd>{session.user.email}</dd>
-              </div>
-              <div className="flex justify-between gap-4 border-b border-line pb-3">
-                <dt className="text-ink-muted">Телефон</dt>
-                <dd>{publicPhone(session.user.phone) || "—"}</dd>
-              </div>
-              <div className="flex justify-between gap-4 border-b border-line pb-3">
-                <dt className="text-ink-muted">Категория</dt>
-                <dd>{category?.name ?? player.category}</dd>
-              </div>
-            </dl>
-            <p className="mt-4 text-xs text-ink-muted">
-              Документы:{" "}
-              <Link href="/privacy" className="text-accent hover:underline">
-                политика ПДн
-              </Link>
-              ,{" "}
-              <Link href="/consent" className="text-accent hover:underline">
-                согласия
-              </Link>
-              .
-            </p>
-          </div>
-          <NotificationSettings />
+          <ProfileSettingsForm
+            email={session.user.email}
+            firstName={player.firstName}
+            lastName={player.lastName}
+            phone={session.user.phone || ""}
+            city={player.city}
+            bio={player.bio}
+            category={player.category}
+          />
+          <NotificationSettings initial={session.notifications ?? DEFAULT_NOTIFICATION_PREFS} />
         </section>
 
         <section className="mt-10 border-t border-line pt-10">

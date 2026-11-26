@@ -97,21 +97,28 @@ export async function confirmPlayerVerification(
     note?: string;
   },
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { response, data } = await apiRequest<ApiErrorBody>(
-    `/organizer/players/${encodeURIComponent(id)}/verify`,
-    {
-      method: "POST",
-      body: JSON.stringify({
-        first_name: input.firstName,
-        last_name: input.lastName,
-        birth_date: input.birthDate,
-        level: input.level,
-        phone: input.phone,
-        status: input.status,
-        note: input.note,
-      }),
-    },
-  );
-  if (response.ok) return { ok: true };
-  return { ok: false, error: data?.message ?? "Не удалось подтвердить профиль" };
+  try {
+    const { response, data } = await apiRequest<ApiErrorBody>(
+      `/organizer/players/${encodeURIComponent(id)}/verify`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          first_name: input.firstName,
+          last_name: input.lastName,
+          birth_date: input.birthDate,
+          level: input.level,
+          phone: input.phone,
+          status: input.status,
+          note: input.note,
+        }),
+      },
+    );
+    if (response.ok) return { ok: true };
+    return { ok: false, error: data?.message ?? "Не удалось подтвердить профиль" };
+  } catch {
+    return {
+      ok: false,
+      error: "Не удалось связаться с сервером. Проверьте соединение и попробуйте снова.",
+    };
+  }
 }
