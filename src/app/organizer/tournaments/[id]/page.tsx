@@ -166,10 +166,10 @@ export default async function OrganizerTournamentPage({
 
             <Panel
               title="Призёры и места"
-              description="Красивое оформление первого, второго и третьего места на публичной странице"
+              description="Первое–четвёртое место на публичной странице турнира"
               action={
                 <span className="text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted">
-                  {tournament.winners?.length ?? 0} из 3
+                  {tournament.winners?.length ?? 0} из 4
                 </span>
               }
             >

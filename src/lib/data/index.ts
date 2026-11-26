@@ -282,7 +282,7 @@ export async function getPlayerProfile(slug: string) {
     return {
       player,
       matches: [] as Awaited<ReturnType<typeof fetchTournamentMatches>>,
-      titles: [] as { year: number; tournamentTitle: string; type: TournamentType; place: 1 | 2 | 3 }[],
+      titles: [] as { year: number; tournamentTitle: string; type: TournamentType; place: 1 | 2 | 3 | 4 }[],
       rank,
       categoryRank,
       categoriesCount: globalRankings.totalPlayers,

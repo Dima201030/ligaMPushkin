@@ -101,7 +101,7 @@ export interface Registration {
 }
 
 export interface TournamentWinner {
-  place: 1 | 2 | 3;
+  place: 1 | 2 | 3 | 4;
   playerIds: string[];
 }
 
@@ -218,7 +218,7 @@ export interface PlayerTitle {
   year: number;
   tournamentTitle: string;
   type: TournamentType;
-  place: 1 | 2 | 3;
+  place: 1 | 2 | 3 | 4;
 }
 
 export interface TournamentDraft {
