@@ -22,8 +22,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </div>
 
       <div className="relative hidden overflow-hidden bg-navy lg:block">
-        <div className="absolute inset-0 court-pattern opacity-40" aria-hidden="true" />
-        <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/70 to-navy/20" aria-hidden="true" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/images/hero.jpg" alt="" className="absolute inset-0 size-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/50 to-navy/10" aria-hidden="true" />
         <div className="relative flex h-full flex-col justify-end p-12 text-white">
           <p className="eyebrow eyebrow-plain text-sky">{CLUB.productName}</p>
           <p className="mt-4 max-w-[20ch] font-display text-4xl font-semibold leading-tight">

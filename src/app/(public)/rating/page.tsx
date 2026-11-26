@@ -92,7 +92,12 @@ export default async function RatingPage({
               </div>
 
               <div className="mt-6 flex items-center gap-3">
-                <Avatar firstName={row.player.firstName} lastName={row.player.lastName} size="md" />
+                <Avatar
+                  firstName={row.player.firstName}
+                  lastName={row.player.lastName}
+                  src={row.player.avatarUrl}
+                  size="md"
+                />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{row.player.firstName} {row.player.lastName}</p>
                   <p className="mt-1 text-[0.58rem] uppercase tracking-[0.12em] text-ink-muted">
@@ -148,7 +153,12 @@ export default async function RatingPage({
                       </td>
                       <td>
                         <div className="flex items-center gap-3">
-                          <Avatar firstName={row.player.firstName} lastName={row.player.lastName} size="sm" />
+                          <Avatar
+                            firstName={row.player.firstName}
+                            lastName={row.player.lastName}
+                            src={row.player.avatarUrl}
+                            size="sm"
+                          />
                           <Link href={`/players/${row.player.slug}`} className="font-semibold group-hover:text-accent">
                             {row.player.firstName} {row.player.lastName}
                           </Link>

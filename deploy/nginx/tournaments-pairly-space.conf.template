@@ -31,11 +31,18 @@ server {
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 
-    # Same Basic Auth file as mrpushkin.duckdns.org
-    auth_basic "Pairly";
-    auth_basic_user_file /etc/nginx/mrpushkin.htpasswd;
+    # auth_basic "Pairly";
+    # auth_basic_user_file /etc/nginx/mrpushkin.htpasswd;
 
-    location ^~ __BASE_PATH__/_next/static/ {
+    # Legacy secret basePath → same path without prefix (permanent).
+    location = /mp-7f3a9c2e5b8d4106 {
+        return 301 /;
+    }
+    location ^~ /mp-7f3a9c2e5b8d4106/ {
+        rewrite ^/mp-7f3a9c2e5b8d4106/(.*)$ /$1 permanent;
+    }
+
+    location ^~ /_next/static/ {
         proxy_pass http://127.0.0.1:3010;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -51,14 +58,8 @@ server {
         access_log off;
     }
 
-    # Subdomain root → club UI (same basePath as duckdns; one container on :3010)
-    location = / {
-        return 302 __BASE_PATH__/;
-    }
-
     # Live match SSE: disable buffering, longer idle timeout (heartbeats ~15s).
-    location ~ ^__BASE_PATH__/api/(tournaments/[^/]+/matches/events|organizer/tournaments/[^/]+/matches/events)$ {
-        rewrite ^__BASE_PATH__/api/(.*)$ /api/$1 break;
+    location ~ ^/api/(tournaments/[^/]+/matches/events|organizer/tournaments/[^/]+/matches/events)$ {
         proxy_pass http://127.0.0.1:3020;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -74,8 +75,7 @@ server {
         proxy_send_timeout 1800s;
     }
 
-    location ^~ __BASE_PATH__/api/ {
-        rewrite ^__BASE_PATH__/api/(.*)$ /api/$1 break;
+    location ^~ /api/ {
         proxy_pass http://127.0.0.1:3020;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -88,7 +88,8 @@ server {
         proxy_send_timeout 60s;
     }
 
-    location ^~ __BASE_PATH__ {
+    # Club UI at domain root (empty NEXT_BASE_PATH).
+    location / {
         proxy_pass http://127.0.0.1:3010;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -99,9 +100,5 @@ server {
         proxy_set_header X-Forwarded-Proto https;
         proxy_read_timeout 60s;
         proxy_send_timeout 60s;
-    }
-
-    location / {
-        return 404;
     }
 }

@@ -124,7 +124,12 @@ export function PlayersExplorer({ rows }: { rows: { player: Player; rank: number
                   <td className="text-xs font-bold tabular-nums text-ink-faint">{rank}</td>
                   <td>
                     <div className="flex items-center gap-3">
-                      <Avatar firstName={player.firstName} lastName={player.lastName} size="sm" />
+                      <Avatar
+                        firstName={player.firstName}
+                        lastName={player.lastName}
+                        src={player.avatarUrl}
+                        size="sm"
+                      />
                       <div className="min-w-0">
                         <Link href={`/players/${player.slug}`} className="font-semibold text-ink group-hover:text-accent">
                           {player.firstName} {player.lastName}
@@ -167,7 +172,12 @@ export function PlayersExplorer({ rows }: { rows: { player: Player; rank: number
         {filtered.map(({ player, rank }) => (
           <Link key={player.id} href={`/players/${player.slug}`} className="card-flat flex items-center gap-3 p-3.5">
             <span className="w-5 text-xs font-bold tabular-nums text-ink-faint">{rank}</span>
-            <Avatar firstName={player.firstName} lastName={player.lastName} size="md" />
+            <Avatar
+              firstName={player.firstName}
+              lastName={player.lastName}
+              src={player.avatarUrl}
+              size="md"
+            />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold">{player.firstName} {player.lastName}</p>
               <p className="mt-0.5 text-[0.68rem] text-ink-muted">

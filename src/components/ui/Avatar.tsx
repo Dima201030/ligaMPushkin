@@ -1,3 +1,4 @@
+import { COVER_PLACEHOLDER, resolveCoverUrl } from "@/lib/media";
 import { cn, initials } from "@/lib/utils";
 
 const SIZES = {
@@ -11,16 +12,44 @@ const SIZES = {
 export function Avatar({
   firstName,
   lastName,
+  src,
   size = "md",
   className,
   tone = "blue",
 }: {
   firstName: string;
   lastName: string;
+  /** Profile photo URL when available; falls back to initials. */
+  src?: string | null;
   size?: keyof typeof SIZES;
   className?: string;
   tone?: "blue" | "navy" | "soft";
 }) {
+  const resolved = src ? resolveCoverUrl(src) : null;
+  const photoSrc =
+    resolved && resolved !== COVER_PLACEHOLDER && !resolved.includes("cover-placeholder")
+      ? resolved
+      : null;
+
+  if (photoSrc) {
+    return (
+      <span
+        className={cn(
+          "relative shrink-0 overflow-hidden rounded-full border",
+          SIZES[size],
+          tone === "navy" && "border-white/25",
+          tone === "blue" && "border-transparent",
+          tone === "soft" && "border-line",
+          className,
+        )}
+        aria-hidden="true"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={photoSrc} alt="" className="size-full object-cover" />
+      </span>
+    );
+  }
+
   return (
     <span
       className={cn(
@@ -43,14 +72,27 @@ export function AvatarPair({
   second,
   size = "md",
 }: {
-  first: { firstName: string; lastName: string };
-  second: { firstName: string; lastName: string };
+  first: { firstName: string; lastName: string; avatarUrl?: string | null };
+  second: { firstName: string; lastName: string; avatarUrl?: string | null };
   size?: keyof typeof SIZES;
 }) {
   return (
     <span className="flex -space-x-2">
-      <Avatar firstName={first.firstName} lastName={first.lastName} size={size} className="ring-2 ring-surface" />
-      <Avatar firstName={second.firstName} lastName={second.lastName} size={size} className="ring-2 ring-surface" tone="soft" />
+      <Avatar
+        firstName={first.firstName}
+        lastName={first.lastName}
+        src={first.avatarUrl}
+        size={size}
+        className="ring-2 ring-surface"
+      />
+      <Avatar
+        firstName={second.firstName}
+        lastName={second.lastName}
+        src={second.avatarUrl}
+        size={size}
+        className="ring-2 ring-surface"
+        tone="soft"
+      />
     </span>
   );
 }
