@@ -3,12 +3,12 @@ import { Medal, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type PodiumEntry = {
-  place: 1 | 2 | 3;
+  place: 1 | 2 | 3 | 4;
   players: { name: string; slug?: string }[];
 };
 
 const META: Record<
-  1 | 2 | 3,
+  1 | 2 | 3 | 4,
   { title: string; note: string; numeral: string; frame: string; accent: string }
 > = {
   1: {
@@ -32,7 +32,39 @@ const META: Record<
     frame: "border-line",
     accent: "bg-line",
   },
+  4: {
+    title: "Четвёртое место",
+    note: "Проигравший матч за 3-е",
+    numeral: "text-ink-faint",
+    frame: "border-line",
+    accent: "bg-line",
+  },
 };
+
+/** Expand legacy singles shared-bronze (two players on place 3) into 3 + 4. */
+export function normalizePodiumEntries(entries: PodiumEntry[]): PodiumEntry[] {
+  const byPlace = new Map<number, PodiumEntry>();
+  for (const entry of entries) {
+    if (entry.place < 1 || entry.place > 4) continue;
+    byPlace.set(entry.place, entry);
+  }
+  const third = byPlace.get(3);
+  if (third && third.players.length >= 2 && !byPlace.has(4)) {
+    byPlace.set(3, { place: 3, players: [third.players[0]] });
+    byPlace.set(4, { place: 4, players: [third.players[1]] });
+  }
+  // Never show the same singles name under both 3 and 4.
+  const fourth = byPlace.get(4);
+  const thirdNow = byPlace.get(3);
+  if (thirdNow && fourth && thirdNow.players.length === 1 && fourth.players.length === 1) {
+    const a = thirdNow.players[0];
+    const b = fourth.players[0];
+    if (a.slug && b.slug ? a.slug === b.slug : a.name === b.name) {
+      byPlace.delete(4);
+    }
+  }
+  return [...byPlace.values()].sort((a, b) => a.place - b.place);
+}
 
 function PodiumCard({ entry, featured }: { entry: PodiumEntry; featured: boolean }) {
   const meta = META[entry.place];
@@ -83,10 +115,11 @@ function PodiumCard({ entry, featured }: { entry: PodiumEntry; featured: boolean
 }
 
 export function TournamentPodium({ entries }: { entries: PodiumEntry[] }) {
-  if (entries.length === 0) return null;
+  const ordered = normalizePodiumEntries(entries);
+  if (ordered.length === 0) return null;
 
-  const ordered = [...entries].sort((a, b) => a.place - b.place);
   const three = ordered.length === 3;
+  const four = ordered.length === 4;
 
   return (
     <section className="border-t border-line pt-6">
@@ -103,7 +136,9 @@ export function TournamentPodium({ entries }: { entries: PodiumEntry[] }) {
             ? "max-w-sm"
             : ordered.length === 2
               ? "sm:grid-cols-2"
-              : "sm:grid-cols-3",
+              : four
+                ? "sm:grid-cols-2 lg:grid-cols-4"
+                : "sm:grid-cols-3",
         )}
       >
         {ordered.map((entry) => (

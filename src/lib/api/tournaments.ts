@@ -121,11 +121,11 @@ export function mapTournament(
     season: raw.season,
     isHidden: raw.is_hidden ?? false,
     winners: (raw.winners ?? []).map((winner) => ({
-      place: winner.place as 1 | 2 | 3,
+      place: winner.place as 1 | 2 | 3 | 4,
       playerIds: (winner.player_ids ?? []).map((id) => normalizeUuid(id)),
     })),
     suggestedPlaces: (raw.suggested_places ?? []).map((winner) => ({
-      place: winner.place as 1 | 2 | 3,
+      place: winner.place as 1 | 2 | 3 | 4,
       playerIds: (winner.player_ids ?? []).map((id) => normalizeUuid(id)),
     })),
     placesMismatch: Boolean(raw.places_mismatch),
@@ -428,8 +428,8 @@ export async function setOrganizerTournamentVisibility(
 
 export async function saveTournamentPlaces(
   id: string,
-  places: { place: 1 | 2 | 3; playerIds: string[] }[],
-): Promise<{ ok: true; winners: { place: 1 | 2 | 3; playerIds: string[] }[] } | { ok: false; error: string }> {
+  places: { place: 1 | 2 | 3 | 4; playerIds: string[] }[],
+): Promise<{ ok: true; winners: { place: 1 | 2 | 3 | 4; playerIds: string[] }[] } | { ok: false; error: string }> {
   const { response, data } = await apiRequest<{
     places?: { place: number; player_ids: string[] }[];
   } & ApiErrorBody>(`/organizer/tournaments/${encodeURIComponent(id)}/places`, {
@@ -444,7 +444,7 @@ export async function saveTournamentPlaces(
     return {
       ok: true,
       winners: (data?.places ?? []).map((place) => ({
-        place: place.place as 1 | 2 | 3,
+        place: place.place as 1 | 2 | 3 | 4,
         playerIds: (place.player_ids ?? []).map((id) => normalizeUuid(id)),
       })),
     };

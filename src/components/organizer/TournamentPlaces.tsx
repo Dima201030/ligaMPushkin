@@ -7,12 +7,13 @@ import { saveTournamentPlaces } from "@/lib/api/tournaments";
 import { cn } from "@/lib/utils";
 import { normalizeUuid, uuidsEqual } from "@/lib/uuid";
 
-type Place = 1 | 2 | 3;
+type Place = 1 | 2 | 3 | 4;
 
 const PLACES: { place: Place; label: string; hint: string }[] = [
   { place: 1, label: "Первое место", hint: "Победитель турнира" },
   { place: 2, label: "Второе место", hint: "Финалист" },
   { place: 3, label: "Третье место", hint: "Бронзовый призёр" },
+  { place: 4, label: "Четвёртое место", hint: "Проигравший матч за 3-е" },
 ];
 
 type Slot = {
@@ -21,15 +22,40 @@ type Slot = {
   partnerId: string;
 };
 
-function initialSlots(winners: TournamentWinner[], suggested: TournamentWinner[]): Record<Place, Slot> {
-  const slots: Record<Place, Slot> = {
+function emptySlots(): Record<Place, Slot> {
+  return {
     1: { enabled: false, playerId: "", partnerId: "" },
     2: { enabled: false, playerId: "", partnerId: "" },
     3: { enabled: false, playerId: "", partnerId: "" },
+    4: { enabled: false, playerId: "", partnerId: "" },
   };
+}
+
+function initialSlots(winners: TournamentWinner[], suggested: TournamentWinner[]): Record<Place, Slot> {
+  const slots = emptySlots();
   const source = winners.length > 0 ? winners : suggested;
   for (const winner of source) {
-    slots[winner.place] = {
+    if (winner.place < 1 || winner.place > 4) continue;
+    const place = winner.place as Place;
+    // Legacy singles shared-bronze: two players on place 3 → 3rd + 4th slots.
+    if (
+      place === 3 &&
+      winner.playerIds.length === 2 &&
+      !source.some((item) => item.place === 4)
+    ) {
+      slots[3] = {
+        enabled: true,
+        playerId: normalizeUuid(winner.playerIds[0]),
+        partnerId: "",
+      };
+      slots[4] = {
+        enabled: true,
+        playerId: normalizeUuid(winner.playerIds[1]),
+        partnerId: "",
+      };
+      continue;
+    }
+    slots[place] = {
       enabled: true,
       playerId: normalizeUuid(winner.playerIds[0]),
       partnerId: normalizeUuid(winner.playerIds[1]),
@@ -42,7 +68,7 @@ function slotPlayerIds(slot: Slot, isPairs: boolean): string[] {
   if (!slot.enabled || !slot.playerId) return [];
   const ids = [normalizeUuid(slot.playerId)];
   const partnerId = normalizeUuid(slot.partnerId);
-  if (partnerId && !uuidsEqual(partnerId, ids[0]) && (isPairs || partnerId)) {
+  if (isPairs && partnerId && !uuidsEqual(partnerId, ids[0])) {
     ids.push(partnerId);
   }
   return ids;
@@ -200,7 +226,6 @@ export function TournamentPlaces({
         {PLACES.map((item) => {
           const slot = slots[item.place];
           const isFirst = item.place === 1;
-          const showSecond = isPairs || Boolean(slot.partnerId);
           return (
             <div
               key={item.place}
@@ -251,7 +276,7 @@ export function TournamentPlaces({
               </div>
 
               {slot.enabled && (
-                <div className={cn("mt-4 grid gap-3", showSecond && "sm:grid-cols-2")}>
+                <div className={cn("mt-4 grid gap-3", isPairs && "sm:grid-cols-2")}>
                   <label className="block">
                     <span className="field-label">Игрок</span>
                     <select
@@ -267,9 +292,9 @@ export function TournamentPlaces({
                       ))}
                     </select>
                   </label>
-                  {showSecond && (
+                  {isPairs && (
                     <label className="block">
-                      <span className="field-label">{isPairs ? "Партнёр" : "Ещё призёр"}</span>
+                      <span className="field-label">Партнёр</span>
                       <select
                         className="field min-h-[38px] text-sm"
                         value={slot.partnerId}

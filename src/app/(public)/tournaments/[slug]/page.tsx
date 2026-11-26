@@ -158,7 +158,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
             {winners.length > 0 && (
               <TournamentPodium
                 entries={winners.map((winner) => ({
-                  place: winner.place,
+                  place: winner.place as 1 | 2 | 3 | 4,
                   players: winner.playerIds
                     .map((id) => participants.find((item) => uuidsEqual(item.playerId, id))?.player)
                     .filter(Boolean)
