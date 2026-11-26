@@ -146,11 +146,11 @@ export function OrganizerTournamentTable({ tournaments }: { tournaments: Tournam
                   Math.round((tournament.participants.length / tournament.maxParticipants) * 100),
                 );
                 return (
-                  <tr key={tournament.id}>
+                  <tr key={tournament.id} className="row-link group">
                     <td className="min-w-[240px]">
                       <Link
                         href={`/organizer/tournaments/${tournament.id}`}
-                        className="font-medium text-ink transition-opacity hover:opacity-60"
+                        className="row-link-primary font-medium text-ink transition-opacity hover:opacity-60"
                       >
                         {tournament.title}
                       </Link>
@@ -198,7 +198,7 @@ export function OrganizerTournamentTable({ tournaments }: { tournaments: Tournam
                     <td className="whitespace-nowrap text-right text-[0.72rem] tabular-nums text-ink-soft">
                       {tournament.entryFee ? formatMoney(tournament.entryFee) : "—"}
                     </td>
-                    <td>
+                    <td className="row-link-actions">
                       <TournamentRowActions
                         id={tournament.id}
                         slug={tournament.slug}

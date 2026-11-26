@@ -129,6 +129,7 @@ export default async function OrganizerTournamentPage({
             >
               <ParticipantsManager
                 tournamentId={tournament.id}
+                tournamentSlug={tournament.slug}
                 tournamentTitle={tournament.title}
                 maxParticipants={tournament.maxParticipants}
                 entryFee={tournament.entryFee}

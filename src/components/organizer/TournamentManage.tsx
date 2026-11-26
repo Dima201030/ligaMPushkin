@@ -191,12 +191,14 @@ const TABS: { value: "all" | RegistrationStatus; label: string }[] = [
 
 export function ParticipantsManager({
   tournamentId,
+  tournamentSlug,
   tournamentTitle,
   participants,
   maxParticipants,
   entryFee,
 }: {
   tournamentId: string;
+  tournamentSlug: string;
   tournamentTitle: string;
   participants: ManageParticipant[];
   maxParticipants: number;
@@ -546,7 +548,7 @@ export function ParticipantsManager({
         <p className="text-[0.64rem] text-ink-faint">
           Турнир «{tournamentTitle}» · {rows.length} заявок
         </p>
-        <Link href={`/organizer/tournaments/${tournamentId}`} className="link-arrow text-[0.7rem]">
+        <Link href={`/tournaments/${tournamentSlug}`} className="link-arrow text-[0.7rem]">
           Карточка турнира
           <ArrowRight className="size-3.5" aria-hidden="true" />
         </Link>

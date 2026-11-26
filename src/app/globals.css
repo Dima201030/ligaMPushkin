@@ -472,10 +472,17 @@
     position: relative;
   }
 
-  .row-link a::after {
+  /* Stretched primary link fills the row; nest actions under .row-link-actions. */
+  .row-link a.row-link-primary::after,
+  .row-link:not(:has(a.row-link-primary)) a::after {
     content: "";
     position: absolute;
     inset: 0;
+  }
+
+  .row-link-actions {
+    position: relative;
+    z-index: 1;
   }
 
   .divider {
