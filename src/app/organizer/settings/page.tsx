@@ -4,6 +4,7 @@ import { ClubSettingsForm } from "@/components/organizer/ClubSettingsForm";
 import { OrganizerHeader, Panel } from "@/components/organizer/OrganizerUI";
 import { fetchOrganizerClub } from "@/lib/api/clubs";
 import { CLUB } from "@/lib/domain";
+import { requireFullOrganizerSession } from "@/lib/organizer-access";
 
 export const metadata: Metadata = {
   title: "Настройки клуба",
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function OrganizerSettingsPage() {
+  await requireFullOrganizerSession();
   let club = null as Awaited<ReturnType<typeof fetchOrganizerClub>> | null;
   let loadError: string | null = null;
   try {

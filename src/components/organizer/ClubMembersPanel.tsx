@@ -14,8 +14,8 @@ import { cn } from "@/lib/utils";
 import { MiniLabel, Panel } from "./OrganizerUI";
 
 const ROLE_LABEL: Record<ClubMemberRole, string> = {
-  owner: "Владелец",
-  organizer: "Организатор",
+  owner: "Владелец клуба",
+  organizer: "Организатор турниров",
   player: "Игрок",
 };
 
@@ -80,7 +80,7 @@ export function InviteMemberForm() {
   return (
     <Panel
       title="Добавить участника"
-      description="Пользователь должен уже быть зарегистрирован. Роли клуба: владелец и организатор управляют клубом."
+      description="Пользователь должен уже быть зарегистрирован. «Организатор турниров» получает ограниченный кабинет; владелец — полный доступ к клубу."
     >
       <form onSubmit={submit} className="max-w-xl space-y-5 py-2" noValidate>
         <label className="block">
@@ -108,8 +108,8 @@ export function InviteMemberForm() {
             onChange={(event) => setRole(event.target.value as ClubMemberRole)}
             disabled={busy}
           >
-            <option value="organizer">Организатор</option>
-            <option value="owner">Владелец</option>
+            <option value="organizer">Организатор турниров</option>
+            <option value="owner">Владелец клуба</option>
             <option value="player">Игрок</option>
           </select>
         </label>
@@ -194,7 +194,7 @@ export function MembersTable({ members }: { members: ClubMember[] }) {
   return (
     <Panel
       title="Участники клуба"
-      description="Участники текущего клуба. Смена роли сразу сохраняется. Удаление — soft (status left); последнего владельца убрать нельзя."
+      description="Участники текущего клуба. Назначьте «организатор турниров» для ограниченного кабинета или «владелец» для полного доступа. Последнего владельца снять нельзя."
     >
       {error ? (
         <p role="alert" className="mb-3 text-[0.78rem] text-negative">
@@ -232,8 +232,8 @@ export function MembersTable({ members }: { members: ClubMember[] }) {
                       disabled={busy || lastOwner}
                       onChange={(event) => changeRole(member, event.target.value as ClubMemberRole)}
                     >
-                      <option value="owner">Владелец</option>
-                      <option value="organizer">Организатор</option>
+                      <option value="owner">Владелец клуба</option>
+                      <option value="organizer">Организатор турниров</option>
                       <option value="player">Игрок</option>
                     </select>
                   </label>

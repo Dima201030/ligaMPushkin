@@ -19,8 +19,12 @@ import { CategoryBadge, StatusPill } from "@/components/ui/Badges";
 import { MatchRow } from "@/components/domain/MatchRow";
 import { OrganizerHeader, OrgStat, Panel, MiniLabel } from "@/components/organizer/OrganizerUI";
 import { RegistrationsInbox } from "@/components/organizer/RegistrationsInbox";
+import { hasFullOrganizerAccess } from "@/lib/api/auth";
+import { requireOrganizerSession } from "@/lib/organizer-access";
 
 export default async function OrganizerDashboardPage() {
+  const session = await requireOrganizerSession();
+  const fullAccess = hasFullOrganizerAccess(session);
   const data = await getOrganizerDashboard();
   const live = data.matches.filter((match) => match.status === "live");
   const nextTournament = data.tournaments
@@ -32,7 +36,11 @@ export default async function OrganizerDashboardPage() {
       <OrganizerHeader
         eyebrow={`Оперативный штаб · ${formatDate(new Date())}`}
         title="Обзор турниров"
-        description="Всё, что требует внимания сегодня: новые заявки, матчи на корте и турниры, которые готовятся к старту."
+        description={
+          fullAccess
+            ? "Всё, что требует внимания сегодня: новые заявки, матчи на корте и турниры, которые готовятся к старту."
+            : "Ограниченный кабинет организатора турниров: сетки, матчи, заявки на турнир и состав."
+        }
         meta={
           <span className="inline-flex items-center gap-2 text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted">
             <CircleDot className="size-3.5 text-positive" aria-hidden="true" />
@@ -41,10 +49,12 @@ export default async function OrganizerDashboardPage() {
         }
         actions={
           <>
-            <Link href="/organizer/applications" className="btn btn-secondary btn-sm">
-              <UserCheck className="size-4" aria-hidden="true" />
-              Заявки игроков
-            </Link>
+            {fullAccess ? (
+              <Link href="/organizer/applications" className="btn btn-secondary btn-sm">
+                <UserCheck className="size-4" aria-hidden="true" />
+                Заявки игроков
+              </Link>
+            ) : null}
             <Link href="/organizer/tournaments/new" className="btn btn-primary btn-sm">
               <Plus className="size-4" aria-hidden="true" />
               Создать турнир
@@ -229,12 +239,16 @@ export default async function OrganizerDashboardPage() {
                         ? `${data.stats.missingScores} матчей без счёта`
                         : "Все счёты внесены",
                   },
-                  {
-                    href: "/organizer/content",
-                    icon: Newspaper,
-                    label: "Опубликовать новость",
-                    hint: "Новости и страницы платформы",
-                  },
+                  ...(fullAccess
+                    ? [
+                        {
+                          href: "/organizer/content",
+                          icon: Newspaper,
+                          label: "Опубликовать новость",
+                          hint: "Новости и страницы платформы",
+                        },
+                      ]
+                    : []),
                 ].map((action) => {
                   const Icon = action.icon;
                   return (
@@ -257,35 +271,37 @@ export default async function OrganizerDashboardPage() {
               </div>
             </Panel>
 
-            <Panel title="Движение рейтинга" description="Изменения после последних турниров" flush>
-              <ul className="divide-y divide-line">
-                {data.ratingHistory.slice(0, 4).map((entry) => (
-                  <li key={entry.id} className="py-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-[0.78rem] font-medium text-ink">{entry.match}</p>
-                        <p className="mt-0.5 text-[0.64rem] text-ink-muted">{entry.reason}</p>
+            {fullAccess ? (
+              <Panel title="Движение рейтинга" description="Изменения после последних турниров" flush>
+                <ul className="divide-y divide-line">
+                  {data.ratingHistory.slice(0, 4).map((entry) => (
+                    <li key={entry.id} className="py-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-[0.78rem] font-medium text-ink">{entry.match}</p>
+                          <p className="mt-0.5 text-[0.64rem] text-ink-muted">{entry.reason}</p>
+                        </div>
+                        <span
+                          className={cn(
+                            "shrink-0 text-[0.68rem] font-medium tabular-nums",
+                            entry.delta >= 0 ? "text-positive" : "text-negative",
+                          )}
+                        >
+                          {entry.delta > 0 ? "+" : ""}
+                          {entry.delta}
+                        </span>
                       </div>
-                      <span
-                        className={cn(
-                          "shrink-0 text-[0.68rem] font-medium tabular-nums",
-                          entry.delta >= 0 ? "text-positive" : "text-negative",
-                        )}
-                      >
-                        {entry.delta > 0 ? "+" : ""}
-                        {entry.delta}
-                      </span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              <div className="border-t border-line py-3">
-                <Link href="/organizer/ratings" className="link-arrow text-xs">
-                  Управление рейтингом
-                  <ArrowRight className="size-3.5" aria-hidden="true" />
-                </Link>
-              </div>
-            </Panel>
+                    </li>
+                  ))}
+                </ul>
+                <div className="border-t border-line py-3">
+                  <Link href="/organizer/ratings" className="link-arrow text-xs">
+                    Управление рейтингом
+                    <ArrowRight className="size-3.5" aria-hidden="true" />
+                  </Link>
+                </div>
+              </Panel>
+            ) : null}
 
             <Panel title="Журнал изменений" description="Действия организаторов" flush>
               <ul className="divide-y divide-line">

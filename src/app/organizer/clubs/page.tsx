@@ -7,6 +7,7 @@ import { OrganizerHeader, Panel } from "@/components/organizer/OrganizerUI";
 import { fetchMyClubs } from "@/lib/api/clubs";
 import { CLUB_COOKIE, clubPath, DEFAULT_CLUB_SLUG } from "@/lib/club/tenant";
 import { CLUB } from "@/lib/domain";
+import { requireFullOrganizerSession } from "@/lib/organizer-access";
 
 export const metadata: Metadata = {
   title: "Клубы",
@@ -14,6 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default async function OrganizerClubsPage() {
+  await requireFullOrganizerSession();
   const jar = await cookies();
   const activeSlug = jar.get(CLUB_COOKIE)?.value || DEFAULT_CLUB_SLUG;
   const memberships = await fetchMyClubs().catch(() => []);

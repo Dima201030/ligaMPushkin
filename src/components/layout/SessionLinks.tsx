@@ -2,26 +2,31 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { fetchCurrentUser, isOrganizerRole, logoutAccount, type LeagueUser } from "@/lib/api/auth";
+import {
+  canAccessOrganizer,
+  fetchSession,
+  logoutAccount,
+  type MeSession,
+} from "@/lib/api/auth";
 
 export function SessionLinks({ compact = false }: { compact?: boolean }) {
-  const [user, setUser] = useState<LeagueUser | null | undefined>(undefined);
+  const [session, setSession] = useState<MeSession | null | undefined>(undefined);
 
   useEffect(() => {
     let alive = true;
-    fetchCurrentUser()
+    fetchSession()
       .then((next) => {
-        if (alive) setUser(next);
+        if (alive) setSession(next);
       })
       .catch(() => {
-        if (alive) setUser(null);
+        if (alive) setSession(null);
       });
     return () => {
       alive = false;
     };
   }, []);
 
-  if (user === undefined) {
+  if (session === undefined) {
     return (
       <span className="text-[0.66rem] font-medium uppercase tracking-[0.16em] text-ink-muted">
         …
@@ -29,7 +34,7 @@ export function SessionLinks({ compact = false }: { compact?: boolean }) {
     );
   }
 
-  if (!user) {
+  if (!session) {
     return (
       <Link
         href="/login"
@@ -40,8 +45,9 @@ export function SessionLinks({ compact = false }: { compact?: boolean }) {
     );
   }
 
-  const cabinetHref = isOrganizerRole(user.role) ? "/organizer" : "/cabinet";
-  const label = isOrganizerRole(user.role) ? "Организатор" : "Кабинет";
+  const organizer = canAccessOrganizer(session);
+  const cabinetHref = organizer ? "/organizer" : "/cabinet";
+  const label = organizer ? "Организатор" : "Кабинет";
 
   return (
     <div className={compact ? "flex items-center gap-3" : "flex flex-col items-end gap-1.5"}>
@@ -56,7 +62,7 @@ export function SessionLinks({ compact = false }: { compact?: boolean }) {
         className="text-[0.58rem] uppercase tracking-[0.14em] text-ink-muted transition-colors hover:text-ink"
         onClick={async () => {
           await logoutAccount();
-          setUser(null);
+          setSession(null);
           window.location.href = "/";
         }}
       >
