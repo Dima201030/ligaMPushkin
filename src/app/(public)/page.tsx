@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { getHomeData } from "@/lib/data";
+import { tournamentPath } from "@/lib/club/tenant";
 import { CATEGORY_BY_SLUG, TYPE_BY_VALUE } from "@/lib/domain";
 import { formatNumber, formatTime, pluralizePlayers, weekday } from "@/lib/utils";
 import { HeroWordmark } from "@/components/ui/HeroWordmark";
@@ -319,7 +320,7 @@ export default async function HomePage() {
               return (
                 <Link
                   key={tournament.id}
-                  href={`/tournaments/${tournament.slug}`}
+                  href={tournamentPath(tournament.clubSlug, tournament.slug)}
                   className="group grid grid-cols-[3.6rem_1fr_auto] items-start gap-x-5 gap-y-3 border-t border-line py-6 transition-colors last:border-b last:border-line hover:bg-white/35 md:grid-cols-[7rem_1fr_10rem_auto] md:items-center md:gap-x-10 md:py-8"
                 >
                   <div className="flex items-baseline gap-2 md:block">

@@ -15,10 +15,23 @@ function withClubCookie(response: NextResponse, slug: string) {
 
 export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
+  const { clubSlug, restPath } = stripClubPrefix(pathname);
 
-  // Single-tenant install: /c/:slug and ?club= are accepted for old links but
-  // never switch tenants. A stale cookie is overwritten with the default club.
-  const { restPath } = stripClubPrefix(pathname);
+  // Club-scoped tournament URLs are first-class routes: club comes from the path
+  // for that page only. Do not strip the prefix and do not treat this as a global
+  // "current club" switch for the rest of the site.
+  if (clubSlug && restPath.startsWith("/tournaments")) {
+    if (isPlatformClubSlug(clubSlug)) {
+      const url = request.nextUrl.clone();
+      url.pathname = restPath;
+      return withClubCookie(NextResponse.redirect(url), DEFAULT_CLUB_SLUG);
+    }
+    return NextResponse.next();
+  }
+
+  // Single-tenant install for other paths: /c/:slug and ?club= are accepted for
+  // old links but never switch tenants. A stale cookie is overwritten with the
+  // default club.
   if (restPath !== pathname || searchParams.has("club")) {
     const url = request.nextUrl.clone();
     url.pathname = restPath;

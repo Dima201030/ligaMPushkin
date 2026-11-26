@@ -44,6 +44,7 @@ export function RegistrationPanel({
     setNotice(null);
     const result = await createRegistration(tournament.slug, {
       lookingForPartner: isPairs ? lookingForPartner : false,
+      clubSlug: tournament.clubSlug,
     });
     setBusy(false);
     if (!result.ok) {
@@ -63,7 +64,9 @@ export function RegistrationPanel({
     setBusy(true);
     setError(null);
     setNotice(null);
-    const result = await cancelRegistration(tournament.slug);
+    const result = await cancelRegistration(tournament.slug, {
+      clubSlug: tournament.clubSlug,
+    });
     setBusy(false);
     if (!result.ok) {
       setError(result.error);

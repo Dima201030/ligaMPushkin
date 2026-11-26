@@ -63,6 +63,23 @@ export function clubPath(slug: string, pathname = "/"): string {
   return `${CLUB_PATH_PREFIX}/${normalized}${restPath}`;
 }
 
+/**
+ * Public tournament URL carrying club in the path (not a session switcher).
+ * Falls back to legacy /tournaments/:slug when club is unknown.
+ */
+export function tournamentPath(
+  clubSlug: string | null | undefined,
+  tournamentSlug: string,
+): string {
+  const club = normalizeClubSlug(clubSlug);
+  const slug = tournamentSlug.trim();
+  if (!slug) return "/tournaments";
+  if (!club || isPlatformClubSlug(club)) {
+    return `/tournaments/${encodeURIComponent(slug)}`;
+  }
+  return `${CLUB_PATH_PREFIX}/${club}/tournaments/${encodeURIComponent(slug)}`;
+}
+
 export function parseClubCookie(cookieHeader: string | null | undefined): string | null {
   if (!cookieHeader) return null;
   const parts = cookieHeader.split(";");

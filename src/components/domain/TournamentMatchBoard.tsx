@@ -6,13 +6,15 @@ import { MatchRow } from "./MatchRow";
 
 export function TournamentMatchBoard({
   slug,
+  clubSlug,
   initialMatches,
 }: {
   slug: string;
+  clubSlug?: string;
   initialMatches: Match[];
 }) {
   const { matches, mode, updatedAt } = useTournamentMatchesLive(
-    { kind: "public", slug },
+    { kind: "public", slug, clubSlug },
     { initialMatches, enabled: true },
   );
 

@@ -15,7 +15,7 @@ import {
 export type LiveConnectionMode = "sse" | "poll" | "idle";
 
 type LiveSource =
-  | { kind: "public"; slug: string }
+  | { kind: "public"; slug: string; clubSlug?: string }
   | { kind: "organizer"; tournamentId: string };
 
 type Options = {
@@ -26,9 +26,9 @@ type Options = {
   pollMs?: number;
 };
 
-function withClubQuery(url: string): string {
+function withClubQuery(url: string, clubSlug?: string): string {
   const sep = url.includes("?") ? "&" : "?";
-  return `${url}${sep}club=${encodeURIComponent(DEFAULT_CLUB_SLUG)}`;
+  return `${url}${sep}club=${encodeURIComponent(clubSlug || DEFAULT_CLUB_SLUG)}`;
 }
 
 /**
@@ -55,7 +55,9 @@ export function useTournamentMatchesLive(source: LiveSource, options: Options) {
   pauseRef.current = pauseApply;
 
   const sourceKey =
-    source.kind === "public" ? `public:${source.slug}` : `organizer:${source.tournamentId}`;
+    source.kind === "public"
+      ? `public:${source.slug}:${source.clubSlug ?? ""}`
+      : `organizer:${source.tournamentId}`;
 
   useEffect(() => {
     setMatches(initialMatches);
@@ -95,7 +97,9 @@ export function useTournamentMatchesLive(source: LiveSource, options: Options) {
       try {
         const sync =
           source.kind === "public"
-            ? await syncTournamentMatches(source.slug, revisionRef.current || undefined)
+            ? await syncTournamentMatches(source.slug, revisionRef.current || undefined, {
+                clubSlug: source.clubSlug,
+              })
             : await syncOrganizerTournamentMatches(
                 source.tournamentId,
                 revisionRef.current || undefined,
@@ -126,7 +130,10 @@ export function useTournamentMatchesLive(source: LiveSource, options: Options) {
           ? tournamentMatchesEventsPath(source.slug)
           : organizerTournamentMatchesEventsPath(source.tournamentId);
       try {
-        es = new EventSource(withClubQuery(path), { withCredentials: true });
+        es = new EventSource(
+          withClubQuery(path, source.kind === "public" ? source.clubSlug : undefined),
+          { withCredentials: true },
+        );
       } catch {
         startPolling();
         return;

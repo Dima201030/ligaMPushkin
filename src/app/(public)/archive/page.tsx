@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Trophy } from "lucide-react";
 import { getArchiveYears, listArchive } from "@/lib/data";
+import { tournamentPath } from "@/lib/club/tenant";
 import { CATEGORIES, CATEGORY_BY_SLUG, TOURNAMENT_TYPES, TYPE_BY_VALUE } from "@/lib/domain";
 import type { CategorySlug, TournamentType } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
@@ -103,7 +104,10 @@ export default async function ArchivePage({
                     <tr key={tournament.id} className="row-link group">
                       <td className="whitespace-nowrap text-xs text-ink-muted">{formatDate(tournament.startsAt)}</td>
                       <td>
-                        <Link href={`/tournaments/${tournament.slug}`} className="font-semibold group-hover:text-accent">
+                        <Link
+                          href={tournamentPath(tournament.clubSlug, tournament.slug)}
+                          className="font-semibold group-hover:text-accent"
+                        >
                           {tournament.title}
                         </Link>
                         <p className="mt-0.5 text-[0.66rem] text-ink-faint">{tournament.season} · {TYPE_BY_VALUE[tournament.type].label}</p>

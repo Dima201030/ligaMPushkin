@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import type { Tournament } from "@/lib/types";
+import { tournamentPath } from "@/lib/club/tenant";
 import { CATEGORY_BY_SLUG, STATUS_BY_VALUE, TYPE_BY_VALUE } from "@/lib/domain";
 import { cn, formatMoney, weekday } from "@/lib/utils";
 
@@ -39,7 +40,7 @@ export function TournamentCard({
 
   return (
     <article className={cn("group flex h-full flex-col", className)}>
-      <Link href={`/tournaments/${tournament.slug}`} className="flex h-full flex-col">
+      <Link href={tournamentPath(tournament.clubSlug, tournament.slug)} className="flex h-full flex-col">
         <div className="cover-image relative aspect-[4/3] shrink-0">
           {tournament.coverUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -58,7 +59,7 @@ export function TournamentCard({
               {String(startsAt.getDate()).padStart(2, "0")} {MONTHS_GENITIVE[startsAt.getMonth()]} ·{" "}
               {weekday(startsAt)}
             </span>
-            <span>{category.name}</span>
+            <span>{tournament.clubName ?? category.name}</span>
           </div>
 
           <h3 className="mt-2.5 text-[1.02rem] font-medium leading-snug transition-opacity group-hover:opacity-60">
@@ -97,7 +98,7 @@ export function TournamentRow({ tournament }: { tournament: Tournament }) {
   const startsAt = new Date(tournament.startsAt);
   return (
     <Link
-      href={`/tournaments/${tournament.slug}`}
+      href={tournamentPath(tournament.clubSlug, tournament.slug)}
       className="group flex items-center gap-4 border-b border-line px-1 py-4 transition-colors last:border-b-0 hover:bg-white/40"
     >
       <div className="w-12 shrink-0 py-1 text-center">
@@ -113,6 +114,7 @@ export function TournamentRow({ tournament }: { tournament: Tournament }) {
           {tournament.title}
         </p>
         <p className="mt-0.5 truncate text-[0.6rem] uppercase tracking-[0.12em] text-ink-muted">
+          {tournament.clubName ? `${tournament.clubName} · ` : ""}
           {TYPE_BY_VALUE[tournament.type].label} · {CATEGORY_BY_SLUG[tournament.category].name}
         </p>
       </div>

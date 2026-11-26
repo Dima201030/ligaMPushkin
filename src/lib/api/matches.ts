@@ -139,17 +139,18 @@ async function throwIfNotOk(response: Response, data: ApiErrorBody | undefined, 
   throw new ApiError(response.status, data?.code, data?.message ?? fallback);
 }
 
-function serverOpts(opts?: { cookie?: string; absolute?: boolean }) {
+function serverOpts(opts?: { cookie?: string; absolute?: boolean; clubSlug?: string }) {
   return {
     // Default absolute on server only; browser must stay same-origin.
     absolute: opts?.absolute ?? typeof window === "undefined",
+    clubSlug: opts?.clubSlug,
     headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
   } as const;
 }
 
 export async function fetchTournamentBracket(
   slug: string,
-  opts?: { cookie?: string; absolute?: boolean },
+  opts?: { cookie?: string; absolute?: boolean; clubSlug?: string },
 ): Promise<{ bracket: BracketMeta; matches: Match[] }> {
   const { response, data } = await apiRequest<{
     bracket: {
@@ -174,7 +175,7 @@ export async function fetchTournamentBracket(
 
 export async function fetchTournamentMatches(
   slug: string,
-  opts?: { cookie?: string; absolute?: boolean },
+  opts?: { cookie?: string; absolute?: boolean; clubSlug?: string },
 ): Promise<Match[]> {
   const { response, data } = await apiRequest<{ matches: ApiMatch[] }>(
     `/tournaments/${encodeURIComponent(slug)}/matches`,
@@ -218,10 +219,12 @@ export function parseLiveSyncJSON(raw: string): MatchLiveSync {
 export async function syncTournamentMatches(
   slug: string,
   since?: string,
+  opts?: { clubSlug?: string },
 ): Promise<MatchLiveSync> {
   const query = since ? `?revision=${encodeURIComponent(since)}` : "";
   const { response, data } = await apiRequest<ApiMatchLiveSync>(
     `/tournaments/${encodeURIComponent(slug)}/matches/sync${query}`,
+    serverOpts(opts),
   );
   await throwIfNotOk(response, data as ApiErrorBody | undefined, "Не удалось обновить матчи");
   return mapLiveSync(data);
