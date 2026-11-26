@@ -191,6 +191,17 @@
 
 ---
 
+## D-019. Live-обновление матчей без WebSocket
+
+**Дата:** 26.11.2026.
+**Контекст:** MP-97 — счёт и статусы матчей на странице турнира и в кабинете организатора должны обновляться без полной перезагрузки.
+**Варианты:** WebSocket hub; SSE; короткий HTTP-poll по revision.
+**Решение:** SSE (`…/matches/events`) с серверным опросом БД и heartbeat; клиент падает на poll `…/matches/sync?revision=` если SSE недоступен (прокси/буфер). Fingerprint = статус турнира + bracket_version + count/sum(version)/max(updated_at) матчей. Без in-memory pub/sub.
+**Следствия:** nginx для `/matches/events` — `proxy_buffering off` и длинный `proxy_read_timeout`; UI показывает «Онлайн» / «Автообновление».
+**Связано:** `ARCHITECTURE.md`, кабинет матчей, публичная карточка турнира.
+
+---
+
 ## Открытые решения
 
 | № | Вопрос | Нужно к |

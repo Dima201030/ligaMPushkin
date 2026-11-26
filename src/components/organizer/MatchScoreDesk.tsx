@@ -25,6 +25,7 @@ import {
   walkover,
   withFreshMatchVersion,
 } from "@/lib/api/matches";
+import { useTournamentMatchesLive } from "@/lib/live/useTournamentMatchesLive";
 import { MatchRow } from "@/components/domain/MatchRow";
 import { DemoNote } from "./OrganizerUI";
 
@@ -101,7 +102,6 @@ function mutationErrorMessage(err: unknown, fallback: string): string {
 }
 
 export function MatchScoreDesk({ matches, lockTournament = false }: { matches: Match[]; lockTournament?: boolean }) {
-  const [items, setItems] = useState(matches);
   const [tab, setTab] = useState<Tab>("all");
   const [query, setQuery] = useState("");
   const [tournament, setTournament] = useState("all");
@@ -115,9 +115,25 @@ export function MatchScoreDesk({ matches, lockTournament = false }: { matches: M
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
+  const liveTournamentId = lockTournament ? matches[0]?.tournamentId : undefined;
+  const {
+    matches: items,
+    setMatches: setItems,
+    mode: liveMode,
+    updatedAt: liveUpdatedAt,
+  } = useTournamentMatchesLive(
+    { kind: "organizer", tournamentId: liveTournamentId ?? "" },
+    {
+      initialMatches: matches,
+      enabled: Boolean(liveTournamentId),
+      pauseApply: Boolean(editing || busyId),
+    },
+  );
+
   useEffect(() => {
+    if (liveTournamentId) return;
     setItems(matches);
-  }, [matches]);
+  }, [liveTournamentId, matches, setItems]);
 
   const tournamentOptions = useMemo(() => {
     const unique = new Map<string, string>();
@@ -409,6 +425,23 @@ export function MatchScoreDesk({ matches, lockTournament = false }: { matches: M
           )}
         </div>
       </div>
+
+      {liveTournamentId && (liveMode === "sse" || liveMode === "poll") ? (
+        <p className="flex items-center gap-1.5 text-[0.66rem] uppercase tracking-[0.12em] text-ink-muted">
+          <span className="size-1.5 animate-pulse bg-negative" aria-hidden="true" />
+          {liveMode === "sse" ? "Онлайн" : "Автообновление"}
+          {liveUpdatedAt ? (
+            <span className="normal-case tracking-normal text-ink-faint">
+              · обновлено{" "}
+              {new Date(liveUpdatedAt).toLocaleTimeString("ru-RU", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              })}
+            </span>
+          ) : null}
+        </p>
+      ) : null}
 
       <div className="grid gap-x-8 gap-y-6 sm:grid-cols-3">
         <div className="border-t border-line pt-4">

@@ -14,7 +14,7 @@ import { CATEGORY_BY_SLUG, FORMAT_LABEL, STATUS_BY_VALUE, SURFACE_LABEL, TYPE_BY
 import { cn, formatDateTime, formatMoney } from "@/lib/utils";
 import { uuidsEqual } from "@/lib/uuid";
 import { CategoryBadge } from "@/components/ui/Badges";
-import { MatchRow } from "@/components/domain/MatchRow";
+import { TournamentMatchBoard } from "@/components/domain/TournamentMatchBoard";
 import { TournamentPodium } from "@/components/domain/TournamentPodium";
 import { RegistrationPanel } from "@/components/domain/RegistrationPanel";
 import { Breadcrumbs } from "@/components/ui/Section";
@@ -200,26 +200,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
               </section>
             )}
 
-            <section className="card overflow-hidden">
-              <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4 md:px-6">
-                <h2 className="text-lg">Матчи турнира</h2>
-                <span className="text-xs font-medium text-ink-muted">{matches.length} матчей</span>
-              </div>
-              {matches.length > 0 ? (
-                <div className="divide-y divide-divider">
-                  {matches.map((match) => (
-                    <MatchRow key={match.id} match={match} showTournament={false} />
-                  ))}
-                </div>
-              ) : (
-                <div className="px-6 py-12 text-center">
-                  <p className="font-bold">Сетка ещё не опубликована</p>
-                  <p className="mt-1 text-sm text-ink-muted">
-                    Матчи появятся после жеребьёвки и публикации расписания организатором.
-                  </p>
-                </div>
-              )}
-            </section>
+            <TournamentMatchBoard slug={tournament.slug} initialMatches={matches} />
 
             <section className="card overflow-hidden">
               <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4 md:px-6">

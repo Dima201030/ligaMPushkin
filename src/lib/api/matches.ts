@@ -1,6 +1,6 @@
 import type { Match, MatchSide, MatchStatus, TournamentFormat, TournamentType } from "@/lib/types";
 import { normalizeUuid, uuidsEqual } from "@/lib/uuid";
-import { ApiError, apiRequest, type ApiErrorBody } from "./client";
+import { ApiError, apiPath, apiRequest, type ApiErrorBody } from "./client";
 
 interface ApiPlayerBrief {
   id: string;
@@ -182,6 +182,69 @@ export async function fetchTournamentMatches(
   );
   await throwIfNotOk(response, data as ApiErrorBody | undefined, "Не удалось загрузить матчи");
   return (data?.matches ?? []).map((item) => mapMatch(item));
+}
+
+export type MatchLiveSync = {
+  revision: string;
+  unchanged: boolean;
+  tournamentStatus: string;
+  bracketStatus: string;
+  matches?: Match[];
+};
+
+type ApiMatchLiveSync = {
+  revision: string;
+  unchanged?: boolean;
+  tournament_status: string;
+  bracket_status: string;
+  matches?: ApiMatch[];
+};
+
+export function mapLiveSync(data: ApiMatchLiveSync | undefined): MatchLiveSync {
+  return {
+    revision: data?.revision ?? "",
+    unchanged: Boolean(data?.unchanged),
+    tournamentStatus: data?.tournament_status ?? "",
+    bracketStatus: data?.bracket_status ?? "",
+    matches: data?.matches?.map((item) => mapMatch(item)),
+  };
+}
+
+export function parseLiveSyncJSON(raw: string): MatchLiveSync {
+  return mapLiveSync(JSON.parse(raw) as ApiMatchLiveSync);
+}
+
+/** Poll endpoint: returns matches only when revision differs from `since`. */
+export async function syncTournamentMatches(
+  slug: string,
+  since?: string,
+): Promise<MatchLiveSync> {
+  const query = since ? `?revision=${encodeURIComponent(since)}` : "";
+  const { response, data } = await apiRequest<ApiMatchLiveSync>(
+    `/tournaments/${encodeURIComponent(slug)}/matches/sync${query}`,
+  );
+  await throwIfNotOk(response, data as ApiErrorBody | undefined, "Не удалось обновить матчи");
+  return mapLiveSync(data);
+}
+
+export async function syncOrganizerTournamentMatches(
+  tournamentId: string,
+  since?: string,
+): Promise<MatchLiveSync> {
+  const query = since ? `?revision=${encodeURIComponent(since)}` : "";
+  const { response, data } = await apiRequest<ApiMatchLiveSync>(
+    `/organizer/tournaments/${encodeURIComponent(tournamentId)}/matches/sync${query}`,
+  );
+  await throwIfNotOk(response, data as ApiErrorBody | undefined, "Не удалось обновить матчи");
+  return mapLiveSync(data);
+}
+
+export function tournamentMatchesEventsPath(slug: string): string {
+  return apiPath(`/tournaments/${encodeURIComponent(slug)}/matches/events`);
+}
+
+export function organizerTournamentMatchesEventsPath(tournamentId: string): string {
+  return apiPath(`/organizer/tournaments/${encodeURIComponent(tournamentId)}/matches/events`);
 }
 
 export async function fetchOrganizerBracket(
