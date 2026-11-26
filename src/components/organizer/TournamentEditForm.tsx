@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Save } from "lucide-react";
@@ -20,6 +20,7 @@ import {
   TOURNAMENT_STATUSES,
   TOURNAMENT_TYPES,
 } from "@/lib/domain";
+import { TOURNAMENT_LIMITS, validateTournamentFields } from "@/lib/tournament-limits";
 import { cn } from "@/lib/utils";
 import { Panel } from "./OrganizerUI";
 
@@ -62,16 +63,38 @@ export function TournamentEditForm({ tournament }: { tournament: Tournament }) {
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [attempted, setAttempted] = useState(false);
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
+  const fieldErrors = useMemo(
+    () =>
+      validateTournamentFields({
+        title: form.title,
+        description: form.description,
+        regulations: form.regulations,
+        startsAt: form.startsAt,
+        endsAt: form.endsAt,
+        registrationOpensAt: form.registrationOpensAt,
+        registrationClosesAt: form.registrationClosesAt,
+        maxParticipants: form.maxParticipants,
+        entryFee: form.entryFee,
+        venueName: form.venueName,
+        venueAddress: form.venueAddress,
+        requireRegulations: form.regulations.trim().length > 0,
+      }),
+    [form],
+  );
+
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (busy) return;
-    if (!form.title.trim()) {
-      setError("Укажите название турнира");
+    setAttempted(true);
+    const firstError = Object.values(fieldErrors)[0];
+    if (firstError) {
+      setError(firstError);
       return;
     }
     setBusy(true);
@@ -113,18 +136,29 @@ export function TournamentEditForm({ tournament }: { tournament: Tournament }) {
             <label className="block">
               <span className="field-label">Название турнира</span>
               <input
-                className="field"
+                className={cn("field", attempted && fieldErrors.title && "border-negative")}
                 value={form.title}
+                maxLength={TOURNAMENT_LIMITS.titleMax}
                 onChange={(event) => update("title", event.target.value)}
               />
+              {attempted && fieldErrors.title && (
+                <span className="mt-1 block text-[0.68rem] text-negative">{fieldErrors.title}</span>
+              )}
             </label>
             <label className="block">
               <span className="field-label">Описание</span>
               <textarea
-                className="field min-h-[92px] resize-y"
+                className={cn("field min-h-[92px] resize-y", attempted && fieldErrors.description && "border-negative")}
                 value={form.description}
+                maxLength={TOURNAMENT_LIMITS.descriptionMax}
                 onChange={(event) => update("description", event.target.value)}
               />
+              <span className="mt-1 block text-[0.62rem] tabular-nums text-ink-faint">
+                {form.description.trim().length}/{TOURNAMENT_LIMITS.descriptionMax}
+              </span>
+              {attempted && fieldErrors.description && (
+                <span className="mt-1 block text-[0.68rem] text-negative">{fieldErrors.description}</span>
+              )}
             </label>
             <div className="grid gap-4 sm:grid-cols-3">
               <label className="block">
@@ -185,37 +219,49 @@ export function TournamentEditForm({ tournament }: { tournament: Tournament }) {
               <span className="field-label">Старт турнира</span>
               <input
                 type="datetime-local"
-                className="field"
+                className={cn("field", attempted && fieldErrors.startsAt && "border-negative")}
                 value={form.startsAt}
                 onChange={(event) => update("startsAt", event.target.value)}
               />
+              {attempted && fieldErrors.startsAt && (
+                <span className="mt-1 block text-[0.68rem] text-negative">{fieldErrors.startsAt}</span>
+              )}
             </label>
             <label className="block">
               <span className="field-label">Окончание</span>
               <input
                 type="datetime-local"
-                className="field"
+                className={cn("field", attempted && fieldErrors.endsAt && "border-negative")}
                 value={form.endsAt}
                 onChange={(event) => update("endsAt", event.target.value)}
               />
+              {attempted && fieldErrors.endsAt && (
+                <span className="mt-1 block text-[0.68rem] text-negative">{fieldErrors.endsAt}</span>
+              )}
             </label>
             <label className="block">
               <span className="field-label">Открытие регистрации</span>
               <input
                 type="datetime-local"
-                className="field"
+                className={cn("field", attempted && fieldErrors.registrationOpensAt && "border-negative")}
                 value={form.registrationOpensAt}
                 onChange={(event) => update("registrationOpensAt", event.target.value)}
               />
+              {attempted && fieldErrors.registrationOpensAt && (
+                <span className="mt-1 block text-[0.68rem] text-negative">{fieldErrors.registrationOpensAt}</span>
+              )}
             </label>
             <label className="block">
               <span className="field-label">Закрытие регистрации</span>
               <input
                 type="datetime-local"
-                className="field"
+                className={cn("field", attempted && fieldErrors.registrationClosesAt && "border-negative")}
                 value={form.registrationClosesAt}
                 onChange={(event) => update("registrationClosesAt", event.target.value)}
               />
+              {attempted && fieldErrors.registrationClosesAt && (
+                <span className="mt-1 block text-[0.68rem] text-negative">{fieldErrors.registrationClosesAt}</span>
+              )}
             </label>
           </div>
         </Panel>
@@ -226,18 +272,26 @@ export function TournamentEditForm({ tournament }: { tournament: Tournament }) {
               <label className="block">
                 <span className="field-label">Название площадки</span>
                 <input
-                  className="field"
+                  className={cn("field", attempted && fieldErrors.venueName && "border-negative")}
                   value={form.venueName}
+                  maxLength={TOURNAMENT_LIMITS.venueNameMax}
                   onChange={(event) => update("venueName", event.target.value)}
                 />
+                {attempted && fieldErrors.venueName && (
+                  <span className="mt-1 block text-[0.68rem] text-negative">{fieldErrors.venueName}</span>
+                )}
               </label>
               <label className="block">
                 <span className="field-label">Адрес</span>
                 <input
-                  className="field"
+                  className={cn("field", attempted && fieldErrors.venueAddress && "border-negative")}
                   value={form.venueAddress}
+                  maxLength={TOURNAMENT_LIMITS.venueAddressMax}
                   onChange={(event) => update("venueAddress", event.target.value)}
                 />
+                {attempted && fieldErrors.venueAddress && (
+                  <span className="mt-1 block text-[0.68rem] text-negative">{fieldErrors.venueAddress}</span>
+                )}
               </label>
               <label className="block">
                 <span className="field-label">Кортов</span>
@@ -268,32 +322,46 @@ export function TournamentEditForm({ tournament }: { tournament: Tournament }) {
                 <span className="field-label">Взнос, ₽</span>
                 <input
                   type="number"
-                  min={0}
+                  min={TOURNAMENT_LIMITS.entryFeeMin}
+                  max={TOURNAMENT_LIMITS.entryFeeMax}
                   step={100}
-                  className="field"
+                  className={cn("field", attempted && fieldErrors.entryFee && "border-negative")}
                   value={form.entryFee}
                   onChange={(event) => update("entryFee", event.target.value)}
                 />
+                {attempted && fieldErrors.entryFee && (
+                  <span className="mt-1 block text-[0.68rem] text-negative">{fieldErrors.entryFee}</span>
+                )}
               </label>
               <label className="block">
                 <span className="field-label">Максимум участников</span>
                 <input
                   type="number"
-                  min={2}
-                  max={128}
-                  className="field"
+                  min={TOURNAMENT_LIMITS.maxParticipantsMin}
+                  max={TOURNAMENT_LIMITS.maxParticipantsMax}
+                  className={cn("field", attempted && fieldErrors.maxParticipants && "border-negative")}
                   value={form.maxParticipants}
                   onChange={(event) => update("maxParticipants", event.target.value)}
                 />
+                {attempted && fieldErrors.maxParticipants && (
+                  <span className="mt-1 block text-[0.68rem] text-negative">{fieldErrors.maxParticipants}</span>
+                )}
               </label>
             </div>
             <label className="block">
               <span className="field-label">Регламент</span>
               <textarea
-                className="field min-h-[132px] resize-y"
+                className={cn("field min-h-[132px] resize-y", attempted && fieldErrors.regulations && "border-negative")}
                 value={form.regulations}
+                maxLength={TOURNAMENT_LIMITS.regulationsMax}
                 onChange={(event) => update("regulations", event.target.value)}
               />
+              <span className="mt-1 block text-[0.62rem] tabular-nums text-ink-faint">
+                {form.regulations.trim().length}/{TOURNAMENT_LIMITS.regulationsMax}
+              </span>
+              {attempted && fieldErrors.regulations && (
+                <span className="mt-1 block text-[0.68rem] text-negative">{fieldErrors.regulations}</span>
+              )}
             </label>
           </div>
         </Panel>

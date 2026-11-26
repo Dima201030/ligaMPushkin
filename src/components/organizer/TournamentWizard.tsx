@@ -22,6 +22,7 @@ import {
   TOURNAMENT_TYPES,
   TYPE_BY_VALUE,
 } from "@/lib/domain";
+import { TOURNAMENT_LIMITS, validateTournamentFields } from "@/lib/tournament-limits";
 import { cn, formatDate, formatMoney, formatTime } from "@/lib/utils";
 import { CategoryBadge } from "@/components/ui/Badges";
 import { MiniLabel, Panel } from "./OrganizerUI";
@@ -107,23 +108,20 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
     }));
   }
 
-  const errors = useMemo(() => {
-    const result: Partial<Record<keyof FormState, string>> = {};
-    if (form.title.trim().length < 3) result.title = "Укажите название турнира (минимум 3 символа)";
-    if (!form.startsAt) result.startsAt = "Выберите дату и время старта";
-    if (!form.registrationClosesAt) result.registrationClosesAt = "Укажите дедлайн регистрации";
-    if (
-      form.startsAt &&
-      form.registrationClosesAt &&
-      new Date(form.registrationClosesAt) >= new Date(form.startsAt)
-    ) {
-      result.registrationClosesAt = "Регистрация должна закрыться до старта турнира";
-    }
-    const capacity = Number(form.maxParticipants);
-    if (!capacity || capacity < 4 || capacity > 128) result.maxParticipants = "Допустимо от 4 до 128 участников";
-    if (form.regulations.trim().length < 20) result.regulations = "Опишите регламент — минимум 20 символов";
-    return result;
-  }, [form]);
+  const errors = useMemo(
+    () =>
+      validateTournamentFields({
+        title: form.title,
+        description: form.description,
+        regulations: form.regulations,
+        startsAt: form.startsAt,
+        registrationClosesAt: form.registrationClosesAt,
+        maxParticipants: form.maxParticipants,
+        entryFee: form.entryFee,
+        requireRegulations: true,
+      }) as Partial<Record<keyof FormState, string>>,
+    [form],
+  );
 
   const isValid = Object.keys(errors).length === 0;
   const venue = venues.find((item) => item.id === form.venueId);
@@ -302,6 +300,7 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
                 className={cn("field", attempted && errors.title && "border-negative")}
                 placeholder="Например, Winter Cup 2027"
                 value={form.title}
+                maxLength={TOURNAMENT_LIMITS.titleMax}
                 onChange={(event) => update("title", event.target.value)}
               />
               {attempted && errors.title && <span className="mt-1 block text-[0.68rem] text-negative">{errors.title}</span>}
@@ -310,11 +309,18 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
             <label className="block">
               <span className="field-label">Описание для страницы турнира</span>
               <textarea
-                className="field min-h-[92px] resize-y"
+                className={cn("field min-h-[92px] resize-y", attempted && errors.description && "border-negative")}
                 placeholder="Два игровых дня, олимпийская система, утешительная сетка..."
                 value={form.description}
+                maxLength={TOURNAMENT_LIMITS.descriptionMax}
                 onChange={(event) => update("description", event.target.value)}
               />
+              <span className="mt-1 block text-[0.62rem] tabular-nums text-ink-faint">
+                {form.description.trim().length}/{TOURNAMENT_LIMITS.descriptionMax}
+              </span>
+              {attempted && errors.description && (
+                <span className="mt-1 block text-[0.68rem] text-negative">{errors.description}</span>
+              )}
             </label>
 
             <div className="grid gap-4 sm:grid-cols-3">
@@ -379,8 +385,8 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
               <span className="field-label">Максимум участников</span>
               <input
                 type="number"
-                min={4}
-                max={128}
+                min={TOURNAMENT_LIMITS.maxParticipantsMin}
+                max={TOURNAMENT_LIMITS.maxParticipantsMax}
                 step={4}
                 className={cn("field", attempted && errors.maxParticipants && "border-negative")}
                 value={form.maxParticipants}
@@ -394,12 +400,16 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
               <span className="field-label">Взнос, ₽</span>
               <input
                 type="number"
-                min={0}
+                min={TOURNAMENT_LIMITS.entryFeeMin}
+                max={TOURNAMENT_LIMITS.entryFeeMax}
                 step={100}
-                className="field"
+                className={cn("field", attempted && errors.entryFee && "border-negative")}
                 value={form.entryFee}
                 onChange={(event) => update("entryFee", event.target.value)}
               />
+              {attempted && errors.entryFee && (
+                <span className="mt-1 block text-[0.68rem] text-negative">{errors.entryFee}</span>
+              )}
             </label>
             <div className="flex items-end pb-1">
               <p className="text-[0.66rem] leading-relaxed text-ink-faint">
@@ -413,8 +423,12 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
             <textarea
               className={cn("field min-h-[132px] resize-y", attempted && errors.regulations && "border-negative")}
               value={form.regulations}
+              maxLength={TOURNAMENT_LIMITS.regulationsMax}
               onChange={(event) => update("regulations", event.target.value)}
             />
+            <span className="mt-1 block text-[0.62rem] tabular-nums text-ink-faint">
+              {form.regulations.trim().length}/{TOURNAMENT_LIMITS.regulationsMax}
+            </span>
             {attempted && errors.regulations && (
               <span className="mt-1 block text-[0.68rem] text-negative">{errors.regulations}</span>
             )}
