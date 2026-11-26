@@ -118,6 +118,7 @@ export function TournamentEditForm({ tournament }: { tournament: Tournament }) {
       entryFee: Number(form.entryFee) || 0,
       maxParticipants: Number(form.maxParticipants) || tournament.maxParticipants,
       regulations: form.regulations.trim(),
+      clubSlug: tournament.clubSlug,
     });
     setBusy(false);
     if (!result.ok) {
@@ -131,8 +132,17 @@ export function TournamentEditForm({ tournament }: { tournament: Tournament }) {
   return (
     <form onSubmit={submit} className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="min-w-0 space-y-8">
-        <Panel title="Основное" description="Название, тип и категория определяют, где турнир появится на сайте.">
+        <Panel title="Основное" description="Клуб задаётся при создании и не переносится через «текущий клуб».">
           <div className="grid gap-4">
+            <div className="block">
+              <span className="field-label">Клуб</span>
+              <p className="mt-1 border border-line bg-[var(--color-surface-muted,transparent)] px-3 py-2 text-sm text-ink">
+                {tournament.clubName || tournament.clubSlug || "—"}
+              </p>
+              <span className="mt-1 block text-[0.62rem] text-ink-faint">
+                Клуб на карточке только для чтения. Чтобы провести турнир под другим клубом, создайте новый.
+              </span>
+            </div>
             <label className="block">
               <span className="field-label">Название турнира</span>
               <input

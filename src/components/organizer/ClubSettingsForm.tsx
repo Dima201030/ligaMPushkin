@@ -23,6 +23,7 @@ export function ClubSettingsForm({ club }: { club: LeagueClub }) {
   const [busy, setBusy] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [okMessage, setOkMessage] = useState<string | null>(null);
+  const clubSlug = club.slug;
 
   const errors = useMemo(() => {
     const field = validateClubFields({ name, city, requireSlug: false });
@@ -51,6 +52,7 @@ export function ClubSettingsForm({ club }: { club: LeagueClub }) {
         timezone: timezone.trim() || null,
         locale: locale.trim() || null,
       },
+      clubSlug,
     });
     setBusy(false);
 
@@ -159,7 +161,7 @@ export function ClubSettingsForm({ club }: { club: LeagueClub }) {
             )}
             Сохранить
           </button>
-          <MiniLabel>Tenant из cookie pairly_club</MiniLabel>
+          <MiniLabel>Настройки клуба владельца</MiniLabel>
         </div>
       </form>
     </Panel>

@@ -346,6 +346,9 @@ export type CreateTournamentInput = {
   coverUrl?: string;
   regulations: string;
   season?: number;
+  /** Club on the tournament card — not a global current-club switcher. */
+  clubId?: string;
+  clubSlug?: string;
 };
 
 export async function createOrganizerTournament(
@@ -355,6 +358,7 @@ export async function createOrganizerTournament(
     "/organizer/tournaments",
     {
       method: "POST",
+      clubSlug: input.clubSlug,
       body: JSON.stringify({
         title: input.title,
         description: input.description,
@@ -376,6 +380,8 @@ export async function createOrganizerTournament(
         cover_url: input.coverUrl,
         regulations: input.regulations,
         season: input.season,
+        club_id: input.clubId,
+        club_slug: input.clubSlug,
       }),
     },
   );
@@ -418,6 +424,7 @@ export async function updateOrganizerTournament(
     `/organizer/tournaments/${encodeURIComponent(id)}`,
     {
       method: "PATCH",
+      clubSlug: input.clubSlug,
       body: JSON.stringify(body),
     },
   );

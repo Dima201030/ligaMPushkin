@@ -78,11 +78,12 @@ async function serverCookieHeader(): Promise<string | undefined> {
   }
 }
 
-/** Current tenant club for organizer (includes safe settings). */
-export async function fetchOrganizerClub(): Promise<LeagueClub> {
+/** Club settings for an owner — pass clubSlug explicitly (no current-club switcher). */
+export async function fetchOrganizerClub(opts?: { clubSlug?: string }): Promise<LeagueClub> {
   const cookieHeader = await serverCookieHeader();
   const { response, data } = await apiRequest<{ club: ApiClub } & ApiErrorBody>("/organizer/club", {
     absolute: typeof window === "undefined",
+    clubSlug: opts?.clubSlug,
     headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
   });
   if (!response.ok || !data?.club) {
@@ -98,6 +99,7 @@ export interface UpdateOrganizerClubInput {
     timezone?: string | null;
     locale?: string | null;
   };
+  clubSlug?: string;
 }
 
 export async function updateOrganizerClub(
@@ -110,6 +112,7 @@ export async function updateOrganizerClub(
 
   const { response, data } = await apiRequest<{ club: ApiClub } & ApiErrorBody>("/organizer/club", {
     method: "PATCH",
+    clubSlug: input.clubSlug,
     body: JSON.stringify(body),
   });
   if (response.ok && data?.club) {

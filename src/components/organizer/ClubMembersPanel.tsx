@@ -32,7 +32,7 @@ function isLastActiveOwner(member: ClubMember, members: ClubMember[]): boolean {
   return owners.length <= 1;
 }
 
-export function InviteMemberForm() {
+export function InviteMemberForm({ clubSlug }: { clubSlug?: string }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<ClubMemberRole>("organizer");
@@ -59,6 +59,7 @@ export function InviteMemberForm() {
       email: email.trim().toLowerCase(),
       role,
       status: "active",
+      clubSlug,
     });
     setBusy(false);
 
@@ -138,14 +139,20 @@ export function InviteMemberForm() {
             )}
             Добавить
           </button>
-          <MiniLabel>Текущий клуб из cookie pairly_club</MiniLabel>
+          <MiniLabel>Участники клуба владельца</MiniLabel>
         </div>
       </form>
     </Panel>
   );
 }
 
-export function MembersTable({ members }: { members: ClubMember[] }) {
+export function MembersTable({
+  members,
+  clubSlug,
+}: {
+  members: ClubMember[];
+  clubSlug?: string;
+}) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -163,7 +170,7 @@ export function MembersTable({ members }: { members: ClubMember[] }) {
     }
     setError(null);
     setBusyId(member.id);
-    const result = await patchClubMember(member.id, { role });
+    const result = await patchClubMember(member.id, { role, clubSlug });
     setBusyId(null);
     if (!result.ok) {
       setError(result.error);
@@ -182,7 +189,7 @@ export function MembersTable({ members }: { members: ClubMember[] }) {
 
     setError(null);
     setBusyId(member.id);
-    const result = await deleteClubMember(member.id);
+    const result = await deleteClubMember(member.id, { clubSlug });
     setBusyId(null);
     if (!result.ok) {
       setError(result.error);
@@ -194,7 +201,7 @@ export function MembersTable({ members }: { members: ClubMember[] }) {
   return (
     <Panel
       title="Участники клуба"
-      description="Участники текущего клуба. Назначьте «организатор турниров» для ограниченного кабинета или «владелец» для полного доступа. Последнего владельца снять нельзя."
+      description="Участники клуба владельца. Назначьте «организатор турниров» для ограниченного кабинета или «владелец» для полного доступа. Последнего владельца снять нельзя."
     >
       {error ? (
         <p role="alert" className="mb-3 text-[0.78rem] text-negative">
