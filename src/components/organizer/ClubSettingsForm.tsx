@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Loader2, Save } from "lucide-react";
 import { updateOrganizerClub, type LeagueClub } from "@/lib/api/clubs";
+import { CLUB_LIMITS, validateClubFields } from "@/lib/club-limits";
 import { cn } from "@/lib/utils";
 import { MiniLabel, Panel } from "./OrganizerUI";
 
@@ -24,10 +25,10 @@ export function ClubSettingsForm({ club }: { club: LeagueClub }) {
   const [okMessage, setOkMessage] = useState<string | null>(null);
 
   const errors = useMemo(() => {
-    const result: { name?: string; city?: string; timezone?: string; locale?: string } = {};
-    if (name.trim().length < 2) result.name = "Минимум 2 символа";
-    if (name.trim().length > 120) result.name = "Слишком длинное название";
-    if (city.trim().length > 80) result.city = "Город слишком длинный";
+    const field = validateClubFields({ name, city, requireSlug: false });
+    const result: { name?: string; city?: string; timezone?: string; locale?: string } = {
+      ...field,
+    };
     if (timezone.trim() && timezone.trim().length < 3) result.timezone = "Укажите IANA timezone";
     if (locale.trim().length > 32) result.locale = "Locale слишком длинный";
     return result;
@@ -78,6 +79,7 @@ export function ClubSettingsForm({ club }: { club: LeagueClub }) {
             className={cn("field", attempted && errors.name && "border-negative")}
             value={name}
             onChange={(event) => setName(event.target.value)}
+            maxLength={CLUB_LIMITS.nameMax}
             disabled={busy}
             required
           />
@@ -92,6 +94,7 @@ export function ClubSettingsForm({ club }: { club: LeagueClub }) {
             className={cn("field", attempted && errors.city && "border-negative")}
             value={city}
             onChange={(event) => setCity(event.target.value)}
+            maxLength={CLUB_LIMITS.cityMax}
             disabled={busy}
             placeholder="Санкт-Петербург"
           />

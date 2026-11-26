@@ -8,6 +8,7 @@ import { CATEGORIES, CATEGORY_BY_SLUG } from "@/lib/domain";
 import { cn, formatDateShort, winRate } from "@/lib/utils";
 import { Avatar } from "@/components/ui/Avatar";
 import { confirmPlayerVerification, updateOrganizerPlayer } from "@/lib/api/organizer-ratings";
+import { validateBirthAge } from "@/lib/club-limits";
 import { DemoNote } from "./OrganizerUI";
 
 type Sort = "rating" | "name" | "points" | "matches";
@@ -115,15 +116,17 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
   async function verifyPlayer(player: Player, status: "approved" | "rejected") {
     setVerifyingId(player.id);
     const birthDate = resolveBirthDate(player, birthDates);
-    if (status === "approved" && !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
-      showFeedback(
-        `Укажите дату рождения для ${player.lastName} ${player.firstName}, затем нажмите «Подтвердить» ещё раз.`,
-        "error",
-        player.id,
-      );
-      birthInputRefs.current[player.id]?.focus();
-      setVerifyingId(null);
-      return;
+    if (status === "approved") {
+      const ageError =
+        !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)
+          ? `Укажите дату рождения для ${player.lastName} ${player.firstName}, затем нажмите «Подтвердить» ещё раз.`
+          : validateBirthAge(birthDate);
+      if (ageError) {
+        showFeedback(ageError, "error", player.id);
+        birthInputRefs.current[player.id]?.focus();
+        setVerifyingId(null);
+        return;
+      }
     }
     try {
       const result = await confirmPlayerVerification(player.id, {

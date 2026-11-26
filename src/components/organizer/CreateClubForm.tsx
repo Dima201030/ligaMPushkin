@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Building2, Loader2 } from "lucide-react";
 import { createOrganizerClub } from "@/lib/api/clubs";
+import { CLUB_LIMITS, validateClubFields } from "@/lib/club-limits";
 import { clubPath, normalizeClubSlug } from "@/lib/club/tenant";
 import { cn } from "@/lib/utils";
 import { MiniLabel, Panel } from "./OrganizerUI";
@@ -29,13 +30,10 @@ export function CreateClubForm() {
   const [busy, setBusy] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const errors = useMemo(() => {
-    const result: { name?: string; slug?: string } = {};
-    if (name.trim().length < 2) result.name = "Укажите название (минимум 2 символа)";
-    const normalized = normalizeClubSlug(slug);
-    if (!normalized) result.slug = "Slug латиницей: my-club";
-    return result;
-  }, [name, slug]);
+  const errors = useMemo(
+    () => validateClubFields({ name, slug, city, requireSlug: true }),
+    [name, slug, city],
+  );
 
   const isValid = Object.keys(errors).length === 0;
 
@@ -87,6 +85,7 @@ export function CreateClubForm() {
             onChange={(event) => onNameChange(event.target.value)}
             placeholder="Demo Tennis"
             autoComplete="organization"
+            maxLength={CLUB_LIMITS.nameMax}
             disabled={busy}
             required
           />
@@ -107,11 +106,13 @@ export function CreateClubForm() {
             placeholder="demo-tennis"
             autoComplete="off"
             spellCheck={false}
+            maxLength={CLUB_LIMITS.slugMax}
             disabled={busy}
             required
           />
           <p className="mt-1.5 text-[0.68rem] text-ink-faint">
-            Латиница и дефисы. В URL: /c/{normalizeClubSlug(slug) || "slug"}
+            Латиница и дефисы, {CLUB_LIMITS.slugMin}–{CLUB_LIMITS.slugMax} символов. В URL: /c/
+            {normalizeClubSlug(slug) || "slug"}
           </p>
           {attempted && errors.slug ? (
             <p className="mt-1 text-[0.7rem] text-negative">{errors.slug}</p>
@@ -121,12 +122,16 @@ export function CreateClubForm() {
         <label className="block">
           <span className="field-label">Город (необязательно)</span>
           <input
-            className="field"
+            className={cn("field", attempted && errors.city && "border-negative")}
             value={city}
             onChange={(event) => setCity(event.target.value)}
             placeholder="Санкт-Петербург"
+            maxLength={CLUB_LIMITS.cityMax}
             disabled={busy}
           />
+          {attempted && errors.city ? (
+            <p className="mt-1.5 text-[0.7rem] text-negative">{errors.city}</p>
+          ) : null}
         </label>
 
         {submitError ? (

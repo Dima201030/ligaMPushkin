@@ -533,7 +533,8 @@ export function MatchScoreDesk({ matches, lockTournament = false }: { matches: M
                           </span>
                         </p>
                         <p className="mt-1 text-sm text-ink-muted">
-                          Выберите формат, введите геймы по сетам и сохраните. Победитель подставится по счёту.
+                          Выберите формат, введите геймы по сетам (0–99) и сохраните. Победитель подставится по
+                          счёту.
                         </p>
                       </div>
 

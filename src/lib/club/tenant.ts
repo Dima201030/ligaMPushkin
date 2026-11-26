@@ -17,6 +17,7 @@ export function normalizeClubSlug(raw: string | null | undefined): string | null
   if (!raw) return null;
   const slug = raw.trim().toLowerCase();
   if (!slug || !SLUG_RE.test(slug)) return null;
+  if (slug.length < 3 || slug.length > 40) return null;
   return slug;
 }
 
