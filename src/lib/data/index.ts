@@ -44,6 +44,8 @@ export interface TournamentFilters {
   type?: TournamentType;
   year?: number;
   query?: string;
+  /** Default: platform catalog across clubs. */
+  scope?: "platform" | "club";
 }
 
 export const CLUB_VENUES: Venue[] = [
@@ -70,12 +72,12 @@ async function requestCookieHeader(): Promise<string | undefined> {
 export async function getHomeData() {
   const cookie = await requestCookieHeader();
   const [upcoming, rankings, news, events, players, allTournaments] = await Promise.all([
-    fetchTournaments({ status: "upcoming" }, { cookie }).catch(() => [] as Tournament[]),
+    fetchTournaments({ status: "upcoming", scope: "platform" }, { cookie }).catch(() => [] as Tournament[]),
     fetchRankings({}, { cookie }).catch(() => null),
     fetchNews({ limit: 3 }, { cookie }).catch(() => [] as NewsPost[]),
     fetchEvents({ limit: 4 }, { cookie }).catch(() => [] as ClubEvent[]),
     fetchPlayers({ limit: 200 }, { cookie }).catch(() => [] as Player[]),
-    fetchTournaments({ status: "all" }, { cookie }).catch(() => [] as Tournament[]),
+    fetchTournaments({ status: "all", scope: "platform" }, { cookie }).catch(() => [] as Tournament[]),
   ]);
 
   const openOrLive = upcoming.filter((tournament) => tournament.status !== "completed");
@@ -108,6 +110,7 @@ export async function listTournaments(filters: TournamentFilters = {}) {
         type: filters.type,
         year: filters.year,
         query: filters.query,
+        scope: filters.scope === "club" ? undefined : "platform",
       },
       { cookie },
     );
@@ -127,6 +130,7 @@ export async function listTournamentsChecked(
     type: filters.type,
     year: filters.year,
     query: filters.query,
+    scope: (filters.scope === "club" ? undefined : "platform") as "platform" | undefined,
   };
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
@@ -139,28 +143,33 @@ export async function listTournamentsChecked(
   return { items: [], ok: false };
 }
 
-export async function getTournamentBySlug(slug: string): Promise<Tournament | null> {
+export async function getTournamentBySlug(
+  slug: string,
+  opts?: { clubSlug?: string },
+): Promise<Tournament | null> {
   const cookie = await requestCookieHeader();
   try {
-    const page = await fetchTournamentBySlug(slug, { cookie });
+    const page = await fetchTournamentBySlug(slug, { cookie, clubSlug: opts?.clubSlug });
     return page?.tournament ?? null;
   } catch {
     return null;
   }
 }
 
-export async function getTournamentPage(slug: string) {
+export async function getTournamentPage(slug: string, opts?: { clubSlug?: string }) {
   const cookie = await requestCookieHeader();
   try {
-    const page = await fetchTournamentBySlug(slug, { cookie });
+    const page = await fetchTournamentBySlug(slug, { cookie, clubSlug: opts?.clubSlug });
     if (!page) return null;
     const { tournament, registrations } = page;
-    const similar = (await fetchTournaments({ status: "upcoming" }, { cookie }))
+    const similar = (
+      await fetchTournaments({ status: "upcoming", scope: "platform" }, { cookie })
+    )
       .filter((item) => item.id !== tournament.id && item.category === tournament.category)
       .slice(0, 3);
     let matches = [] as Awaited<ReturnType<typeof fetchTournamentMatches>>;
     try {
-      matches = await fetchTournamentMatches(slug, { cookie });
+      matches = await fetchTournamentMatches(slug, { cookie, clubSlug: opts?.clubSlug ?? tournament.clubSlug });
     } catch {
       matches = [];
     }
@@ -374,6 +383,7 @@ export async function listArchive(
         year: filters.year,
         category: filters.category,
         type: filters.type,
+        scope: "platform",
       },
       { cookie },
     );
@@ -385,7 +395,7 @@ export async function listArchive(
 export async function getArchiveYears() {
   const cookie = await requestCookieHeader();
   try {
-    const tournaments = await fetchTournaments({ status: "all" }, { cookie });
+    const tournaments = await fetchTournaments({ status: "all", scope: "platform" }, { cookie });
     return Array.from(new Set(tournaments.map((item) => item.season))).sort((a, b) => b - a);
   } catch {
     return [];

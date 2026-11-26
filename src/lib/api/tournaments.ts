@@ -24,6 +24,9 @@ interface ApiVenue {
 
 interface ApiTournament {
   id: string;
+  club_id?: string;
+  club_slug?: string;
+  club_name?: string;
   slug: string;
   title: string;
   description: string;
@@ -99,6 +102,9 @@ export function mapTournament(
 ): Tournament {
   return {
     id: normalizeUuid(raw.id),
+    clubId: raw.club_id ? normalizeUuid(raw.club_id) : undefined,
+    clubSlug: raw.club_slug?.trim() || undefined,
+    clubName: raw.club_name?.trim() || undefined,
     slug: raw.slug,
     title: raw.title,
     description: raw.description,
@@ -181,6 +187,8 @@ export type TournamentListFilters = {
   type?: TournamentType;
   year?: number;
   query?: string;
+  /** Cross-club catalog — no club switcher; club travels on each tournament. */
+  scope?: "platform";
 };
 
 function listQuery(filters: TournamentListFilters): string {
@@ -190,18 +198,20 @@ function listQuery(filters: TournamentListFilters): string {
   if (filters.type) params.set("type", filters.type);
   if (filters.year) params.set("year", String(filters.year));
   if (filters.query) params.set("q", filters.query);
+  if (filters.scope === "platform") params.set("scope", "platform");
   const qs = params.toString();
   return qs ? `?${qs}` : "";
 }
 
 export async function fetchTournaments(
   filters: TournamentListFilters = {},
-  opts?: { cookie?: string },
+  opts?: { cookie?: string; clubSlug?: string },
 ): Promise<Tournament[]> {
   const { response, data } = await apiRequest<{ tournaments: ApiTournament[] }>(
     `/tournaments${listQuery(filters)}`,
     {
       absolute: typeof window === "undefined",
+      clubSlug: opts?.clubSlug,
       headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
     },
   );
@@ -211,7 +221,7 @@ export async function fetchTournaments(
 
 export async function fetchTournamentBySlug(
   slug: string,
-  opts?: { cookie?: string },
+  opts?: { cookie?: string; clubSlug?: string },
 ): Promise<{ tournament: Tournament; registrations: ReturnType<typeof mapRegistration>[] } | null> {
   const { response, data } = await apiRequest<{
     tournament: ApiTournament;
@@ -219,6 +229,7 @@ export async function fetchTournamentBySlug(
     images: ApiTournamentImage[];
   }>(`/tournaments/${encodeURIComponent(slug)}`, {
     absolute: typeof window === "undefined",
+    clubSlug: opts?.clubSlug,
     headers: opts?.cookie ? { Cookie: opts.cookie } : undefined,
   });
   if (response.status === 404) return null;
@@ -457,12 +468,13 @@ export async function saveTournamentPlaces(
 
 export async function createRegistration(
   slug: string,
-  body?: { partnerId?: string; lookingForPartner?: boolean },
+  body?: { partnerId?: string; lookingForPartner?: boolean; clubSlug?: string },
 ): Promise<{ ok: true; status: RegistrationStatus } | { ok: false; error: string }> {
   const { response, data } = await apiRequest<{ registration: ApiRegistration } & ApiErrorBody>(
     `/tournaments/${encodeURIComponent(slug)}/registrations`,
     {
       method: "POST",
+      clubSlug: body?.clubSlug,
       body: JSON.stringify({
         partner_id: body?.partnerId,
         looking_for_partner: body?.lookingForPartner ?? false,
@@ -490,10 +502,11 @@ export async function createRegistration(
 
 export async function cancelRegistration(
   slug: string,
+  opts?: { clubSlug?: string },
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const { response, data } = await apiRequest<ApiErrorBody>(
     `/tournaments/${encodeURIComponent(slug)}/registrations/me`,
-    { method: "DELETE" },
+    { method: "DELETE", clubSlug: opts?.clubSlug },
   );
   if (response.ok) return { ok: true };
   return {

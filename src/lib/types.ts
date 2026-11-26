@@ -114,6 +114,10 @@ export interface TournamentImage {
 export interface Tournament {
   id: string;
   slug: string;
+  /** Organizer club (tenant) — used for API X-Club-Slug, not a UI switcher. */
+  clubId?: string;
+  clubSlug?: string;
+  clubName?: string;
   title: string;
   description: string;
   type: TournamentType;

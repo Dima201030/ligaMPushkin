@@ -7,6 +7,7 @@ import {
   parseClubCookie,
   resolveClubSlug,
   stripClubPrefix,
+  tournamentPath,
 } from "./tenant";
 
 describe("normalizeClubSlug", () => {
@@ -89,5 +90,18 @@ describe("isPlatformClubSlug / isPlatformClubName", () => {
     expect(isPlatformClubSlug("mr-pushkin")).toBe(false);
     expect(isPlatformClubName("Pairly")).toBe(true);
     expect(isPlatformClubName("Mr. Pushkin")).toBe(false);
+  });
+});
+
+describe("tournamentPath", () => {
+  it("builds a club-scoped tournament URL without acting as a switcher", () => {
+    expect(tournamentPath("mr-pushkin", "winter-cup")).toBe(
+      "/c/mr-pushkin/tournaments/winter-cup",
+    );
+  });
+
+  it("falls back to the legacy path when club is unknown or reserved", () => {
+    expect(tournamentPath(null, "winter-cup")).toBe("/tournaments/winter-cup");
+    expect(tournamentPath("pairly", "winter-cup")).toBe("/tournaments/winter-cup");
   });
 });
