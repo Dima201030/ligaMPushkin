@@ -14,6 +14,7 @@ describe("resolveCoverUrl", () => {
 
   it("falls back to the neutral placeholder", async () => {
     const { resolveCoverUrl, COVER_PLACEHOLDER } = await loadMedia();
+    expect(COVER_PLACEHOLDER).toBe("/images/cover-placeholder.svg");
     expect(resolveCoverUrl()).toBe(COVER_PLACEHOLDER);
     expect(resolveCoverUrl(null)).toBe(COVER_PLACEHOLDER);
     expect(resolveCoverUrl("")).toBe(COVER_PLACEHOLDER);
@@ -22,7 +23,22 @@ describe("resolveCoverUrl", () => {
   it("replaces legacy club photos with the placeholder", async () => {
     const { resolveCoverUrl, COVER_PLACEHOLDER } = await loadMedia();
     expect(resolveCoverUrl("/images/courts/old-club.jpg")).toBe(COVER_PLACEHOLDER);
-    expect(resolveCoverUrl("/images/cover-placeholder.svg")).toBe("/images/cover-placeholder.svg");
+    expect(resolveCoverUrl("/images/cover-placeholder.svg")).toBe(
+      "/images/cover-placeholder.svg",
+    );
+  });
+
+  it("prefixes the placeholder with the app base path", async () => {
+    process.env.NEXT_PUBLIC_BASE_PATH = BASE;
+    const { resolveCoverUrl, COVER_PLACEHOLDER } = await loadMedia();
+    expect(COVER_PLACEHOLDER).toBe(`${BASE}/images/cover-placeholder.svg`);
+    expect(resolveCoverUrl()).toBe(`${BASE}/images/cover-placeholder.svg`);
+    expect(resolveCoverUrl("/images/cover-placeholder.svg")).toBe(
+      `${BASE}/images/cover-placeholder.svg`,
+    );
+    expect(resolveCoverUrl("/images/courts/old-club.jpg")).toBe(
+      `${BASE}/images/cover-placeholder.svg`,
+    );
   });
 
   it("keeps external URLs untouched", async () => {

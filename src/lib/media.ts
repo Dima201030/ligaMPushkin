@@ -1,8 +1,11 @@
-export const COVER_PLACEHOLDER = "/images/cover-placeholder.svg";
-
-// In production the app is mounted under a secret base path, so files served by
-// the Go API at /api/files/{id} must be requested through that same prefix.
+// In production the app is mounted under a secret base path, so public assets
+// and Go API files at /api/files/{id} must be requested through that prefix.
 const BASE_PATH = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/$/, "");
+
+const COVER_PLACEHOLDER_PATH = "/images/cover-placeholder.svg";
+
+/** Neutral cover; always includes NEXT_PUBLIC_BASE_PATH when set. */
+export const COVER_PLACEHOLDER = `${BASE_PATH}${COVER_PLACEHOLDER_PATH}`;
 
 /**
  * Legacy club photos are no longer shipped. Any cover that still points to a
@@ -11,7 +14,13 @@ const BASE_PATH = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/$/, "");
  */
 export function resolveCoverUrl(url?: string | null): string {
   if (!url) return COVER_PLACEHOLDER;
-  if (url.startsWith("/images/") && !url.startsWith("/images/cover-placeholder")) {
+  if (
+    url === COVER_PLACEHOLDER_PATH ||
+    url.startsWith("/images/cover-placeholder")
+  ) {
+    return COVER_PLACEHOLDER;
+  }
+  if (url.startsWith("/images/")) {
     return COVER_PLACEHOLDER;
   }
   if (url.startsWith("/api/")) {
