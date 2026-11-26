@@ -20,7 +20,7 @@ export default async function OrganizerPlayersPage() {
       <OrganizerHeader
         eyebrow="База игроков"
         title="Игроки"
-        description="Добавляйте участников без регистрации, затем связывайте заготовку с заявкой, когда человек зарегистрируется."
+        description="Добавляйте участников без регистрации, связывайте заготовку с заявкой. Удаление обезличивает аккаунт («Удалённый аккаунт») во всех списках."
       />
       <div className="space-y-7 px-4 py-7 md:px-8 lg:px-10">
         <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2 xl:grid-cols-4">

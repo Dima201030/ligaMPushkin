@@ -2,12 +2,14 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, CheckCircle2, Plus, Search, ShieldCheck, Trophy } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowUpRight, CheckCircle2, Plus, Search, ShieldCheck, Trash2, Trophy } from "lucide-react";
 import type { CategorySlug, Player, ProfileVerificationStatus } from "@/lib/types";
 import { CATEGORIES, CATEGORY_BY_SLUG } from "@/lib/domain";
 import { cn, formatDateShort, winRate } from "@/lib/utils";
 import { Avatar } from "@/components/ui/Avatar";
 import { confirmPlayerVerification, updateOrganizerPlayer } from "@/lib/api/organizer-ratings";
+import { deleteOrganizerPlayer } from "@/lib/api/organizer-players";
 import { validateBirthAge } from "@/lib/club-limits";
 import { DemoNote } from "./OrganizerUI";
 
@@ -36,22 +38,26 @@ function resolveBirthDate(
 }
 
 export function OrganizerPlayersTable({ players }: { players: Player[] }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>("all");
   const [sort, setSort] = useState<Sort>("rating");
   const [categories, setCategories] = useState<Record<string, CategorySlug>>({});
   const [verification, setVerification] = useState<Record<string, ProfileVerificationStatus>>({});
   const [birthDates, setBirthDates] = useState<Record<string, string>>({});
+  const [rowsOverride, setRowsOverride] = useState<Player[] | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errorPlayerId, setErrorPlayerId] = useState<string | null>(null);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const birthInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const feedbackRef = useRef<HTMLDivElement | null>(null);
+  const sourcePlayers = rowsOverride ?? players;
 
   const rows = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return players
+    return sourcePlayers
       .map((player) => ({
         ...player,
         category: categories[player.id] ?? player.category,
@@ -77,7 +83,29 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
         if (sort === "matches") return b.wins + b.losses - (a.wins + a.losses);
         return b.rating - a.rating;
       });
-  }, [players, categories, verification, birthDates, query, category, sort]);
+  }, [sourcePlayers, categories, verification, birthDates, query, category, sort]);
+
+  async function erasePlayer(player: Player) {
+    const label = `${player.lastName} ${player.firstName}`.trim();
+    if (
+      !window.confirm(
+        `Удалить ${label}?\n\nАккаунт будет обезличен («Удалённый аккаунт») и исчезнет из участников, рейтинга, игроков и активных заявок.`,
+      )
+    ) {
+      return;
+    }
+    setDeletingId(player.id);
+    setError(null);
+    const result = await deleteOrganizerPlayer(player.id);
+    setDeletingId(null);
+    if (!result.ok) {
+      showFeedback(result.error, "error", player.id);
+      return;
+    }
+    setRowsOverride((current) => (current ?? players).filter((item) => item.id !== player.id));
+    showFeedback(`${label} удалён и обезличен во всех списках.`, "notice");
+    router.refresh();
+  }
 
   function showFeedback(message: string, kind: "error" | "notice", playerId?: string) {
     if (kind === "error") {
@@ -369,14 +397,26 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
                       {formatDateShort(player.memberSince)}
                     </td>
                     <td>
-                      <Link
-                        href={`/players/${player.slug}`}
-                        className="grid size-7 place-items-center text-ink-faint transition-colors hover:text-ink"
-                        title="Открыть профиль"
-                        aria-label={`Профиль ${player.firstName} ${player.lastName}`}
-                      >
-                        <ArrowUpRight className="size-3.5" />
-                      </Link>
+                      <div className="flex items-center justify-end gap-1">
+                        <Link
+                          href={`/players/${player.slug}`}
+                          className="grid size-7 place-items-center text-ink-faint transition-colors hover:text-ink"
+                          title="Открыть профиль"
+                          aria-label={`Профиль ${player.firstName} ${player.lastName}`}
+                        >
+                          <ArrowUpRight className="size-3.5" />
+                        </Link>
+                        <button
+                          type="button"
+                          className="grid size-7 place-items-center text-ink-faint transition-colors hover:text-negative"
+                          title="Удалить аккаунт"
+                          aria-label={`Удалить ${player.firstName} ${player.lastName}`}
+                          disabled={deletingId === player.id}
+                          onClick={() => void erasePlayer(player)}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -394,7 +434,7 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
 
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
         {CATEGORIES.map((item) => {
-          const count = players.filter((player) => (categories[player.id] ?? player.category) === item.slug).length;
+          const count = sourcePlayers.filter((player) => (categories[player.id] ?? player.category) === item.slug).length;
           if (!count) return null;
           return (
             <span key={item.slug} className="inline-flex items-baseline gap-1.5 text-[0.62rem] uppercase tracking-[0.12em] text-ink-muted">

@@ -85,3 +85,15 @@ export async function mergePlaceholderPlayer(
   if (response.ok) return { ok: true };
   return { ok: false, error: data?.message ?? "Не удалось объединить аккаунты" };
 }
+
+/** Owner erase: anonymize account and hide from members/ranking/players/registrations. */
+export async function deleteOrganizerPlayer(
+  id: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { response, data } = await apiRequest<ApiErrorBody>(
+    `/organizer/players/${encodeURIComponent(id)}`,
+    { method: "DELETE" },
+  );
+  if (response.ok) return { ok: true };
+  return { ok: false, error: data?.message ?? "Не удалось удалить аккаунт" };
+}

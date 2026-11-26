@@ -32,9 +32,9 @@ export function DeleteAccountPanel() {
     <div className="border border-negative/30 bg-negative-soft/40 p-5">
       <h3 className="text-base text-ink">Удаление аккаунта</h3>
       <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-        Аккаунт будет обезличен: email и телефон удаляются, вход закрывается, публичный
-        профиль скрывается. История матчей может сохраниться без ваших персональных
-        данных. Подробнее — в{" "}
+        Аккаунт будет обезличен («Удалённый аккаунт»): email и телефон удаляются, вход
+        закрывается, профиль скрывается из участников, рейтинга и игроков. История матчей
+        может сохраниться без персональных данных. Подробнее — в{" "}
         <Link href="/privacy" className="text-accent hover:underline">
           политике ПДн
         </Link>

@@ -197,7 +197,7 @@ export function MembersTable({
     const label = `${member.firstName} ${member.lastName}`.trim() || member.email;
     if (
       !window.confirm(
-        `Убрать ${label} (${member.email}) из клуба?\n\nИсчезнет из участников, рейтинга и публичного списка игроков клуба. Аккаунт Pairly останется.`,
+        `Удалить ${label} (${member.email})?\n\nАккаунт будет обезличен («Удалённый аккаунт»): исчезнет из участников, рейтинга, игроков/проверки и активных заявок на турниры. Вход станет недоступен.`,
       )
     ) {
       return;
@@ -213,14 +213,18 @@ export function MembersTable({
       return;
     }
     setRows((current) => current.filter((item) => item.id !== member.id));
-    setOkMessage(`${label} убран из клуба (рейтинг и игроки скрыты). Аккаунт Pairly сохранён.`);
+    setOkMessage(
+      result.accountErased
+        ? `${label} удалён: аккаунт обезличен во всех списках.`
+        : `${label} убран из клуба (организаторский аккаунт сохранён).`,
+    );
     router.refresh();
   }
 
   return (
     <Panel
       title="Участники клуба"
-      description="Членство и видимость в клубе. Удаление убирает из участников, рейтинга и публичных игроков; аккаунт Pairly остаётся. Последнего владельца снять нельзя."
+      description="Членство и роли. Удаление игрока обезличивает аккаунт («Удалённый аккаунт») во всех списках. Последнего владельца снять нельзя."
     >
       {error ? (
         <p role="alert" className="mb-3 text-[0.78rem] text-negative">
@@ -272,7 +276,7 @@ export function MembersTable({
                     type="button"
                     className="btn btn-secondary btn-sm"
                     disabled={busy || lastOwner}
-                    title={lastOwner ? "Нельзя удалить последнего владельца" : "Убрать из клуба"}
+                    title={lastOwner ? "Нельзя удалить последнего владельца" : "Удалить аккаунт из клуба и платформы"}
                     onClick={() => removeMember(member)}
                   >
                     {busy ? (
