@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Loader2, Trash2, UserPlus } from "lucide-react";
 import {
@@ -81,7 +81,7 @@ export function InviteMemberForm({ clubSlug }: { clubSlug?: string }) {
   return (
     <Panel
       title="Добавить участника"
-      description="Пользователь должен уже быть зарегистрирован. «Организатор турниров» получает ограниченный кабинет; владелец — полный доступ к клубу."
+      description="Добавляет членство в клубе (не создаёт аккаунт Pairly). Пользователь должен уже быть зарегистрирован. «Организатор турниров» — ограниченный кабинет; владелец — полный доступ."
     >
       <form onSubmit={submit} className="max-w-xl space-y-5 py-2" noValidate>
         <label className="block">
@@ -154,21 +154,28 @@ export function MembersTable({
   clubSlug?: string;
 }) {
   const router = useRouter();
+  const [rows, setRows] = useState(members);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [okMessage, setOkMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setRows(members);
+  }, [members]);
 
   const visible = useMemo(
-    () => members.filter((member) => member.status !== "left"),
-    [members],
+    () => rows.filter((member) => member.status !== "left"),
+    [rows],
   );
 
   async function changeRole(member: ClubMember, role: ClubMemberRole) {
     if (role === member.role) return;
-    if (member.role === "owner" && role !== "owner" && isLastActiveOwner(member, members)) {
+    if (member.role === "owner" && role !== "owner" && isLastActiveOwner(member, rows)) {
       setError("Нельзя снять роль с последнего владельца клуба");
       return;
     }
     setError(null);
+    setOkMessage(null);
     setBusyId(member.id);
     const result = await patchClubMember(member.id, { role, clubSlug });
     setBusyId(null);
@@ -176,18 +183,28 @@ export function MembersTable({
       setError(result.error);
       return;
     }
+    setRows((current) =>
+      current.map((item) => (item.id === member.id ? { ...item, role } : item)),
+    );
     router.refresh();
   }
 
   async function removeMember(member: ClubMember) {
-    if (isLastActiveOwner(member, members)) {
+    if (isLastActiveOwner(member, rows)) {
       setError("Нельзя удалить последнего владельца клуба");
       return;
     }
     const label = `${member.firstName} ${member.lastName}`.trim() || member.email;
-    if (!window.confirm(`Удалить ${label} из клуба?`)) return;
+    if (
+      !window.confirm(
+        `Убрать ${label} (${member.email}) из клуба?\n\nИсчезнет из участников, рейтинга и публичного списка игроков клуба. Аккаунт Pairly останется.`,
+      )
+    ) {
+      return;
+    }
 
     setError(null);
+    setOkMessage(null);
     setBusyId(member.id);
     const result = await deleteClubMember(member.id, { clubSlug });
     setBusyId(null);
@@ -195,17 +212,24 @@ export function MembersTable({
       setError(result.error);
       return;
     }
+    setRows((current) => current.filter((item) => item.id !== member.id));
+    setOkMessage(`${label} убран из клуба (рейтинг и игроки скрыты). Аккаунт Pairly сохранён.`);
     router.refresh();
   }
 
   return (
     <Panel
       title="Участники клуба"
-      description="Участники клуба владельца. Назначьте «организатор турниров» для ограниченного кабинета или «владелец» для полного доступа. Последнего владельца снять нельзя."
+      description="Членство и видимость в клубе. Удаление убирает из участников, рейтинга и публичных игроков; аккаунт Pairly остаётся. Последнего владельца снять нельзя."
     >
       {error ? (
         <p role="alert" className="mb-3 text-[0.78rem] text-negative">
           {error}
+        </p>
+      ) : null}
+      {okMessage ? (
+        <p role="status" className="mb-3 text-[0.78rem] text-positive">
+          {okMessage}
         </p>
       ) : null}
       {visible.length === 0 ? (
@@ -214,7 +238,7 @@ export function MembersTable({
         <ul className="divide-y divide-line border-y border-line">
           {visible.map((member) => {
             const busy = busyId === member.id;
-            const lastOwner = isLastActiveOwner(member, members);
+            const lastOwner = isLastActiveOwner(member, rows);
             return (
               <li
                 key={member.id}
@@ -248,7 +272,7 @@ export function MembersTable({
                     type="button"
                     className="btn btn-secondary btn-sm"
                     disabled={busy || lastOwner}
-                    title={lastOwner ? "Нельзя удалить последнего владельца" : "Удалить из клуба"}
+                    title={lastOwner ? "Нельзя удалить последнего владельца" : "Убрать из клуба"}
                     onClick={() => removeMember(member)}
                   >
                     {busy ? (
