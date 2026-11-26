@@ -1,5 +1,7 @@
 import { cn } from "@/lib/utils";
 
+export { WinRateRing } from "./WinRateRing";
+
 export function RatingChart({
   values,
   height = 180,
@@ -91,44 +93,6 @@ export function RatingChart({
         <span>{first.value}</span>
         <span>{caption}</span>
         <span>{last.value}</span>
-      </div>
-    </div>
-  );
-}
-
-export function WinRateRing({
-  value,
-  size = 112,
-  label = "побед",
-}: {
-  value: number;
-  size?: number;
-  label?: string;
-}) {
-  const stroke = 8;
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (value / 100) * circumference;
-
-  return (
-    <div className="relative inline-grid place-items-center" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90" role="img" aria-label={`${value}% ${label}`}>
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--color-line)" strokeWidth={stroke} />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="var(--color-accent)"
-          strokeWidth={stroke}
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-        />
-      </svg>
-      <div className="absolute text-center">
-        <div className="text-2xl font-extrabold tracking-tight text-navy">{value}%</div>
-        <div className="text-[0.6rem] font-semibold uppercase tracking-[0.08em] text-ink-muted">{label}</div>
       </div>
     </div>
   );
