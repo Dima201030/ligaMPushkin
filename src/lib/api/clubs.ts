@@ -1,5 +1,10 @@
+import { isPlatformClubName, isPlatformClubSlug } from "@/lib/club/tenant";
 import { normalizeUuid } from "@/lib/uuid";
 import { ApiError, apiRequest, type ApiErrorBody } from "./client";
+
+function isVisibleClub(club: LeagueClub): boolean {
+  return !isPlatformClubSlug(club.slug) && !isPlatformClubName(club.name);
+}
 
 export interface LeagueClub {
   id: string;
@@ -38,7 +43,7 @@ export async function fetchClubs(opts?: { cookie?: string; absolute?: boolean })
   if (!response.ok) {
     throw new ApiError(response.status, data?.code, data?.message || "Не удалось загрузить клубы");
   }
-  return (data?.clubs ?? []).map(mapClub);
+  return (data?.clubs ?? []).map(mapClub).filter(isVisibleClub);
 }
 
 export async function fetchClubBySlug(
@@ -56,7 +61,9 @@ export async function fetchClubBySlug(
   if (!response.ok || !data?.club) {
     throw new ApiError(response.status, data?.code, data?.message || "Не удалось загрузить клуб");
   }
-  return mapClub(data.club);
+  const club = mapClub(data.club);
+  if (!isVisibleClub(club)) return null;
+  return club;
 }
 
 async function serverCookieHeader(): Promise<string | undefined> {
@@ -145,14 +152,16 @@ export async function fetchMyClubs(): Promise<ClubMembership[]> {
   if (!response.ok) {
     throw new ApiError(response.status, data?.code, data?.message || "Не удалось загрузить ваши клубы");
   }
-  return (data?.clubs ?? []).map((row) => ({
-    clubId: normalizeUuid(row.club_id),
-    slug: row.slug,
-    name: row.name,
-    status: row.status,
-    role: row.role,
-    membershipStatus: row.membership_status,
-  }));
+  return (data?.clubs ?? [])
+    .map((row) => ({
+      clubId: normalizeUuid(row.club_id),
+      slug: row.slug,
+      name: row.name,
+      status: row.status,
+      role: row.role,
+      membershipStatus: row.membership_status,
+    }))
+    .filter((club) => !isPlatformClubSlug(club.slug) && !isPlatformClubName(club.name));
 }
 
 export interface CreateClubInput {
