@@ -80,24 +80,19 @@ function mapBracketMeta(raw: {
   };
 }
 
-function sideLabel(side: ApiMatchSide): string | undefined {
-  if (side.is_bye) return "Пропуск";
-  if (side.label) return side.label;
-  const names: string[] = [];
-  if (side.player) {
-    names.push(`${side.player.last_name} ${side.player.first_name.charAt(0)}.`);
-  }
-  if (side.partner) {
-    names.push(`${side.partner.last_name} ${side.partner.first_name.charAt(0)}.`);
-  }
-  return names.length ? names.join(" / ") : undefined;
-}
-
 function mapSide(side: ApiMatchSide): MatchSide {
   const briefs = [side.player, side.partner].filter(Boolean) as ApiPlayerBrief[];
   const playerIds = [side.player_id, side.partner_id]
     .filter((id): id is string => Boolean(id))
     .map((id) => normalizeUuid(id));
+  // Keep bye / explicit labels only. Do not copy brief names into label —
+  // MatchRow links /players/{slug} from players[]; a name label shadows that.
+  let label: string | undefined;
+  if (side.is_bye) {
+    label = "Пропуск";
+  } else if (briefs.length === 0 && side.label?.trim()) {
+    label = side.label.trim();
+  }
   return {
     playerIds,
     players: briefs.map((brief) => ({
@@ -107,7 +102,7 @@ function mapSide(side: ApiMatchSide): MatchSide {
       lastName: brief.last_name,
     })),
     seed: side.seed ?? undefined,
-    label: sideLabel(side),
+    label,
   };
 }
 

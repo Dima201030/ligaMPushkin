@@ -31,7 +31,10 @@ function Side({
   align?: "left" | "right";
 }) {
   const players = sidePlayers(side);
-  const empty = !side.label && players.length === 0;
+  // API often sets side.label to the same names; prefer structured players so
+  // we can link /players/{slug} instead of plain text.
+  const named = players.filter((player) => player.firstName && player.lastName);
+  const empty = named.length === 0 && !side.label && players.length === 0;
 
   return (
     <div className={cn("flex min-w-0 items-center gap-2", align === "right" && "justify-end text-right")}>
@@ -43,26 +46,15 @@ function Side({
           empty && "italic text-ink-faint",
         )}
       >
-        {side.label ? (
-          side.label
-        ) : empty ? (
-          "Победитель пары матчей"
-        ) : (
-          players.map((player, index) => {
-            const name =
-              player.firstName && player.lastName
-                ? `${player.lastName} ${player.firstName.charAt(0)}.`
-                : player.id.slice(0, 8);
+        {named.length > 0 ? (
+          named.map((player, index) => {
+            const name = `${player.lastName} ${player.firstName!.charAt(0)}.`;
             const node = player.slug ? (
-              <Link
-                key={player.id}
-                href={`/players/${player.slug}`}
-                className="hover:text-accent"
-              >
+              <Link href={`/players/${player.slug}`} className="hover:text-accent">
                 {name}
               </Link>
             ) : (
-              <span key={player.id}>{name}</span>
+              <span>{name}</span>
             );
             return (
               <span key={player.id}>
@@ -71,6 +63,17 @@ function Side({
               </span>
             );
           })
+        ) : side.label ? (
+          side.label
+        ) : empty ? (
+          "Победитель пары матчей"
+        ) : (
+          players.map((player, index) => (
+            <span key={player.id}>
+              {index > 0 ? " / " : null}
+              {player.id.slice(0, 8)}
+            </span>
+          ))
         )}
       </div>
       {align === "left" && side.seed && <Seed seed={side.seed} />}
