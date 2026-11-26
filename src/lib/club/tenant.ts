@@ -8,6 +8,9 @@ export const CLUB_PATH_PREFIX = "/c";
 export const DEFAULT_CLUB_SLUG =
   process.env.NEXT_PUBLIC_DEFAULT_CLUB_SLUG?.trim().toLowerCase() || "mr-pushkin";
 
+/** Reserved: Pairly is the platform brand, never a tenant club. */
+export const PLATFORM_CLUB_SLUGS = new Set(["pairly"]);
+
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export function normalizeClubSlug(raw: string | null | undefined): string | null {
@@ -15,6 +18,17 @@ export function normalizeClubSlug(raw: string | null | undefined): string | null
   const slug = raw.trim().toLowerCase();
   if (!slug || !SLUG_RE.test(slug)) return null;
   return slug;
+}
+
+
+/** Hide platform-brand rows that should never appear as clubs. */
+export function isPlatformClubSlug(slug: string | null | undefined): boolean {
+  const normalized = normalizeClubSlug(slug);
+  return Boolean(normalized && PLATFORM_CLUB_SLUGS.has(normalized));
+}
+
+export function isPlatformClubName(name: string | null | undefined): boolean {
+  return (name ?? "").trim().toLowerCase() === "pairly";
 }
 
 export function resolveClubSlug(

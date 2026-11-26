@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   clubPath,
+  isPlatformClubName,
+  isPlatformClubSlug,
   normalizeClubSlug,
   parseClubCookie,
   resolveClubSlug,
@@ -77,5 +79,15 @@ describe("clubPath", () => {
 
   it("falls back to the default slug", () => {
     expect(clubPath("bad slug")).toBe("/c/mr-pushkin");
+  });
+});
+
+describe("isPlatformClubSlug / isPlatformClubName", () => {
+  it("treats pairly as a reserved platform brand, not a club", () => {
+    expect(isPlatformClubSlug("pairly")).toBe(true);
+    expect(isPlatformClubSlug("Pairly")).toBe(true);
+    expect(isPlatformClubSlug("mr-pushkin")).toBe(false);
+    expect(isPlatformClubName("Pairly")).toBe(true);
+    expect(isPlatformClubName("Mr. Pushkin")).toBe(false);
   });
 });

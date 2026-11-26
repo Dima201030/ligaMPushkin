@@ -1,10 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { CLUB_COOKIE, DEFAULT_CLUB_SLUG, stripClubPrefix } from "@/lib/club/tenant";
+import { CLUB_COOKIE, DEFAULT_CLUB_SLUG, isPlatformClubSlug, stripClubPrefix } from "@/lib/club/tenant";
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 function withClubCookie(response: NextResponse, slug: string) {
-  response.cookies.set(CLUB_COOKIE, slug, {
+  const safe = isPlatformClubSlug(slug) ? DEFAULT_CLUB_SLUG : slug;
+  response.cookies.set(CLUB_COOKIE, safe, {
     path: "/",
     maxAge: COOKIE_MAX_AGE,
     sameSite: "lax",
