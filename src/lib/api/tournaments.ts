@@ -4,6 +4,7 @@ import type {
   RegistrationStatus,
   Surface,
   Tournament,
+  TournamentCreator,
   TournamentImage,
   TournamentFormat,
   TournamentStatus,
@@ -20,6 +21,13 @@ interface ApiVenue {
   address: string;
   courts: number;
   surface: string;
+}
+
+interface ApiCreator {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email?: string | null;
 }
 
 interface ApiTournament {
@@ -51,6 +59,8 @@ interface ApiTournament {
   places_mismatch?: boolean;
   confirmed_count?: number;
   waitlist_count?: number;
+  created_by_id?: string;
+  created_by?: ApiCreator | null;
 }
 
 interface ApiTournamentImage {
@@ -95,6 +105,24 @@ function mapTournamentImage(raw: ApiTournamentImage): TournamentImage {
   return { id: normalizeUuid(raw.id), url: resolveCoverUrl(raw.url), createdAt: raw.created_at };
 }
 
+function mapTournamentCreator(raw?: ApiCreator | null): TournamentCreator | undefined {
+  if (!raw?.id) return undefined;
+  const email = raw.email?.trim();
+  return {
+    id: normalizeUuid(raw.id),
+    firstName: raw.first_name?.trim() || "",
+    lastName: raw.last_name?.trim() || "",
+    email: email || undefined,
+  };
+}
+
+export function formatTournamentCreatorLabel(creator?: TournamentCreator | null): string {
+  if (!creator) return "";
+  const name = `${creator.firstName} ${creator.lastName}`.trim();
+  if (name && creator.email) return `${name} · ${creator.email}`;
+  return name || creator.email || "";
+}
+
 export function mapTournament(
   raw: ApiTournament,
   participants: Registration[] = [],
@@ -126,6 +154,8 @@ export function mapTournament(
     images: images.map(mapTournamentImage),
     season: raw.season,
     isHidden: raw.is_hidden ?? false,
+    createdById: raw.created_by_id ? normalizeUuid(raw.created_by_id) : undefined,
+    createdBy: mapTournamentCreator(raw.created_by),
     winners: (raw.winners ?? []).map((winner) => ({
       place: winner.place as 1 | 2 | 3 | 4,
       playerIds: (winner.player_ids ?? []).map((id) => normalizeUuid(id)),

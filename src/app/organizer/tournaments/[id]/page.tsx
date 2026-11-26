@@ -14,6 +14,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { getOrganizerTournament } from "@/lib/data";
+import { formatTournamentCreatorLabel } from "@/lib/api/tournaments";
 import { FORMAT_LABEL, SURFACE_LABEL, TYPE_BY_VALUE } from "@/lib/domain";
 import { formatDateTime, formatMoney } from "@/lib/utils";
 import { CategoryBadge, StatusPill, SurfaceBadge, TypeBadge } from "@/components/ui/Badges";
@@ -47,6 +48,7 @@ export default async function OrganizerTournamentPage({
 
   const { tournament, participants, matches, confirmed, pending, waitlist, revenue } = data;
   const isPairs = ["doubles", "mixed", "teams"].includes(tournament.type);
+  const creatorLabel = formatTournamentCreatorLabel(tournament.createdBy);
   const placeOptions = (() => {
     const byId = new Map<string, { id: string; name: string }>();
     for (const entry of participants) {
@@ -72,10 +74,15 @@ export default async function OrganizerTournamentPage({
         title={tournament.title}
         description={tournament.description}
         meta={
-          <div className="flex flex-wrap items-center gap-1.5">
-            <StatusPill status={tournament.status} />
-            <CategoryBadge category={tournament.category} />
-            <TypeBadge type={tournament.type} />
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <StatusPill status={tournament.status} />
+              <CategoryBadge category={tournament.category} />
+              <TypeBadge type={tournament.type} />
+            </div>
+            {creatorLabel ? (
+              <p className="text-[0.68rem] text-ink-muted">Создатель: {creatorLabel}</p>
+            ) : null}
           </div>
         }
         actions={
@@ -230,6 +237,10 @@ export default async function OrganizerTournamentPage({
             <Panel title="Регламент и условия" description="Информация, которую видят игроки">
               <p className="text-[0.82rem] leading-relaxed text-ink-soft">{tournament.regulations}</p>
               <dl className="mt-5 grid gap-4 border-t border-line pt-5 sm:grid-cols-2">
+                <div>
+                  <dt className="stat-label">Создатель</dt>
+                  <dd className="mt-1 text-sm">{creatorLabel || "Не указан"}</dd>
+                </div>
                 <div>
                   <dt className="stat-label">Взнос</dt>
                   <dd className="mt-1 text-sm">{tournament.entryFee ? formatMoney(tournament.entryFee) : "Бесплатно"}</dd>

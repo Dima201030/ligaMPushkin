@@ -111,6 +111,13 @@ export interface TournamentImage {
   createdAt: string;
 }
 
+export interface TournamentCreator {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+}
+
 export interface Tournament {
   id: string;
   slug: string;
@@ -141,6 +148,8 @@ export interface Tournament {
   images?: TournamentImage[];
   season: number;
   isHidden?: boolean;
+  createdById?: string;
+  createdBy?: TournamentCreator;
 }
 
 export interface MatchSidePlayer {

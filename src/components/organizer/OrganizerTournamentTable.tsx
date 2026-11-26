@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import type { Tournament } from "@/lib/types";
+import { formatTournamentCreatorLabel } from "@/lib/api/tournaments";
 import { CATEGORIES, FORMAT_LABEL, STATUS_BY_VALUE, TYPE_BY_VALUE } from "@/lib/domain";
 import { cn, formatDateShort, formatMoney } from "@/lib/utils";
 import { CategoryBadge, StatusPill } from "@/components/ui/Badges";
@@ -53,7 +54,7 @@ export function OrganizerTournamentTable({ tournaments }: { tournaments: Tournam
         matchesFilter(tournament, filter) &&
         (category === "all" || tournament.category === category) &&
         (needle
-          ? `${tournament.title} ${tournament.slug} ${tournament.description}`.toLowerCase().includes(needle)
+          ? `${tournament.title} ${tournament.slug} ${tournament.description} ${formatTournamentCreatorLabel(tournament.createdBy)}`.toLowerCase().includes(needle)
           : true)
       );
     });
@@ -125,10 +126,11 @@ export function OrganizerTournamentTable({ tournaments }: { tournaments: Tournam
         />
       ) : (
         <div className="overflow-x-auto border-y border-line">
-          <table className="data-table min-w-[900px]">
+          <table className="data-table min-w-[1040px]">
             <thead>
               <tr>
                 <th>Турнир</th>
+                <th>Создатель</th>
                 <th>Статус</th>
                 <th>Даты</th>
                 <th>Участники</th>
@@ -145,6 +147,7 @@ export function OrganizerTournamentTable({ tournaments }: { tournaments: Tournam
                   100,
                   Math.round((tournament.participants.length / tournament.maxParticipants) * 100),
                 );
+                const creatorLabel = formatTournamentCreatorLabel(tournament.createdBy);
                 return (
                   <tr key={tournament.id} className="row-link group">
                     <td className="min-w-[240px]">
@@ -159,6 +162,9 @@ export function OrganizerTournamentTable({ tournaments }: { tournaments: Tournam
                         <span className="text-[0.64rem] text-ink-muted">{TYPE_BY_VALUE[tournament.type].label}</span>
                         <span className="text-[0.64rem] text-ink-faint">· {tournament.slug}</span>
                       </div>
+                    </td>
+                    <td className="min-w-[160px] text-[0.7rem] text-ink-soft">
+                      {creatorLabel || "—"}
                     </td>
                     <td>
                       <div className="flex flex-wrap items-center gap-1.5">
