@@ -117,6 +117,7 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
         startsAt: form.startsAt,
         registrationClosesAt: form.registrationClosesAt,
         maxParticipants: form.maxParticipants,
+        entryFee: form.entryFee,
         requireRegulations: true,
       }) as Partial<Record<keyof FormState, string>>,
     [form],
@@ -384,8 +385,8 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
               <span className="field-label">Максимум участников</span>
               <input
                 type="number"
-                min={4}
-                max={128}
+                min={TOURNAMENT_LIMITS.maxParticipantsMin}
+                max={TOURNAMENT_LIMITS.maxParticipantsMax}
                 step={4}
                 className={cn("field", attempted && errors.maxParticipants && "border-negative")}
                 value={form.maxParticipants}
@@ -399,12 +400,16 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
               <span className="field-label">Взнос, ₽</span>
               <input
                 type="number"
-                min={0}
+                min={TOURNAMENT_LIMITS.entryFeeMin}
+                max={TOURNAMENT_LIMITS.entryFeeMax}
                 step={100}
-                className="field"
+                className={cn("field", attempted && errors.entryFee && "border-negative")}
                 value={form.entryFee}
                 onChange={(event) => update("entryFee", event.target.value)}
               />
+              {attempted && errors.entryFee && (
+                <span className="mt-1 block text-[0.68rem] text-negative">{errors.entryFee}</span>
+              )}
             </label>
             <div className="flex items-end pb-1">
               <p className="text-[0.66rem] leading-relaxed text-ink-faint">

@@ -56,6 +56,19 @@ describe("validateTournamentFields", () => {
       }).startsAt,
     ).toMatch(/6 месяцев/);
   });
+
+  it("rejects oversized price and seats", () => {
+    expect(
+      validateTournamentFields({
+        ...base,
+        entryFee: TOURNAMENT_LIMITS.entryFeeMax + 1,
+        maxParticipants: TOURNAMENT_LIMITS.maxParticipantsMax + 1,
+      }),
+    ).toMatchObject({
+      entryFee: expect.stringContaining("100000000"),
+      maxParticipants: expect.stringContaining("500"),
+    });
+  });
 });
 
 describe("content limits", () => {

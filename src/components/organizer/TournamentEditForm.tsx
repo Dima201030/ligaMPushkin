@@ -80,6 +80,7 @@ export function TournamentEditForm({ tournament }: { tournament: Tournament }) {
         registrationOpensAt: form.registrationOpensAt,
         registrationClosesAt: form.registrationClosesAt,
         maxParticipants: form.maxParticipants,
+        entryFee: form.entryFee,
         venueName: form.venueName,
         venueAddress: form.venueAddress,
         requireRegulations: form.regulations.trim().length > 0,
@@ -321,23 +322,30 @@ export function TournamentEditForm({ tournament }: { tournament: Tournament }) {
                 <span className="field-label">Взнос, ₽</span>
                 <input
                   type="number"
-                  min={0}
+                  min={TOURNAMENT_LIMITS.entryFeeMin}
+                  max={TOURNAMENT_LIMITS.entryFeeMax}
                   step={100}
-                  className="field"
+                  className={cn("field", attempted && fieldErrors.entryFee && "border-negative")}
                   value={form.entryFee}
                   onChange={(event) => update("entryFee", event.target.value)}
                 />
+                {attempted && fieldErrors.entryFee && (
+                  <span className="mt-1 block text-[0.68rem] text-negative">{fieldErrors.entryFee}</span>
+                )}
               </label>
               <label className="block">
                 <span className="field-label">Максимум участников</span>
                 <input
                   type="number"
-                  min={2}
-                  max={128}
-                  className="field"
+                  min={TOURNAMENT_LIMITS.maxParticipantsMin}
+                  max={TOURNAMENT_LIMITS.maxParticipantsMax}
+                  className={cn("field", attempted && fieldErrors.maxParticipants && "border-negative")}
                   value={form.maxParticipants}
                   onChange={(event) => update("maxParticipants", event.target.value)}
                 />
+                {attempted && fieldErrors.maxParticipants && (
+                  <span className="mt-1 block text-[0.68rem] text-negative">{fieldErrors.maxParticipants}</span>
+                )}
               </label>
             </div>
             <label className="block">

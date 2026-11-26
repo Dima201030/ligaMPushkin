@@ -9,7 +9,9 @@ export const TOURNAMENT_LIMITS = {
   venueNameMax: 120,
   venueAddressMax: 240,
   maxParticipantsMin: 4,
-  maxParticipantsMax: 128,
+  maxParticipantsMax: 500,
+  entryFeeMin: 0,
+  entryFeeMax: 100_000_000,
   startMaxMonthsAhead: 6,
   maxDurationDays: 60,
 } as const;
@@ -21,6 +23,7 @@ export const CONTENT_LIMITS = {
   newsBodyMax: 20000,
   eventDescriptionMax: 4000,
   eventLocationMax: 200,
+  eventSeatsMax: 500,
   startMaxMonthsAhead: 6,
 } as const;
 
@@ -39,6 +42,7 @@ export function validateTournamentFields(input: {
   registrationClosesAt: string;
   registrationOpensAt?: string;
   maxParticipants: string | number;
+  entryFee?: string | number;
   venueName?: string;
   venueAddress?: string;
   requireRegulations?: boolean;
@@ -118,6 +122,15 @@ export function validateTournamentFields(input: {
     errors.maxParticipants = `Допустимо от ${L.maxParticipantsMin} до ${L.maxParticipantsMax} участников`;
   }
 
+  if (input.entryFee !== undefined && input.entryFee !== "") {
+    const fee = Number(input.entryFee);
+    if (!Number.isFinite(fee) || fee < L.entryFeeMin) {
+      errors.entryFee = "Взнос не может быть отрицательным";
+    } else if (fee > L.entryFeeMax) {
+      errors.entryFee = "Взнос слишком большой — максимум 100000000 ₽";
+    }
+  }
+
   if (input.venueName !== undefined && input.venueName.trim().length > L.venueNameMax) {
     errors.venueName = "Название площадки слишком длинное — максимум 120 символов";
   }
@@ -152,9 +165,10 @@ export function validateEventFields(input: {
   description: string;
   location: string;
   startsAt: string;
-}): Partial<Record<"title" | "description" | "location" | "startsAt", string>> {
+  seatsLeft?: string | number | null;
+}): Partial<Record<"title" | "description" | "location" | "startsAt" | "seatsLeft", string>> {
   const L = CONTENT_LIMITS;
-  const errors: Partial<Record<"title" | "description" | "location" | "startsAt", string>> = {};
+  const errors: Partial<Record<"title" | "description" | "location" | "startsAt" | "seatsLeft", string>> = {};
   const title = input.title.trim();
   if (title.length < L.titleMin) errors.title = "Заголовок слишком короткий";
   else if (title.length > L.titleMax) errors.title = "Заголовок слишком длинный — максимум 120 символов";
@@ -171,6 +185,14 @@ export function validateEventFields(input: {
     if (Number.isNaN(start.getTime())) errors.startsAt = "Некорректная дата";
     else if (start > monthsAheadLimit(L.startMaxMonthsAhead)) {
       errors.startsAt = "Дата события не может быть больше чем через 6 месяцев";
+    }
+  }
+  if (input.seatsLeft !== undefined && input.seatsLeft !== null && input.seatsLeft !== "") {
+    const seats = Number(input.seatsLeft);
+    if (!Number.isFinite(seats) || seats < 0) {
+      errors.seatsLeft = "Число мест не может быть отрицательным";
+    } else if (seats > L.eventSeatsMax) {
+      errors.seatsLeft = "Число мест слишком большое — максимум 500";
     }
   }
   return errors;
