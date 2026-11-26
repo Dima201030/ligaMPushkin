@@ -486,6 +486,13 @@ export async function createRegistration(
   }
   const errBody = data as ApiErrorBody | undefined;
   if (response.status === 403) {
+    if (errBody?.code === "email_unverified") {
+      return {
+        ok: false,
+        error:
+          "Подтвердите email по ссылке из письма. Пока адрес не подтверждён, запись на турнир недоступна.",
+      };
+    }
     return {
       ok: false,
       error:

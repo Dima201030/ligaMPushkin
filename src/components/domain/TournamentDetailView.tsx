@@ -39,6 +39,7 @@ export async function TournamentDetailView({
       )
     : undefined;
   const registered = Boolean(myRegistration);
+  const isEmailVerified = Boolean(session?.user.emailVerified);
   const isProfileVerified = session?.profile?.verificationStatus === "approved";
   const winners = tournament.winners ?? [];
 
@@ -264,6 +265,7 @@ export async function TournamentDetailView({
               initialStatus={myRegistration?.status}
               isAuthenticated={Boolean(user)}
               isApproved={user?.status === "approved"}
+              isEmailVerified={isEmailVerified}
               isProfileVerified={isProfileVerified}
             />
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { EmailConfirmBanner } from "@/components/layout/EmailConfirmBanner";
 import { OrganizerNav } from "@/components/organizer/OrganizerNav";
 import { CLUB } from "@/lib/domain";
 import { hasFullOrganizerAccess } from "@/lib/api/auth";
@@ -23,7 +24,10 @@ export default async function OrganizerLayout({ children }: { children: React.Re
         organizerEmail={session.user.email}
         access={fullAccess ? "full" : "tournament"}
       />
-      <div className="min-w-0">{children}</div>
+      <div className="min-w-0">
+        <EmailConfirmBanner />
+        {children}
+      </div>
     </div>
   );
 }

@@ -13,6 +13,7 @@ export function RegistrationPanel({
   initialStatus,
   isAuthenticated,
   isApproved,
+  isEmailVerified,
   isProfileVerified,
 }: {
   tournament: Tournament;
@@ -20,6 +21,8 @@ export function RegistrationPanel({
   initialStatus?: string;
   isAuthenticated: boolean;
   isApproved: boolean;
+  /** UI hint only — server returns 403 email_unverified if email not confirmed. */
+  isEmailVerified: boolean;
   /** UI hint only — server returns 403 if profile verification ≠ approved. */
   isProfileVerified: boolean;
 }) {
@@ -146,6 +149,10 @@ export function RegistrationPanel({
         ) : !isApproved ? (
           <div className="border border-warning/40 px-4 py-3 text-sm text-ink-soft">
             Запись откроется после подтверждения аккаунта организатором.
+          </div>
+        ) : !isEmailVerified ? (
+          <div className="border border-warning/40 px-4 py-3 text-sm text-ink-soft">
+            Подтвердите email по ссылке из письма — затем можно записаться на турнир.
           </div>
         ) : !isProfileVerified ? (
           <div className="border border-warning/40 px-4 py-3 text-sm text-ink-soft">

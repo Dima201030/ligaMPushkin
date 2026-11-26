@@ -1,3 +1,4 @@
+import { EmailConfirmBanner } from "@/components/layout/EmailConfirmBanner";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { RevealObserver } from "@/components/ui/Reveal";
@@ -6,6 +7,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
   return (
     <>
       <SiteHeader />
+      <EmailConfirmBanner />
       <main className="flex-1">{children}</main>
       <SiteFooter />
       <RevealObserver />
