@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import type { Tournament } from "@/lib/types";
+import { formatTournamentCreatorLabel } from "@/lib/api/tournaments";
 import { tournamentPath } from "@/lib/club/tenant";
 import { CATEGORY_BY_SLUG, STATUS_BY_VALUE, TYPE_BY_VALUE } from "@/lib/domain";
 import { cn, formatMoney, weekday } from "@/lib/utils";
@@ -37,6 +38,7 @@ export function TournamentCard({
   const category = CATEGORY_BY_SLUG[tournament.category];
   const isCompleted = tournament.status === "completed";
   const winners = tournament.winners?.filter((item) => item.place === 1);
+  const creatorLabel = formatTournamentCreatorLabel(tournament.createdBy);
 
   return (
     <article className={cn("group flex h-full flex-col", className)}>
@@ -65,6 +67,12 @@ export function TournamentCard({
           <h3 className="mt-2.5 text-[1.02rem] font-medium leading-snug transition-opacity group-hover:opacity-60">
             {tournament.title}
           </h3>
+
+          {creatorLabel ? (
+            <p className="mt-2 text-xs leading-relaxed text-ink-muted">
+              Создатель: {creatorLabel}
+            </p>
+          ) : null}
 
           {isCompleted && winners?.length ? (
             <p className="mt-2 text-xs leading-relaxed text-positive">
@@ -96,6 +104,7 @@ export function TournamentCard({
 
 export function TournamentRow({ tournament }: { tournament: Tournament }) {
   const startsAt = new Date(tournament.startsAt);
+  const creatorLabel = formatTournamentCreatorLabel(tournament.createdBy);
   return (
     <Link
       href={tournamentPath(tournament.clubSlug, tournament.slug)}
@@ -116,6 +125,7 @@ export function TournamentRow({ tournament }: { tournament: Tournament }) {
         <p className="mt-0.5 truncate text-[0.6rem] uppercase tracking-[0.12em] text-ink-muted">
           {tournament.clubName ? `${tournament.clubName} · ` : ""}
           {TYPE_BY_VALUE[tournament.type].label} · {CATEGORY_BY_SLUG[tournament.category].name}
+          {creatorLabel ? ` · ${creatorLabel}` : ""}
         </p>
       </div>
       <ArrowUpRight className="size-4 shrink-0 text-ink-faint transition-colors group-hover:text-ink" aria-hidden="true" />

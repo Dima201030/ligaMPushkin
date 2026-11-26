@@ -8,6 +8,7 @@ import {
   Users,
 } from "lucide-react";
 import { fetchSession } from "@/lib/api/auth";
+import { formatTournamentCreatorLabel } from "@/lib/api/tournaments";
 import { getTournamentPage } from "@/lib/data";
 import { tournamentPath } from "@/lib/club/tenant";
 import { CATEGORY_BY_SLUG, FORMAT_LABEL, STATUS_BY_VALUE, SURFACE_LABEL, TYPE_BY_VALUE } from "@/lib/domain";
@@ -77,6 +78,11 @@ export async function TournamentDetailView({
           <h1 className="mt-4 max-w-[24ch] text-white">{tournament.title}</h1>
           {tournament.clubName ? (
             <p className="mt-3 text-sm text-white/55">Организатор: {tournament.clubName}</p>
+          ) : null}
+          {formatTournamentCreatorLabel(tournament.createdBy) ? (
+            <p className={`${tournament.clubName ? "mt-1" : "mt-3"} text-sm text-white/55`}>
+              Создатель: {formatTournamentCreatorLabel(tournament.createdBy)}
+            </p>
           ) : null}
 
           <div className="mt-6 grid max-w-4xl gap-4 text-sm text-white/70 sm:grid-cols-2 lg:grid-cols-4">
