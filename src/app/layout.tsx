@@ -22,6 +22,9 @@ const siteUrl =
   process.env.PUBLIC_URL?.trim() ||
   "https://pairly.space";
 
+/** Explicit icons must include basePath — Next does not prefix metadata.icons. */
+const iconBase = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/$/, "");
+
 export const metadata: Metadata = {
   title: {
     default: `${CLUB.leagueName} — платформа для организации турниров`,
@@ -32,10 +35,16 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "48x48" },
-      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: `${iconBase}/favicon.ico`, sizes: "48x48" },
+      { url: `${iconBase}/icon.svg`, type: "image/svg+xml" },
     ],
-    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+    apple: [
+      {
+        url: `${iconBase}/apple-icon.png`,
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
   },
   openGraph: {
     title: CLUB.leagueName,
