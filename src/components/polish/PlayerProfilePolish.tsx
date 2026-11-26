@@ -2,7 +2,6 @@
 
 import { CountUp } from "@/components/motion/CountUp";
 import { AvatarRing } from "@/components/polish/AvatarRing";
-import { XpBar } from "@/components/polish/XpBar";
 import { StreakFlame } from "@/components/polish/StreakFlame";
 import { ActivityHeatmap } from "@/components/polish/ActivityHeatmap";
 import { BadgeUnlock } from "@/components/polish/BadgeUnlock";
@@ -63,9 +62,6 @@ export function PlayerHeroMeta({
         <h1 className="mt-3">
           {firstName} {lastName}
         </h1>
-        <div className="mt-4 max-w-sm">
-          <XpBar value={progress} label="Уровень мастерства" />
-        </div>
       </div>
       <div className="flex gap-8 border-t border-line pt-5 sm:border-l sm:border-t-0 sm:pl-8 sm:pt-0">
         <div>
