@@ -45,7 +45,7 @@ export function TournamentCard({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={tournament.coverUrl} alt="" loading="lazy" />
           ) : (
-            <div className="size-full court-pattern" />
+            <div className="size-full court-pattern-static" aria-hidden="true" />
           )}
           <span className="absolute left-0 top-0 bg-canvas px-2.5 py-1.5 text-[0.54rem] uppercase tracking-[0.14em] text-ink">
             {STATUS_BY_VALUE[tournament.status].label}
