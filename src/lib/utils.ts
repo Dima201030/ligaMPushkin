@@ -123,3 +123,22 @@ export function pluralizePlayers(count: number) {
 export function toISODate(date: Date) {
   return date.toISOString();
 }
+
+// Legacy club city values are hidden in the public UI.
+export function publicCity(city?: string | null): string {
+  const value = city?.trim() ?? "";
+  if (!value) return "";
+  return ["Пушкин", "Санкт-Петербург", "Pushkin"].includes(value) ? "" : value;
+}
+
+/** Hide synthetic / placeholder phones from public and cabinet surfaces. */
+export function publicPhone(phone?: string | null): string {
+  const value = phone?.trim() ?? "";
+  if (!value) return "";
+  const digits = value.replace(/\D/g, "");
+  if (digits.length < 10) return "";
+  if (digits.startsWith("7999") || digits.startsWith("7000")) return "";
+  if (/000[- ]?00|111[- ]?11|999[- ]?\d{2}/i.test(value)) return "";
+  if (/^(\d)\1+$/.test(digits)) return "";
+  return value;
+}

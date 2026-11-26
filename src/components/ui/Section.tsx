@@ -55,7 +55,7 @@ export function PageHeader({
   compact?: boolean;
 }) {
   return (
-    <section className="relative overflow-hidden bg-navy text-white">
+    <section data-reveal className="relative overflow-hidden bg-navy text-white">
       <div className={cn("page-shell relative", compact ? "py-10 md:py-14" : "py-14 md:py-20")}>
         <div className="flex flex-wrap items-end justify-between gap-8">
           <div className="max-w-[70ch]">

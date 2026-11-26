@@ -11,7 +11,7 @@ import { Avatar } from "@/components/ui/Avatar";
 
 export const metadata: Metadata = {
   title: "Рейтинг",
-  description: "Общий и категорийный рейтинг игроков лиги Mr. Pushkin. Очки, позиции и динамика сезона 2026.",
+  description: "Общий и категорийный рейтинг игроков Pairly. Очки, позиции и динамика сезона 2026.",
 };
 
 export default async function RatingPage({
@@ -31,8 +31,8 @@ export default async function RatingPage({
     <>
       <PageHeader
         eyebrow="Сезон 2026"
-        title={category ? `Рейтинг ${CATEGORY_BY_SLUG[category].name}` : "Общий рейтинг лиги"}
-        description="Очки начисляются за матчи в турнирах клуба и действуют 52 недели. Рейтинг определяет посев в сетке и приглашение на итоговые турниры."
+        title={category ? `Рейтинг ${CATEGORY_BY_SLUG[category].name}` : "Общий рейтинг"}
+        description="Очки начисляются за результаты турниров и действуют 52 недели. Рейтинг определяет посев в сетке и приглашение на итоговые турниры."
         actions={
           <Link href="/players" className="btn btn-on-dark">
             Каталог игроков

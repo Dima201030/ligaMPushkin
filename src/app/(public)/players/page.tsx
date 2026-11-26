@@ -7,19 +7,21 @@ import { formatNumber } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Игроки",
-  description: "Каталог игроков лиги Mr. Pushkin: рейтинг, категория, статистика побед и история матчей.",
+  description: "Каталог игроков Pairly: рейтинг, категория, статистика побед и история матчей.",
 };
 
 export default async function PlayersPage() {
   const rows = await listPlayersWithRank();
-  const averageRating = Math.round(rows.reduce((sum, row) => sum + row.player.rating, 0) / rows.length);
+  const averageRating = rows.length
+    ? Math.round(rows.reduce((sum, row) => sum + row.player.rating, 0) / rows.length)
+    : 0;
 
   return (
     <>
       <PageHeader
         eyebrow="Сообщество"
-        title="Игроки лиги"
-        description="Все участники клуба: рейтинг, категория мастерства и соревновательная статистика. Найдите игрока или сравните свой прогресс."
+        title="Игроки"
+        description="Все участники турниров: рейтинг, категория мастерства и соревновательная статистика. Найдите игрока или сравните свой прогресс."
       >
         <div className="mt-8 grid max-w-2xl grid-cols-2 gap-6 border-t border-white/15 pt-5 sm:grid-cols-4">
           <div>
@@ -27,15 +29,15 @@ export default async function PlayersPage() {
             <p className="mt-2 text-[0.66rem] text-white/45">в каталоге</p>
           </div>
           <div>
-            <p className="display text-[1.65rem] leading-none tabular-nums text-white">{formatNumber(318)}</p>
-            <p className="mt-2 text-[0.66rem] text-white/45">всего в лиге</p>
+            <p className="display text-[1.65rem] leading-none tabular-nums text-white">{formatNumber(rows.length)}</p>
+            <p className="mt-2 text-[0.66rem] text-white/45">всего на платформе</p>
           </div>
           <div>
             <p className="display text-[1.65rem] leading-none tabular-nums text-white">{formatNumber(averageRating)}</p>
             <p className="mt-2 text-[0.66rem] text-white/45">средний рейтинг</p>
           </div>
           <div>
-            <p className="display text-[1.65rem] leading-none tabular-nums text-white">7</p>
+            <p className="display text-[1.65rem] leading-none tabular-nums text-white">6</p>
             <p className="mt-2 text-[0.66rem] text-white/45">категорий</p>
           </div>
         </div>

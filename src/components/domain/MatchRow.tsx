@@ -1,26 +1,23 @@
 import Link from "next/link";
 import type { Match } from "@/lib/types";
-import { playerById } from "@/lib/mock/players";
-import { tournamentById } from "@/lib/mock/tournaments";
 import { cn, formatDateShort, formatTime } from "@/lib/utils";
 import { MatchStatusPill } from "@/components/ui/Badges";
 
-function sideLabel(side: Match["side1"]) {
-  if (!side.playerIds.length) return "Победитель пары матчей";
-  const names = side.playerIds.map((id) => {
-    const player = playerById.get(id);
-    return player ? `${player.lastName} ${player.firstName.charAt(0)}.` : "—";
-  });
-  return names.join(" / ");
+function sidePlayers(side: Match["side1"]): NonNullable<Match["side1"]["players"]> {
+  if (side.players && side.players.length > 0) return side.players;
+  return side.playerIds.map((id) => ({ id }));
 }
 
-function sideFullLabel(side: Match["side1"]) {
-  if (!side.playerIds.length) return "Победитель пары матчей";
-  return side.playerIds
-    .map((id) => {
-      const player = playerById.get(id);
-      return player ? `${player.firstName} ${player.lastName}` : "—";
-    })
+function sideLabel(side: Match["side1"]) {
+  if (side.label) return side.label;
+  const players = sidePlayers(side);
+  if (!players.length) return "Победитель пары матчей";
+  return players
+    .map((player) =>
+      player.firstName && player.lastName
+        ? `${player.lastName} ${player.firstName.charAt(0)}.`
+        : player.id.slice(0, 8),
+    )
     .join(" / ");
 }
 
@@ -28,25 +25,57 @@ function Side({
   side,
   winner,
   align = "left",
-  full = false,
 }: {
   side: Match["side1"];
   winner: boolean;
   align?: "left" | "right";
-  full?: boolean;
 }) {
+  const players = sidePlayers(side);
+  // API often sets side.label to the same names; prefer structured players so
+  // we can link /players/{slug} instead of plain text.
+  const named = players.filter((player) => player.firstName && player.lastName);
+  const empty = named.length === 0 && !side.label && players.length === 0;
+
   return (
     <div className={cn("flex min-w-0 items-center gap-2", align === "right" && "justify-end text-right")}>
       {align === "right" && side.seed && <Seed seed={side.seed} />}
-      <span
+      <div
         className={cn(
-          "truncate text-sm",
+          "min-w-0 truncate text-sm",
           winner ? "font-bold text-ink" : "font-medium text-ink-soft",
-          !side.playerIds.length && "italic text-ink-faint",
+          empty && "italic text-ink-faint",
         )}
       >
-        {full ? sideFullLabel(side) : sideLabel(side)}
-      </span>
+        {named.length > 0 ? (
+          named.map((player, index) => {
+            const name = `${player.lastName} ${player.firstName!.charAt(0)}.`;
+            const node = player.slug ? (
+              <Link href={`/players/${player.slug}`} className="hover:text-accent">
+                {name}
+              </Link>
+            ) : (
+              <span>{name}</span>
+            );
+            return (
+              <span key={player.id}>
+                {index > 0 ? " / " : null}
+                {node}
+              </span>
+            );
+          })
+        ) : side.label ? (
+          side.label
+        ) : empty ? (
+          "Победитель пары матчей"
+        ) : (
+          players.map((player, index) => (
+            <span key={player.id}>
+              {index > 0 ? " / " : null}
+              {player.id.slice(0, 8)}
+            </span>
+          ))
+        )}
+      </div>
       {align === "left" && side.seed && <Seed seed={side.seed} />}
     </div>
   );
@@ -73,7 +102,7 @@ export function MatchRow({ match, showTournament = true }: { match: Match; showT
           {showTournament ? (
             <>
               <Link
-                href={`/tournaments/${tournamentById.get(match.tournamentId)?.slug ?? match.tournamentId}`}
+                href={`/tournaments/${match.tournamentSlug ?? match.tournamentId}`}
                 className="font-semibold text-ink-soft transition-colors hover:text-accent"
               >
                 {match.tournamentTitle}

@@ -4,8 +4,8 @@ import { PageHeader } from "@/components/ui/Section";
 import { NewsCard } from "@/components/domain/NewsCard";
 
 export const metadata: Metadata = {
-  title: "Новости",
-  description: "Новости лиги и клуба Mr. Pushkin: турниры, результаты, школа тенниса и жизнь клуба.",
+  title: "Журнал",
+  description: "Журнал Pairly: турниры, результаты, обновления платформы и заметки организаторов.",
 };
 
 export default async function NewsPage() {
@@ -15,18 +15,28 @@ export default async function NewsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Жизнь клуба"
+        eyebrow="Журнал платформы"
         title="Новости и публикации"
-        description="Результаты турниров, анонсы соревнований и заметки тренеров клуба Mr. Pushkin."
+        description="Результаты турниров, обновления продукта и заметки организаторов о том, как устроен турнирный процесс."
       />
 
       <div className="page-shell section">
-        <NewsCard post={featured} featured />
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {rest.map((post) => (
-            <NewsCard key={post.id} post={post} />
-          ))}
-        </div>
+        {!featured ? (
+          <p className="border-y border-line py-16 text-center text-sm text-ink-muted">
+            Публикаций пока нет.
+          </p>
+        ) : (
+          <>
+            <NewsCard post={featured} featured />
+            {rest.length > 0 ? (
+              <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {rest.map((post) => (
+                  <NewsCard key={post.id} post={post} />
+                ))}
+              </div>
+            ) : null}
+          </>
+        )}
       </div>
     </>
   );

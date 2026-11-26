@@ -82,7 +82,7 @@ export default async function NewsPostPage({ params }: { params: Promise<{ slug:
 
           <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-6">
             <div>
-              <p className="display text-[1.4rem] leading-snug">Хотите участвовать в турнирах лиги?</p>
+              <p className="display text-[1.4rem] leading-snug">Хотите участвовать в турнирах Pairly?</p>
               <p className="mt-2 text-xs text-ink-muted">Расписание и регистрация — в разделе «Турниры».</p>
             </div>
             <Link href="/tournaments" className="btn btn-primary btn-sm">К турнирам</Link>

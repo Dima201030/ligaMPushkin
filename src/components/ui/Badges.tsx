@@ -65,7 +65,7 @@ export function MatchStatusPill({ status, className }: { status: MatchStatus; cl
       ? "badge-negative"
       : status === "completed" || status === "walkover"
         ? "badge-positive"
-        : status === "cancelled"
+        : status === "cancelled" || status === "bye"
           ? "badge-neutral"
           : "badge-blue";
   return (

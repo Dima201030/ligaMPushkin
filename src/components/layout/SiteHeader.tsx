@@ -6,18 +6,19 @@ import { useEffect, useState } from "react";
 import { CLUB } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 import { Logo } from "./Logo";
+import { SessionLinks } from "./SessionLinks";
 
 const NAV = [
   { href: "/tournaments", label: "Турниры" },
   { href: "/rating", label: "Рейтинг" },
   { href: "/players", label: "Игроки" },
-  { href: "/news", label: "Новости" },
-  { href: "/archive", label: "Архив" },
-  { href: "/club", label: "Клуб" },
+  { href: "/news", label: "Журнал" },
+  { href: "/about", label: "Организаторам" },
+  { href: "/contacts", label: "Контакты" },
 ];
 
 function isActive(pathname: string, href: string) {
-  if (href === "/club") return ["/club", "/rules", "/contacts"].some((path) => pathname.startsWith(path));
+  if (href === "/about") return ["/about", "/rules"].some((path) => pathname.startsWith(path));
   return pathname.startsWith(href);
 }
 
@@ -50,42 +51,27 @@ export function SiteHeader() {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative text-[0.66rem] font-medium uppercase tracking-[0.16em] transition-opacity hover:opacity-100",
-                  active ? "text-ink opacity-100" : "text-ink-muted opacity-90",
+                  "nav-link text-[0.66rem] font-medium uppercase tracking-[0.16em]",
+                  active ? "text-ink" : "text-ink-muted hover:text-ink",
                 )}
               >
                 {item.label}
-                <span
-                  className={cn(
-                    "absolute -bottom-2 left-0 h-px w-full bg-ink transition-opacity",
-                    active ? "opacity-100" : "opacity-0",
-                  )}
-                  aria-hidden="true"
-                />
               </Link>
             );
           })}
         </nav>
 
         <div className="hidden flex-col items-end gap-1.5 pt-1 lg:flex">
-          <span className="text-[0.66rem] uppercase tracking-[0.16em] text-ink-muted">
-            Сезон {CLUB.season}
-          </span>
-          <Link
-            href="/login"
-            className="text-[0.66rem] font-medium uppercase tracking-[0.16em] text-ink transition-opacity hover:opacity-60"
-          >
-            Войти
-          </Link>
+          <div className="flex items-center gap-3">
+            <span className="text-[0.66rem] uppercase tracking-[0.16em] text-ink-muted">
+              Турниры и рейтинг
+            </span>
+          </div>
+          <SessionLinks />
         </div>
 
         <div className="flex items-center gap-3 lg:hidden">
-          <Link
-            href="/cabinet"
-            className="text-[0.62rem] font-medium uppercase tracking-[0.16em] text-ink"
-          >
-            Кабинет
-          </Link>
+          <SessionLinks compact />
           <button
             type="button"
             onClick={() => setOpen(true)}
@@ -118,6 +104,7 @@ export function SiteHeader() {
             {[
               { href: "/", label: "Главная" },
               ...NAV,
+              { href: "/archive", label: "Архив" },
               { href: "/cabinet", label: "Кабинет" },
               { href: "/login", label: "Войти" },
             ].map((item, index) => (
@@ -136,11 +123,10 @@ export function SiteHeader() {
           </nav>
 
           <div className="mt-8 grid gap-1 text-[0.62rem] uppercase tracking-[0.14em] text-ink-muted">
-            <span>{CLUB.address}</span>
-            <span>{CLUB.hours}</span>
-            <a href={`tel:${CLUB.phoneBookings.replace(/\D/g, "")}`} className="text-ink">
-              {CLUB.phoneBookings}
-            </a>
+            <span>{CLUB.tagline}</span>
+            <Link href="/contacts" className="text-ink">
+              Контакты
+            </Link>
           </div>
         </div>
       )}

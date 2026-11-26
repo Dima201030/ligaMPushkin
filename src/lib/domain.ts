@@ -9,22 +9,24 @@ import type {
   TournamentType,
 } from "@/lib/types";
 
+/** Product brand. The platform is not tied to a single club. */
+const productName = process.env.NEXT_PUBLIC_PRODUCT_NAME?.trim() || "Pairly";
+
 export const CLUB = {
-  name: "Mr. Pushkin",
-  fullName: "Теннисный клуб Mr. Pushkin",
-  leagueName: "Лига Mr. Pushkin",
-  address: "Санкт-Петербург, Пушкинский район, Волхонское шоссе, 79А",
-  phoneBookings: "+7 (911) 969-15-84",
-  phoneSchool: "+7 (921) 966-20-20",
-  hours: "Ежедневно с 08:00 до 23:00",
-  email: "league@mrpushkin.com",
-  vk: "https://vk.com/mrpushkintennis",
-  courts: "7 крытых кортов и 2 открытых грунтовых",
+  productName,
+  name: productName,
+  fullName: productName,
+  leagueName: productName,
+  tagline: "Платформа для организации турниров",
+  description:
+    "Заявки, сетки, расписание, счёт, рейтинг и кабинет организатора — в одном рабочем контуре.",
+  telegram: "lliwago",
+  telegramUrl: "https://t.me/lliwago",
   season: 2026,
 } as const;
 
 export const CATEGORIES: Category[] = [
-  { slug: "masters", name: "Masters", shortName: "M", color: "#071b2b", note: "Высшая категория клуба" },
+  { slug: "masters", name: "Masters", shortName: "M", color: "#071b2b", note: "Высшая категория" },
   { slug: "challenger", name: "Challenger", shortName: "CH", color: "#1b46f0", note: "Сильные игроки, турнирный опыт" },
   { slug: "futures", name: "Futures", shortName: "F", color: "#2f5acf", note: "Уверенная игра и стабильный результат" },
   { slug: "rookies", name: "Rookies", shortName: "R", color: "#4e6e8a", note: "Первый соревновательный опыт" },
@@ -120,6 +122,7 @@ export const MATCH_STATUS_LABEL: Record<MatchStatus, string> = {
   completed: "Завершён",
   cancelled: "Отменён",
   walkover: "Техническая победа",
+  bye: "Пропуск",
 };
 
 export const RATING_RULES = [

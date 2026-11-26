@@ -1,77 +1,30 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Download, Info } from "lucide-react";
+import { Info } from "lucide-react";
+import { getCmsPage } from "@/lib/data";
 import { CATEGORIES, FORMATS, RATING_RULES, TOURNAMENT_STATUSES, TOURNAMENT_TYPES } from "@/lib/domain";
 import { PageHeader } from "@/components/ui/Section";
 import { CategoryBadge } from "@/components/ui/Badges";
+import { CmsBody } from "@/components/domain/CmsBody";
 
 export const metadata: Metadata = {
-  title: "Правила лиги",
-  description: "Регламент турниров лиги Mr. Pushkin: категории, форматы, регистрация, начисление рейтинга и поведение на корте.",
+  title: "Правила и регламент",
+  description: "Регламент турниров на платформе Pairly: категории, форматы, регистрация и начисление рейтинга.",
 };
 
-const SECTIONS = [
-  {
-    title: "1. Общие положения",
-    body: [
-      "Лига Mr. Pushkin — любительское соревнование клуба. Участвовать могут члены клуба и гости, прошедшие регистрацию и согласившиеся с регламентом.",
-      "Организатор публикует расписание, формирует сетки и отвечает за проведение турниров. Спорные ситуации рассматривает турнирный комитет.",
-    ],
-  },
-  {
-    title: "2. Регистрация",
-    body: [
-      "Регистрация открывается на странице турнира. Заявка считается принятой после подтверждения организатором.",
-      "Отменить участие можно до дедлайна регистрации. После жеребьёвки отмена возможна только по уважительной причине.",
-      "При заполнении сетки игроки попадают в лист ожидания. Место освобождается при отказе одного из участников.",
-    ],
-  },
-  {
-    title: "3. Форматы и сетки",
-    body: [
-      "Основные форматы: олимпийская система, круговой турнир, группы с плей-офф и двойное выбывание. Формат указывается на странице турнира.",
-      "Посев формируется по рейтингу. Игроки без рейтинга распределяются жеребьёвкой.",
-      "Матчи проводятся до двух побед в сетах, если регламент турнира не устанавливает иной формат.",
-    ],
-  },
-  {
-    title: "4. Рейтинг и категории",
-    body: [
-      "Очки начисляются за каждый завершённый матч. Победа над соперником более высокой категории приносит больше очков.",
-      "Срок действия очков — 52 недели. Категория пересматривается после восьми матчей в сезоне.",
-      "Ручная корректировка рейтинга фиксируется в журнале изменений с указанием причины.",
-    ],
-  },
-  {
-    title: "5. Поведение на корте",
-    body: [
-      "Участники соблюдают правила тенниса, уважают соперников и решения судьи. Спорные мячи переигрываются по договорённости.",
-      "Опоздание более чем на 15 минут считается техническим поражением, если организатор не принял иного решения.",
-      "Оскорбления, порча инвентаря и неуважение к персоналу клуба ведут к отстранению от турниров.",
-    ],
-  },
-  {
-    title: "6. Результаты и протесты",
-    body: [
-      "Результат матча вносится организатором или капитаном пары сразу после игры. Игроки могут проверить результат в личном кабинете.",
-      "Протест подаётся в течение 24 часов после публикации результата. Решение принимает турнирный комитет.",
-      "Изменения результатов фиксируются в истории изменений и не удаляются.",
-    ],
-  },
-];
+export default async function RulesPage() {
+  const page = await getCmsPage("rules");
 
-export default function RulesPage() {
   return (
     <>
       <PageHeader
         eyebrow="Документы"
-        title="Правила и регламент"
-        description="Как проходят турниры лиги, как начисляется рейтинг и что важно знать перед первым матчем."
+        title={page?.title || "Правила и регламент"}
+        description="Как организатор ведёт турнир, как начисляется рейтинг и что важно знать перед первым матчем."
         actions={
-          <button type="button" className="btn btn-on-dark">
-            <Download className="size-4" aria-hidden="true" />
-            Скачать PDF
-          </button>
+          <Link href="/contacts" className="btn btn-on-dark">
+            Контакты
+          </Link>
         }
         compact
       />
@@ -80,18 +33,10 @@ export default function RulesPage() {
         <div className="grid gap-10 lg:grid-cols-[240px_1fr] lg:gap-16">
           <aside className="lg:sticky lg:top-6 lg:self-start">
             <div className="border-y border-line py-4">
-              <p className="text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted">Содержание</p>
-              <nav className="mt-3 space-y-0.5" aria-label="Содержание регламента">
-                {SECTIONS.map((section) => (
-                  <a
-                    key={section.title}
-                    href={`#section-${section.title.charAt(0)}`}
-                    className="block py-1.5 text-[0.8rem] leading-snug text-ink-soft transition-colors hover:text-ink"
-                  >
-                    {section.title}
-                  </a>
-                ))}
-              </nav>
+              <p className="text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted">Справка</p>
+              <p className="mt-3 text-xs leading-relaxed text-ink-soft">
+                Ниже — актуальный текст регламента и справочник категорий и форматов.
+              </p>
             </div>
             <div className="mt-6 border-t border-line pt-5">
               <Info className="size-4 text-ink-muted" aria-hidden="true" />
@@ -103,20 +48,16 @@ export default function RulesPage() {
           </aside>
 
           <article className="min-w-0">
-            <div className="space-y-8">
-              {SECTIONS.map((section) => (
-                <section key={section.title} id={`section-${section.title.charAt(0)}`} className="scroll-mt-24 border-t border-line pt-6">
-                  <h2 className="text-xl">{section.title}</h2>
-                  <div className="mt-3 space-y-3">
-                    {section.body.map((paragraph) => (
-                      <p key={paragraph.slice(0, 30)} className="text-sm leading-relaxed text-ink-soft">
-                        {paragraph}
-                      </p>
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
+            <section className="border-t border-line pt-6">
+              <h2 className="text-xl">Регламент</h2>
+              <div className="mt-4">
+                {page?.bodyMarkdown ? (
+                  <CmsBody markdown={page.bodyMarkdown} />
+                ) : (
+                  <p className="text-sm text-ink-muted">Текст правил пока не опубликован.</p>
+                )}
+              </div>
+            </section>
 
             <section className="mt-12 border-t border-line pt-6">
               <h2 className="text-xl">Категории игроков</h2>

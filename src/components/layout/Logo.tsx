@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CLUB } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 
 export function Logo({
@@ -14,7 +15,7 @@ export function Logo({
     <Link
       href="/"
       className={cn("group inline-flex flex-col gap-1 leading-none", className)}
-      aria-label="Mr. Pushkin League — на главную"
+      aria-label={`${CLUB.productName} — на главную`}
     >
       <span
         className={cn(
@@ -22,7 +23,7 @@ export function Logo({
           variant === "light" ? "text-white" : "text-ink",
         )}
       >
-        Mr. Pushkin
+        {CLUB.productName}
       </span>
       {!compact && (
         <span
@@ -31,7 +32,7 @@ export function Logo({
             variant === "light" ? "text-white/45" : "text-ink-muted",
           )}
         >
-          Теннисная лига
+          Платформа турниров
         </span>
       )}
     </Link>

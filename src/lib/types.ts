@@ -39,7 +39,7 @@ export type RegistrationStatus =
   | "cancelled"
   | "rejected";
 
-export type MatchStatus = "scheduled" | "live" | "completed" | "cancelled" | "walkover";
+export type MatchStatus = "scheduled" | "live" | "completed" | "cancelled" | "walkover" | "bye";
 
 export type UserRole = "player" | "organizer" | "owner" | "superadmin";
 
@@ -59,6 +59,8 @@ export interface Venue {
   surface: Surface;
 }
 
+export type ProfileVerificationStatus = "pending" | "approved" | "rejected";
+
 export interface Player {
   id: string;
   slug: string;
@@ -67,6 +69,7 @@ export interface Player {
   middleName?: string;
   gender: "male" | "female";
   birthYear: number;
+  birthDate?: string;
   city: string;
   category: CategorySlug;
   rating: number;
@@ -80,7 +83,12 @@ export interface Player {
   bio: string;
   memberSince: string;
   status: "active" | "blocked" | "archived";
+  verificationStatus?: ProfileVerificationStatus;
+  phone?: string;
   avatarUrl?: string;
+  /** Organizer-created player without login; merge with a registration application later. */
+  isPlaceholder?: boolean;
+  email?: string;
 }
 
 export interface Registration {
@@ -95,6 +103,12 @@ export interface Registration {
 export interface TournamentWinner {
   place: 1 | 2 | 3;
   playerIds: string[];
+}
+
+export interface TournamentImage {
+  id: string;
+  url: string;
+  createdAt: string;
 }
 
 export interface Tournament {
@@ -118,11 +132,23 @@ export interface Tournament {
   regulations: string;
   participants: Registration[];
   winners?: TournamentWinner[];
+  suggestedPlaces?: TournamentWinner[];
+  placesMismatch?: boolean;
+  images?: TournamentImage[];
   season: number;
+  isHidden?: boolean;
+}
+
+export interface MatchSidePlayer {
+  id: string;
+  slug?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface MatchSide {
   playerIds: string[];
+  players?: MatchSidePlayer[];
   seed?: number;
   label?: string;
 }
@@ -130,18 +156,28 @@ export interface MatchSide {
 export interface Match {
   id: string;
   tournamentId: string;
+  tournamentSlug?: string;
   tournamentTitle: string;
   type: TournamentType;
   stage: string;
   round: string;
+  /** API round_index — used by bracket studio DnD. */
+  roundIndex?: number;
+  /** API stage key (main/group/lower/…). */
+  bracketStage?: string;
   scheduledAt: string;
   court?: string;
   status: MatchStatus;
   side1: MatchSide;
   side2: MatchSide;
+  side1Bye?: boolean;
+  side2Bye?: boolean;
   score?: string;
   winner: 1 | 2 | null;
+  isBye?: boolean;
   isDoubles: boolean;
+  /** Optimistic concurrency token from the API. */
+  version?: number;
 }
 
 export interface NewsPost {

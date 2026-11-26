@@ -13,9 +13,9 @@ export default async function OrganizerContentPage() {
   return (
     <>
       <OrganizerHeader
-        eyebrow="Контент клуба"
+        eyebrow="Контент платформы"
         title="Новости и события"
-        description="Публикуйте анонсы, итоги турниров и клубные события. Материалы сразу появляются на главной странице сайта."
+        description="Публикуйте анонсы, итоги турниров и события платформы. Материалы сразу появляются на главной странице сайта."
         actions={
           <Link href="/news" className="btn btn-secondary btn-sm">
             Открыть сайт
@@ -27,7 +27,7 @@ export default async function OrganizerContentPage() {
       <div className="space-y-7 px-4 py-7 md:px-8 lg:px-10">
         <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2 xl:grid-cols-4">
           <OrgStat label="Новостей" value={news.length} hint="опубликовано в сезоне" icon={<Newspaper className="size-4" />} tone="neutral" />
-          <OrgStat label="Событий в календаре" value={events.length} hint="клубные встречи и турниры" icon={<CalendarDays className="size-4" />} />
+          <OrgStat label="Событий в календаре" value={events.length} hint="встречи и турниры" icon={<CalendarDays className="size-4" />} />
           <OrgStat label="Объём материалов" value={`${totalReading} мин`} hint="суммарное время чтения" icon={<Eye className="size-4" />} tone="positive" />
           <OrgStat
             label="Ближайшее событие"
@@ -50,6 +50,7 @@ export default async function OrganizerContentPage() {
                 publishedAt: post.publishedAt,
                 readingTime: post.readingTime,
                 coverUrl: post.coverUrl,
+                status: "status" in post ? String(post.status) : "published",
               }))}
               events={events.map((event) => ({
                 id: event.id,
@@ -59,6 +60,7 @@ export default async function OrganizerContentPage() {
                 startsAt: event.startsAt,
                 location: event.location,
                 seatsLeft: event.seatsLeft,
+                status: "status" in event ? String(event.status) : "published",
               }))}
             />
           </div>
@@ -70,7 +72,7 @@ export default async function OrganizerContentPage() {
                   "Заголовок до 60 символов: понятно, о чём и когда.",
                   "Первый абзац — суть: кто, где, когда, результат.",
                   "Одна обложка 16:9, без мелкого текста на фото.",
-                  "Имена игроков — полностью, как в профиле лиги.",
+                  "Имена игроков — полностью, как в профиле игрока.",
                   "Ссылка на турнир или событие в первом абзаце.",
                 ].map((item, index) => (
                   <li key={item} className="flex gap-2.5">
@@ -86,10 +88,9 @@ export default async function OrganizerContentPage() {
             <Panel title="Каналы публикации">
               <ul className="space-y-3">
                 {[
-                  { label: "Сайт лиги", value: "Синхронизирован", tone: "text-positive" },
-                  { label: "Клубный VK", value: "Автопостинг", tone: "text-accent" },
-                  { label: "Telegram-канал", value: "По расписанию", tone: "text-ink-muted" },
-                  { label: "Рассылка игрокам", value: "Раз в неделю", tone: "text-ink-muted" },
+                  { label: "Публичный сайт", value: "Синхронизирован", tone: "text-positive" },
+                  { label: "Telegram", value: "Вручную", tone: "text-ink-muted" },
+                  { label: "Рассылка игрокам", value: "Вручную", tone: "text-ink-muted" },
                 ].map((channel) => (
                   <li key={channel.label} className="flex items-center justify-between gap-3 text-[0.72rem]">
                     <span className="inline-flex items-center gap-2 text-ink-soft">

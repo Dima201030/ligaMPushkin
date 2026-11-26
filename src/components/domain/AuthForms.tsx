@@ -9,11 +9,9 @@ import {
   Clock3,
   Eye,
   EyeOff,
-  KeyRound,
-  ShieldCheck,
   UserCheck,
 } from "lucide-react";
-import { loginAccount, registerAccount } from "@/lib/api/auth";
+import { isOrganizerRole, loginAccount, registerAccount } from "@/lib/api/auth";
 import { CATEGORIES } from "@/lib/domain";
 
 type LoginState =
@@ -47,7 +45,8 @@ export function LoginForm() {
       setChecking(false);
 
       if (result.ok) {
-        router.push("/cabinet");
+        router.push(isOrganizerRole(result.user.role) ? "/organizer" : "/cabinet");
+        router.refresh();
         return;
       }
 
@@ -67,14 +66,14 @@ export function LoginForm() {
       });
     } catch {
       setChecking(false);
-      setState({ kind: "error", message: "Не удалось связаться с сервером лиги" });
+      setState({ kind: "error", message: "Не удалось связаться с сервером платформы" });
     }
   }
 
   return (
     <div>
       <p className="eyebrow">Личный кабинет</p>
-      <h1 className="mt-3 text-3xl text-navy">Вход в лигу</h1>
+      <h1 className="mt-3 text-3xl text-navy">Вход на платформу</h1>
       <p className="mt-3 text-sm leading-relaxed text-ink-muted">
         Следите за регистрацией, рейтингом и историей матчей.
       </p>
@@ -86,7 +85,7 @@ export function LoginForm() {
           </span>
           <h2 className="mt-4 text-xl text-navy">Заявка на подтверждении</h2>
           <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-            {state.name}, аккаунт ещё не подтверждён администратором лиги. Проверяем имя,
+            {state.name}, аккаунт ещё не подтверждён администратором платформы. Проверяем имя,
             фамилию и уровень — обычно это занимает несколько часов.
           </p>
           <p className="mt-3 text-xs leading-relaxed text-ink-muted">
@@ -159,7 +158,7 @@ export function LoginForm() {
 
           {state.kind === "rejected" && (
             <p role="alert" className="rounded-md bg-negative-soft px-3 py-2 text-xs font-medium text-negative">
-              Заявка {state.name} отклонена. Свяжитесь с организатором лиги, чтобы обсудить причину.
+              Заявка {state.name} отклонена. Свяжитесь с организатором платформы, чтобы обсудить причину.
             </p>
           )}
 
@@ -170,24 +169,6 @@ export function LoginForm() {
         </form>
       )}
 
-      <button
-        type="button"
-        className="btn btn-secondary mt-3 w-full"
-        onClick={() => router.push("/cabinet")}
-      >
-        <ShieldCheck className="size-4" aria-hidden="true" />
-        Демо-вход игрока
-      </button>
-
-      <button
-        type="button"
-        className="btn btn-secondary mt-2 w-full"
-        onClick={() => router.push("/organizer")}
-      >
-        <KeyRound className="size-4" aria-hidden="true" />
-        Демо-вход организатора
-      </button>
-
       <div className="my-6 flex items-center gap-3 text-[0.66rem] font-semibold uppercase tracking-[0.1em] text-ink-faint">
         <span className="h-px flex-1 bg-line" />
         или
@@ -195,7 +176,7 @@ export function LoginForm() {
       </div>
 
       <p className="text-center text-sm text-ink-muted">
-        Ещё не в лиге?{" "}
+        Ещё нет аккаунта?{" "}
         <Link href="/register" className="font-semibold text-accent hover:underline">
           Зарегистрироваться
         </Link>
@@ -210,6 +191,9 @@ export function LoginForm() {
 export function RegisterForm() {
   const [step, setStep] = useState<"form" | "done">("form");
   const [level, setLevel] = useState("rookies");
+  const [consentPdn, setConsentPdn] = useState(false);
+  const [consentPublic, setConsentPublic] = useState(false);
+  const [consentMarketing, setConsentMarketing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [applicantName, setApplicantName] = useState("");
@@ -236,6 +220,14 @@ export function RegisterForm() {
       setError("Пароли не совпадают");
       return;
     }
+    if (!consentPdn) {
+      setError("Нужно согласие на обработку персональных данных");
+      return;
+    }
+    if (!consentPublic) {
+      setError("Нужно согласие на публикацию профиля и результатов");
+      return;
+    }
 
     setSubmitting(true);
     setError(null);
@@ -248,6 +240,9 @@ export function RegisterForm() {
         phone,
         password,
         level: level as (typeof CATEGORIES)[number]["slug"],
+        consentPdn,
+        consentPublicProfile: consentPublic,
+        consentMarketing,
       });
 
       setSubmitting(false);
@@ -261,7 +256,7 @@ export function RegisterForm() {
       setStep("done");
     } catch {
       setSubmitting(false);
-      setError("Не удалось связаться с сервером лиги");
+      setError("Не удалось связаться с сервером платформы");
     }
   }
 
@@ -282,7 +277,7 @@ export function RegisterForm() {
             <span className="grid size-5 shrink-0 place-items-center rounded-full bg-positive-soft text-positive">
               <Check className="size-3" aria-hidden="true" />
             </span>
-            Регистрация завершена — заявка в базе лиги.
+            Регистрация завершена — заявка в базе платформы.
           </li>
           <li className="flex gap-3">
             <span className="grid size-5 shrink-0 place-items-center rounded-full bg-warning-soft text-warning">
@@ -309,7 +304,7 @@ export function RegisterForm() {
   return (
     <div>
       <p className="eyebrow">Новый игрок</p>
-      <h1 className="mt-3 text-3xl text-navy">Регистрация в лиге</h1>
+      <h1 className="mt-3 text-3xl text-navy">Регистрация на платформе</h1>
       <p className="mt-3 text-sm leading-relaxed text-ink-muted">
         Создайте аккаунт. Администратор подтвердит имя, фамилию и уровень — только после
         этого вход в личный кабинет станет доступен.
@@ -376,10 +371,64 @@ export function RegisterForm() {
         <p className="text-[0.68rem] leading-relaxed text-ink-faint">
           Уровень — предварительный: администратор проверит его при подтверждении аккаунта.
         </p>
-        <label className="flex items-start gap-2 text-[0.68rem] leading-relaxed text-ink-muted">
-          <input type="checkbox" required className="mt-0.5 size-4 accent-[var(--color-accent)]" />
-          Согласен с правилами лиги и обработкой персональных данных
-        </label>
+        <div className="space-y-3 border-t border-line pt-4">
+          <label className="flex items-start gap-2 text-[0.72rem] leading-relaxed text-ink-soft">
+            <input
+              type="checkbox"
+              className="mt-0.5 size-4 shrink-0 accent-[var(--color-accent)]"
+              checked={consentPdn}
+              onChange={(event) => setConsentPdn(event.target.checked)}
+              required
+            />
+            <span>
+              Согласен на{" "}
+              <Link href="/consent" className="font-semibold text-accent hover:underline" target="_blank">
+                обработку персональных данных
+              </Link>{" "}
+              и принимаю{" "}
+              <Link href="/privacy" className="font-semibold text-accent hover:underline" target="_blank">
+                политику ПДн
+              </Link>
+              .
+            </span>
+          </label>
+          <label className="flex items-start gap-2 text-[0.72rem] leading-relaxed text-ink-soft">
+            <input
+              type="checkbox"
+              className="mt-0.5 size-4 shrink-0 accent-[var(--color-accent)]"
+              checked={consentPublic}
+              onChange={(event) => setConsentPublic(event.target.checked)}
+              required
+            />
+            <span>
+              Согласен на{" "}
+              <Link href="/consent#public" className="font-semibold text-accent hover:underline" target="_blank">
+                публикацию ФИО, рейтинга и результатов
+              </Link>{" "}
+              на сайте.
+            </span>
+          </label>
+          <label className="flex items-start gap-2 text-[0.72rem] leading-relaxed text-ink-muted">
+            <input
+              type="checkbox"
+              className="mt-0.5 size-4 shrink-0 accent-[var(--color-accent)]"
+              checked={consentMarketing}
+              onChange={(event) => setConsentMarketing(event.target.checked)}
+            />
+            <span>
+              Хочу получать новости платформы (необязательно).{" "}
+              <Link href="/consent#marketing" className="text-accent hover:underline" target="_blank">
+                Текст согласия
+              </Link>
+            </span>
+          </label>
+          <p className="text-[0.66rem] text-ink-faint">
+            Пользовательское соглашение:{" "}
+            <Link href="/terms" className="text-accent hover:underline" target="_blank">
+              /terms
+            </Link>
+          </p>
+        </div>
 
         {error && (
           <p role="alert" className="rounded-md bg-negative-soft px-3 py-2 text-xs font-medium text-negative">

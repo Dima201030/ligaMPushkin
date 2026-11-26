@@ -6,15 +6,16 @@ import {
   CalendarDays,
   Clock,
   MapPin,
-  Trophy,
   Users,
 } from "lucide-react";
+import { fetchSession } from "@/lib/api/auth";
 import { getTournamentPage } from "@/lib/data";
 import { CATEGORY_BY_SLUG, FORMAT_LABEL, STATUS_BY_VALUE, SURFACE_LABEL, TYPE_BY_VALUE } from "@/lib/domain";
-import { currentPlayer } from "@/lib/mock/players";
-import { cn, formatDateTime, formatMoney, winRate } from "@/lib/utils";
+import { cn, formatDateTime, formatMoney } from "@/lib/utils";
+import { uuidsEqual } from "@/lib/uuid";
 import { CategoryBadge } from "@/components/ui/Badges";
 import { MatchRow } from "@/components/domain/MatchRow";
+import { TournamentPodium } from "@/components/domain/TournamentPodium";
 import { RegistrationPanel } from "@/components/domain/RegistrationPanel";
 import { Breadcrumbs } from "@/components/ui/Section";
 import { Avatar } from "@/components/ui/Avatar";
@@ -40,9 +41,15 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
 
   const { tournament, matches, participants, similar } = page;
   const isPairs = ["doubles", "mixed", "teams"].includes(tournament.type);
-  const registered = tournament.participants.some(
-    (item) => item.playerId === currentPlayer.id && item.status !== "cancelled",
-  );
+  const session = await fetchSession();
+  const user = session?.user ?? null;
+  const myRegistration = user
+    ? tournament.participants.find(
+        (item) => uuidsEqual(item.playerId, user.id) && item.status !== "cancelled",
+      )
+    : undefined;
+  const registered = Boolean(myRegistration);
+  const isProfileVerified = session?.profile?.verificationStatus === "approved";
   const winners = tournament.winners ?? [];
 
   return (
@@ -149,37 +156,46 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
             </section>
 
             {winners.length > 0 && (
-              <section className="border-t border-line pt-6">
-                <div className="flex items-center gap-2">
-                  <Trophy className="size-4 text-ink-muted" aria-hidden="true" />
-                  <h2 className="text-lg">Призёры турнира</h2>
+              <TournamentPodium
+                entries={winners.map((winner) => ({
+                  place: winner.place,
+                  players: winner.playerIds
+                    .map((id) => participants.find((item) => uuidsEqual(item.playerId, id))?.player)
+                    .filter(Boolean)
+                    .map((player) => ({
+                      name: `${player!.firstName} ${player!.lastName}`,
+                      slug: player!.slug,
+                    })),
+                }))}
+              />
+            )}
+
+            {tournament.images && tournament.images.length > 0 && (
+              <section className="card overflow-hidden">
+                <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4 md:px-6">
+                  <h2 className="text-lg">Галерея</h2>
+                  <span className="text-xs font-medium text-ink-muted">
+                    {tournament.images.length} фото
+                  </span>
                 </div>
-                <div className="mt-2">
-                  {winners.map((winner) => {
-                    const placeLabel = winner.place === 1 ? "1 место" : winner.place === 2 ? "2 место" : "3 место";
-                    return (
-                      <div key={winner.place} className="flex items-center gap-3 border-b border-divider py-3.5 last:border-b-0">
-                        <span
-                          className={cn(
-                            "display w-6 shrink-0 text-[1.4rem] leading-none tabular-nums",
-                            winner.place === 1 ? "text-ink" : "text-ink-faint",
-                          )}
-                        >
-                          {winner.place}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold">{placeLabel}</p>
-                          <p className="mt-0.5 text-xs text-ink-muted">
-                            {winner.playerIds
-                              .map((id) => participants.find((item) => item.playerId === id)?.player)
-                              .filter(Boolean)
-                              .map((player) => `${player!.firstName} ${player!.lastName}`)
-                              .join(" / ")}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div className="grid grid-cols-2 gap-1 p-1 sm:grid-cols-3">
+                  {tournament.images.map((image) => (
+                    <a
+                      key={image.id}
+                      href={image.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="group relative aspect-[4/3] overflow-hidden bg-navy/5"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={image.url}
+                        alt=""
+                        loading="lazy"
+                        className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                      />
+                    </a>
+                  ))}
                 </div>
               </section>
             )}
@@ -222,10 +238,19 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
                       <span className="w-6 text-xs font-bold tabular-nums text-ink-faint">{registration.seed ?? "—"}</span>
                       <Avatar firstName={player.firstName} lastName={player.lastName} size="sm" />
                       <div className="min-w-0 flex-1">
-                        <Link href={`/players/${player.slug}`} className="text-sm font-semibold hover:text-accent">
-                          {player.firstName} {player.lastName}
-                          {partner && <span className="font-normal text-ink-muted"> / {partner.firstName} {partner.lastName}</span>}
-                        </Link>
+                        <p className="text-sm font-semibold">
+                          <Link href={`/players/${player.slug}`} className="hover:text-accent">
+                            {player.firstName} {player.lastName}
+                          </Link>
+                          {partner ? (
+                            <>
+                              <span className="font-normal text-ink-muted"> / </span>
+                              <Link href={`/players/${partner.slug}`} className="font-normal text-ink-muted hover:text-accent">
+                                {partner.firstName} {partner.lastName}
+                              </Link>
+                            </>
+                          ) : null}
+                        </p>
                         <p className="mt-0.5 text-[0.66rem] text-ink-muted">{player.category} · {player.rating}</p>
                       </div>
                       <span
@@ -255,7 +280,14 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
           </div>
 
           <div className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-            <RegistrationPanel tournament={tournament} initiallyRegistered={registered} />
+            <RegistrationPanel
+              tournament={tournament}
+              initiallyRegistered={registered}
+              initialStatus={myRegistration?.status}
+              isAuthenticated={Boolean(user)}
+              isApproved={user?.status === "approved"}
+              isProfileVerified={isProfileVerified}
+            />
 
             <div className="card p-5">
               <p className="text-[0.68rem] font-bold uppercase tracking-[0.1em] text-ink-faint">Площадка</p>
@@ -272,7 +304,7 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
                 </div>
               </div>
               <Link href="/contacts" className="link-arrow mt-4">
-                Как добраться
+                Связаться с организатором
                 <ArrowUpRight className="size-3.5" aria-hidden="true" />
               </Link>
             </div>
@@ -287,7 +319,9 @@ export default async function TournamentPage({ params }: { params: Promise<{ slu
               </ul>
               <div className="mt-4 flex items-center justify-between border-t border-divider pt-4 text-xs text-ink-muted">
                 <span>Вопросы</span>
-                <a className="font-semibold text-accent" href="tel:+79119691584">+7 (911) 969-15-84</a>
+                <Link className="font-semibold text-accent" href="/contacts">
+                  Контакты
+                </Link>
               </div>
             </div>
           </div>

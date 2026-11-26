@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { TournamentCard } from "./TournamentCard";
 
 type TypeFilter = "all" | "singles" | "doubles" | "mixed" | "cups" | "teams";
+type View = "current" | "completed";
 
 const TYPE_TABS: { value: TypeFilter; label: string }[] = [
   { value: "all", label: "Все" },
@@ -24,25 +25,72 @@ function matchesType(type: TournamentType, filter: TypeFilter) {
   return type === filter;
 }
 
-export function TournamentsExplorer({ tournaments }: { tournaments: Tournament[] }) {
+export function TournamentsExplorer({
+  tournaments,
+  completed = [],
+  initialView,
+}: {
+  tournaments: Tournament[];
+  completed?: Tournament[];
+  /** Prefer completed when the live calendar is empty or when linked from archive. */
+  initialView?: View;
+}) {
+  const [view, setView] = useState<View>(() => {
+    if (initialView === "completed" || initialView === "current") return initialView;
+    if (tournaments.length === 0 && completed.length > 0) return "completed";
+    return "current";
+  });
   const [query, setQuery] = useState("");
   const [type, setType] = useState<TypeFilter>("all");
   const [category, setCategory] = useState<CategorySlug | "all">("all");
   const [openOnly, setOpenOnly] = useState(false);
 
+  const source = view === "completed" ? completed : tournaments;
+
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return tournaments.filter((tournament) => {
+    return source.filter((tournament) => {
       const matchesQuery = needle ? tournament.title.toLowerCase().includes(needle) : true;
       const matchesCategory = category === "all" || tournament.category === category;
-      const matchesOpen = openOnly ? tournament.status === "registration_open" : true;
+      const matchesOpen = openOnly && view === "current"
+        ? tournament.status === "registration_open"
+        : true;
       return matchesType(tournament.type, type) && matchesCategory && matchesQuery && matchesOpen;
     });
-  }, [tournaments, query, type, category, openOnly]);
+  }, [source, view, query, type, category, openOnly]);
+
+  const hasActiveFilters = type !== "all" || category !== "all" || Boolean(query) || openOnly;
 
   return (
     <div>
-      <div className="border-y border-line py-4 md:py-5">
+      <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2 border-b border-line pb-0.5">
+          {(
+            [
+              { value: "current" as const, label: "Актуальные", count: tournaments.length },
+              { value: "completed" as const, label: "Завершённые", count: completed.length },
+            ]
+          ).map((item) => (
+            <button
+              key={item.value}
+              type="button"
+              onClick={() => {
+                setView(item.value);
+                setOpenOnly(false);
+              }}
+              className={cn(
+                "-mb-px inline-flex items-baseline gap-1.5 border-b-2 pb-3 text-[0.66rem] uppercase tracking-[0.14em] transition-colors",
+                view === item.value
+                  ? "border-ink text-ink"
+                  : "border-transparent text-ink-muted hover:text-ink",
+              )}
+            >
+              {item.label}
+              <span className="tabular-nums text-ink-faint">{item.count}</span>
+            </button>
+          ))}
+      </div>
+
+      <div className="border-b border-line py-4 md:py-5">
         <div className="grid gap-3 md:grid-cols-[1fr_auto_auto] md:items-end">
           <label className="relative block">
             <span className="sr-only">Поиск турнира</span>
@@ -65,15 +113,21 @@ export function TournamentsExplorer({ tournaments }: { tournaments: Tournament[]
               <option key={item.slug} value={item.slug}>{item.name}</option>
             ))}
           </select>
-          <label className="flex cursor-pointer items-center gap-2 pb-3 text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted md:pb-3.5">
-            <input
-              type="checkbox"
-              checked={openOnly}
-              onChange={(event) => setOpenOnly(event.target.checked)}
-              className="size-3.5 accent-[var(--color-ink)]"
-            />
-            Только открытая регистрация
-          </label>
+          {view === "current" ? (
+            <label className="flex cursor-pointer items-center gap-2 pb-3 text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted md:pb-3.5">
+              <input
+                type="checkbox"
+                checked={openOnly}
+                onChange={(event) => setOpenOnly(event.target.checked)}
+                className="size-3.5 accent-[var(--color-ink)]"
+              />
+              Только открытая регистрация
+            </label>
+          ) : (
+            <span className="hidden pb-3 text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted md:block md:pb-3.5">
+              Результаты и призёры
+            </span>
+          )}
         </div>
 
         <div className="mt-4 flex flex-wrap gap-1.5">
@@ -100,7 +154,7 @@ export function TournamentsExplorer({ tournaments }: { tournaments: Tournament[]
           Найдено <span className="font-bold text-ink">{filtered.length}</span>{" "}
           {filtered.length === 1 ? "турнир" : "турниров"}
         </p>
-        {(type !== "all" || category !== "all" || query || openOnly) && (
+        {hasActiveFilters && (
           <button
             type="button"
             onClick={() => {
@@ -124,8 +178,20 @@ export function TournamentsExplorer({ tournaments }: { tournaments: Tournament[]
 
       {filtered.length === 0 && (
         <div className="card-flat mt-4 px-6 py-16 text-center">
-          <p className="text-lg font-bold">Турниры не найдены</p>
-          <p className="mt-2 text-sm text-ink-muted">Сбросьте фильтры или посмотрите архив прошедших соревнований.</p>
+          <p className="text-lg font-bold">
+            {source.length === 0
+              ? view === "completed"
+                ? "Завершённых турниров пока нет"
+                : "Пока нет турниров"
+              : "Турниры не найдены"}
+          </p>
+          <p className="mt-2 text-sm text-ink-muted">
+            {source.length === 0
+              ? view === "completed"
+                ? "Прошедшие турниры появятся здесь после завершения."
+                : "Организатор ещё не опубликовал соревнования. Загляните позже."
+              : "Сбросьте фильтры или переключитесь на другой список."}
+          </p>
         </div>
       )}
     </div>

@@ -2,26 +2,26 @@
 # Runs on the Raspberry Pi as root. Installs the nginx vhost, images and the
 # long Basic Auth password, issues a Let's Encrypt certificate and reloads nginx.
 #
-# Usage: sudo bash deploy/configure-pi-nginx.sh /path/to/mrpushkin.htpasswd
+# Usage: sudo bash deploy/configure-pi-nginx.sh /path/to/pairly.htpasswd
 set -euo pipefail
 
 BASE_PATH="${NEXT_BASE_PATH:-/mp-7f3a9c2e5b8d4106}"
-DOMAIN="mrpushkin.duckdns.org"
+DOMAIN="pairly.space"
 PROJECT_DIR="${PROJECT_DIR:-/home/dima/mr-pushkin-league}"
-HTPASSWD_SRC="${1:-/tmp/mrpushkin.htpasswd}"
-NGINX_AVAILABLE="/etc/nginx/sites-available/mrpushkin"
-NGINX_ENABLED="/etc/nginx/sites-enabled/mrpushkin"
-IMAGES_DIR="/var/www/mrpushkin/images"
+HTPASSWD_SRC="${1:-/tmp/pairly.htpasswd}"
+NGINX_AVAILABLE="/etc/nginx/sites-available/pairly"
+NGINX_ENABLED="/etc/nginx/sites-enabled/pairly"
+IMAGES_DIR="/var/www/pairly/images"
 
 echo "== 1/5 Копирую изображения"
-install -d -m 755 /var/www/mrpushkin
+install -d -m 755 /var/www/pairly
 rm -rf "$IMAGES_DIR"
 cp -R "$PROJECT_DIR/public/images" "$IMAGES_DIR"
 find "$IMAGES_DIR" -type d -exec chmod 755 {} +
 find "$IMAGES_DIR" -type f -exec chmod 644 {} +
 
 echo "== 2/5 Устанавливаю Basic Auth"
-install -o root -g www-data -m 640 "$HTPASSWD_SRC" /etc/nginx/mrpushkin.htpasswd
+install -o root -g www-data -m 640 "$HTPASSWD_SRC" /etc/nginx/pairly.htpasswd
 
 echo "== 3/5 Включаю HTTP-конфиг для ACME"
 install -m 644 "$PROJECT_DIR/deploy/nginx/mrpushkin-http.conf" "$NGINX_AVAILABLE"

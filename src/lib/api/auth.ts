@@ -1,7 +1,9 @@
 import type { CategorySlug } from "@/lib/types";
+import { normalizeUuid } from "@/lib/uuid";
+import { ApiError, apiRequest, parseJson, serverApiURL } from "./client";
+// apiRequest used for /auth/me/* cabinet helpers
 
-const API_BASE =
-  (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/$/, "");
+export { ApiError };
 
 export type AccountStatus = "pending" | "approved" | "rejected";
 
@@ -17,6 +19,48 @@ export interface LeagueUser {
   phone?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export type ProfileVerificationStatus = "pending" | "approved" | "rejected";
+
+export interface LeagueProfile {
+  slug: string;
+  city: string;
+  bio: string;
+  avatarUrl?: string;
+  status: string;
+  birthDate?: string;
+  verificationStatus: ProfileVerificationStatus;
+  verifiedAt?: string;
+  rating: number;
+  points: number;
+  singlesPoints: number;
+  doublesPoints: number;
+  matchesPlayed: number;
+  wins: number;
+  losses: number;
+  memberSince?: string;
+}
+
+export interface MeSession {
+  user: LeagueUser;
+  profile: LeagueProfile | null;
+}
+
+export interface MyRegistration {
+  id: string;
+  tournamentId: string;
+  tournamentSlug: string;
+  tournamentTitle: string;
+  tournamentStartsAt: string;
+  tournamentEntryFee: number;
+  tournamentStatus: string;
+  status: "pending" | "confirmed" | "waitlist" | "cancelled" | "rejected";
+  lookingForPartner: boolean;
+  partnerId?: string;
+  partnerName?: string;
+  seed?: number;
+  registeredAt: string;
 }
 
 export interface LeagueApplication {
@@ -64,52 +108,16 @@ interface ApiErrorBody {
   message?: string;
 }
 
-export class ApiError extends Error {
-  constructor(
-    readonly status: number,
-    readonly code: string | undefined,
-    message: string,
-  ) {
-    super(message);
-    this.name = "ApiError";
-  }
-}
-
-function apiPath(path: string): string {
-  const suffix = path.startsWith("/") ? path : `/${path}`;
-  return `${API_BASE}/api${suffix}`;
-}
-
-async function parseJson<T>(response: Response): Promise<T | undefined> {
-  const text = await response.text();
-  if (!text) return undefined;
-  try {
-    return JSON.parse(text) as T;
-  } catch {
-    return undefined;
-  }
-}
-
 async function request<T>(
   path: string,
   init?: RequestInit,
 ): Promise<{ response: Response; data: T | undefined }> {
-  const response = await fetch(apiPath(path), {
-    credentials: "include",
-    ...init,
-    headers: {
-      Accept: "application/json",
-      ...(init?.body ? { "Content-Type": "application/json" } : {}),
-      ...init?.headers,
-    },
-  });
-  const data = await parseJson<T>(response);
-  return { response, data };
+  return apiRequest<T>(path, init);
 }
 
 function mapUser(raw: ApiUser): LeagueUser {
   return {
-    id: raw.id,
+    id: normalizeUuid(raw.id),
     email: raw.email,
     firstName: raw.first_name,
     lastName: raw.last_name,
@@ -125,7 +133,7 @@ function mapUser(raw: ApiUser): LeagueUser {
 
 function mapApplication(raw: ApiApplication): LeagueApplication {
   return {
-    id: raw.id,
+    id: normalizeUuid(raw.id),
     email: raw.email,
     firstName: raw.first_name,
     lastName: raw.last_name,
@@ -157,6 +165,9 @@ export type RegisterInput = {
   password: string;
   phone?: string;
   level: CategorySlug;
+  consentPdn: boolean;
+  consentPublicProfile: boolean;
+  consentMarketing?: boolean;
 };
 
 export async function registerAccount(
@@ -171,6 +182,9 @@ export async function registerAccount(
       password: input.password,
       phone: input.phone?.trim() || undefined,
       level: input.level,
+      consent_pdn: input.consentPdn,
+      consent_public_profile: input.consentPublicProfile,
+      consent_marketing: Boolean(input.consentMarketing),
     }),
   });
 
@@ -245,10 +259,159 @@ export async function logoutAccount(): Promise<void> {
   await request("/auth/logout", { method: "POST" });
 }
 
-export async function fetchCurrentUser(): Promise<LeagueUser | null> {
-  const { response, data } = await request<{ user: ApiUser }>("/auth/me");
+/** Right-to-erasure: anonymize account and clear session. */
+export async function deleteMyAccount(): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { response, data } = await request<{ ok?: boolean; message?: string } & ApiErrorBody>("/auth/me", {
+    method: "DELETE",
+  });
+  if (response.status === 200 && data?.ok) {
+    return { ok: true };
+  }
+  return {
+    ok: false,
+    error: data?.message || "Не удалось удалить аккаунт",
+  };
+}
+
+interface ApiProfile {
+  slug: string;
+  city: string;
+  bio: string;
+  avatar_url?: string | null;
+  status: string;
+  birth_date?: string | null;
+  verification_status?: string;
+  verified_at?: string | null;
+  rating: number;
+  points: number;
+  singles_points: number;
+  doubles_points: number;
+  matches_played: number;
+  wins: number;
+  losses: number;
+  member_since?: string;
+}
+
+function mapProfile(raw: ApiProfile): LeagueProfile {
+  const verificationStatus =
+    raw.verification_status === "approved" || raw.verification_status === "rejected"
+      ? raw.verification_status
+      : "pending";
+  return {
+    slug: raw.slug,
+    city: raw.city,
+    bio: raw.bio,
+    avatarUrl: raw.avatar_url ?? undefined,
+    status: raw.status,
+    birthDate: raw.birth_date ?? undefined,
+    verificationStatus,
+    verifiedAt: raw.verified_at ?? undefined,
+    rating: raw.rating,
+    points: raw.points,
+    singlesPoints: raw.singles_points,
+    doublesPoints: raw.doubles_points,
+    matchesPlayed: raw.matches_played,
+    wins: raw.wins,
+    losses: raw.losses,
+    memberSince: raw.member_since,
+  };
+}
+
+export async function fetchSession(): Promise<MeSession | null> {
+  if (typeof window === "undefined") {
+    try {
+      const { cookies } = await import("next/headers");
+      const jar = await cookies();
+      const cookie = jar.getAll().map((item) => `${item.name}=${item.value}`).join("; ");
+      const { getRequestClubSlug } = await import("./client");
+      const { CLUB_HEADER } = await import("@/lib/club/tenant");
+      const clubSlug = await getRequestClubSlug(cookie || undefined);
+      const response = await fetch(serverApiURL("/auth/me"), {
+        headers: {
+          Accept: "application/json",
+          [CLUB_HEADER]: clubSlug,
+          ...(cookie ? { Cookie: cookie } : {}),
+        },
+        cache: "no-store",
+      });
+      const data = await parseJson<{ user: ApiUser; profile?: ApiProfile }>(response);
+      if (!response.ok || !data?.user) return null;
+      return {
+        user: mapUser(data.user),
+        profile: data.profile ? mapProfile(data.profile) : null,
+      };
+    } catch {
+      return null;
+    }
+  }
+  const { response, data } = await request<{ user: ApiUser; profile?: ApiProfile }>("/auth/me");
   if (!response.ok || !data?.user) return null;
-  return mapUser(data.user);
+  return {
+    user: mapUser(data.user),
+    profile: data.profile ? mapProfile(data.profile) : null,
+  };
+}
+
+export async function fetchCurrentUser(): Promise<LeagueUser | null> {
+  const session = await fetchSession();
+  return session?.user ?? null;
+}
+
+export async function fetchMyRegistrations(): Promise<MyRegistration[]> {
+  const cookieHeader = await serverCookieHeader();
+  const { response, data } = await apiRequest<{
+    registrations: Array<{
+      id: string;
+      tournament_id: string;
+      tournament_slug: string;
+      tournament_title: string;
+      tournament_starts_at: string;
+      tournament_entry_fee: number;
+      tournament_status: string;
+      status: string;
+      looking_for_partner: boolean;
+      partner_id?: string | null;
+      partner_name?: string | null;
+      seed?: number | null;
+      registered_at: string;
+    }>;
+  }>("/auth/me/registrations", {
+    absolute: typeof window === "undefined",
+    headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+  });
+  if (!response.ok) return [];
+  return (data?.registrations ?? []).map((row) => ({
+    id: row.id,
+    tournamentId: row.tournament_id,
+    tournamentSlug: row.tournament_slug,
+    tournamentTitle: row.tournament_title,
+    tournamentStartsAt: row.tournament_starts_at,
+    tournamentEntryFee: row.tournament_entry_fee,
+    tournamentStatus: row.tournament_status,
+    status: row.status as MyRegistration["status"],
+    lookingForPartner: row.looking_for_partner,
+    partnerId: row.partner_id ?? undefined,
+    partnerName: row.partner_name ?? undefined,
+    seed: row.seed ?? undefined,
+    registeredAt: row.registered_at,
+  }));
+}
+
+async function serverCookieHeader(): Promise<string | undefined> {
+  if (typeof window !== "undefined") return undefined;
+  try {
+    const { cookies } = await import("next/headers");
+    const jar = await cookies();
+    const all = jar.getAll();
+    if (!all.length) return undefined;
+    return all.map((item) => `${item.name}=${item.value}`).join("; ");
+  } catch {
+    return undefined;
+  }
+}
+
+export function isOrganizerRole(role: string): boolean {
+  return role === "organizer" || role === "owner" || role === "superadmin";
 }
 
 export async function listOrganizerApplications(): Promise<LeagueApplication[]> {

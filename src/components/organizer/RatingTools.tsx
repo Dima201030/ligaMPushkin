@@ -5,66 +5,58 @@ import { Calculator, CheckCircle2, RefreshCw, SlidersHorizontal } from "lucide-r
 import type { CategorySlug } from "@/lib/types";
 import { CATEGORY_BY_SLUG } from "@/lib/domain";
 import { formatNumber } from "@/lib/utils";
+import { applyManualRating, snapshotRatings } from "@/lib/api/organizer-ratings";
 import { DemoNote, MiniLabel } from "./OrganizerUI";
 
 export function RecalculateRating({
   playersCount,
-  matchesCount,
 }: {
   playersCount: number;
-  matchesCount: number;
+  matchesCount?: number;
 }) {
-  const [included, setIncluded] = useState(false);
-  const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function run() {
+    setBusy(true);
+    setError(null);
+    setDone(null);
+    const result = await snapshotRatings();
+    setBusy(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    setDone(`Снимок рейтинга обновлён: ${result.players} игроков.`);
+  }
 
   return (
     <div>
       <p className="text-[0.76rem] leading-relaxed text-ink-muted">
-        Пересчёт очков за 52 недели по всем завершённым матчам. Операция создаёт запись в журнале изменений.
+        Пересчёт таблицы рейтинга по текущим очкам профилей. Создаёт snapshot для публичной таблицы.
       </p>
-      <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-4 text-[0.7rem]">
+      <dl className="mt-4 grid grid-cols-1 gap-3 border-t border-line pt-4 text-[0.7rem]">
         <div>
-          <dt className="stat-label">Игроков</dt>
+          <dt className="stat-label">Игроков на платформе</dt>
           <dd className="mt-1 text-sm tabular-nums">{formatNumber(playersCount)}</dd>
         </div>
-        <div>
-          <dt className="stat-label">Матчей</dt>
-          <dd className="mt-1 text-sm tabular-nums">{formatNumber(matchesCount)}</dd>
-        </div>
       </dl>
-      <label className="mt-4 flex cursor-pointer items-start gap-2 text-[0.68rem] text-ink-soft">
-        <input
-          type="checkbox"
-          checked={included}
-          onChange={(event) => setIncluded(event.target.checked)}
-          className="mt-0.5 size-3.5 accent-[var(--color-accent)]"
-        />
-        Учитывать матчи прошлых сезонов
-      </label>
-      <button
-        type="button"
-        className="btn btn-primary mt-4 w-full"
-        onClick={() => setDone(true)}
-        disabled={done}
-      >
+      <button type="button" className="btn btn-primary mt-4 w-full" onClick={run} disabled={busy || Boolean(done)}>
         {done ? (
           <>
             <CheckCircle2 className="size-4" aria-hidden="true" />
-            Рейтинг пересчитан
+            Готово
           </>
         ) : (
           <>
             <RefreshCw className="size-4" aria-hidden="true" />
-            Пересчитать сезон
+            {busy ? "Пересчитываем…" : "Пересчитать сезон"}
           </>
         )}
       </button>
-      {done && (
-        <DemoNote className="mt-3">
-          Пересчёт выполнен: {formatNumber(matchesCount)} матчей, {formatNumber(playersCount)} игроков. Изменения
-          зафиксированы бы в журнале. Демо-режим.
-        </DemoNote>
-      )}
+      {error && <DemoNote className="mt-3">{error}</DemoNote>}
+      {done && <DemoNote className="mt-3">{done}</DemoNote>}
     </div>
   );
 }
@@ -78,6 +70,8 @@ export function ManualAdjustment({
   const [delta, setDelta] = useState("15");
   const [reason, setReason] = useState("");
   const [saved, setSaved] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const player = players.find((item) => item.id === playerId);
   const numericDelta = Number(delta) || 0;
@@ -89,11 +83,25 @@ export function ManualAdjustment({
     [players],
   );
 
-  function submit(event: React.FormEvent) {
+  async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (!valid || !player) return;
+    setBusy(true);
+    setError(null);
+    setSaved(null);
+    const result = await applyManualRating({
+      playerId: player.id,
+      pointsDelta: numericDelta,
+      ratingDelta: numericDelta,
+      reason: reason.trim(),
+    });
+    setBusy(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
     setSaved(
-      `${player.name}: ${numericDelta > 0 ? "+" : ""}${numericDelta} очков, новый рейтинг ${nextRating}. Причина: ${reason.trim()}`,
+      `${player.name}: ${numericDelta > 0 ? "+" : ""}${numericDelta}, ориентир рейтинга ${nextRating}.`,
     );
     setReason("");
   }
@@ -105,7 +113,7 @@ export function ManualAdjustment({
         <select className="field text-xs" value={playerId} onChange={(event) => setPlayerId(event.target.value)}>
           {sorted.map((item) => (
             <option key={item.id} value={item.id}>
-              {item.name} · {CATEGORY_BY_SLUG[item.category].shortName}
+              {item.name} · {CATEGORY_BY_SLUG[item.category]?.shortName ?? item.category}
             </option>
           ))}
         </select>
@@ -141,47 +149,38 @@ export function ManualAdjustment({
         />
       </label>
 
-      <button type="submit" className="btn btn-secondary w-full" disabled={!valid}>
+      <button type="submit" className="btn btn-secondary w-full" disabled={!valid || busy}>
         <SlidersHorizontal className="size-4" aria-hidden="true" />
-        Применить корректировку
+        {busy ? "Сохраняем…" : "Применить корректировку"}
       </button>
-      <p className="text-[0.62rem] leading-relaxed text-ink-faint">
-        Ручные изменения доступны только администратору и всегда попадают в журнал аудита.
-      </p>
-
-      {saved && (
-        <DemoNote>
-          <span className="inline-flex items-start gap-1.5">
-            <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-            <span>{saved}. Демо-режим: рейтинг не изменён.</span>
-          </span>
-        </DemoNote>
-      )}
+      {error && <p className="text-[0.68rem] text-negative">{error}</p>}
+      {saved && <DemoNote>{saved}</DemoNote>}
     </form>
-  );
-}
-
-export function RatingLegend({ counts }: { counts: { category: CategorySlug; count: number }[] }) {
-  return (
-    <ul className="grid gap-2">
-      {counts.map((item) => (
-        <li key={item.category} className="flex items-center justify-between gap-2 text-[0.7rem]">
-          <span className="inline-flex items-center gap-2 text-ink-soft">
-            <span className="size-1.5" style={{ backgroundColor: CATEGORY_BY_SLUG[item.category].color }} aria-hidden="true" />
-            {CATEGORY_BY_SLUG[item.category].name}
-          </span>
-          <span className="tabular-nums text-ink">{item.count}</span>
-        </li>
-      ))}
-    </ul>
   );
 }
 
 export function RatingCalculatorHint() {
   return (
-    <div className="flex items-start gap-2.5 border-t border-line pt-3 text-[0.66rem] leading-relaxed text-ink-muted">
-      <Calculator className="mt-0.5 size-3.5 shrink-0 text-ink-faint" aria-hidden="true" />
-      Очки за победу = базовые очки стадии × коэффициент категории соперника. Поражение в первом круге очков не снимает.
-    </div>
+    <p className="mt-5 flex items-start gap-2 border-t border-line pt-4 text-[0.68rem] leading-relaxed text-ink-muted">
+      <Calculator className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+      Формула сезона живёт на сервере: очки турниров + Elo-корректировки матчей.
+    </p>
+  );
+}
+
+export function RatingLegend({
+  counts,
+}: {
+  counts: { category: CategorySlug; count: number }[];
+}) {
+  return (
+    <ul className="divide-y divide-line">
+      {counts.map((item) => (
+        <li key={item.category} className="flex items-center justify-between gap-3 py-2.5 text-[0.72rem]">
+          <span>{CATEGORY_BY_SLUG[item.category]?.name ?? item.category}</span>
+          <span className="tabular-nums text-ink-muted">{item.count}</span>
+        </li>
+      ))}
+    </ul>
   );
 }

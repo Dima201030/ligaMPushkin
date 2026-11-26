@@ -23,7 +23,7 @@ rsync -az --delete \
 echo "== Сборка образа на Pi"
 ssh "$HOST" "cd '$DIR' && printf 'NEXT_BASE_PATH=%s\n' '$NEXT_BASE_PATH' > .env && docker compose build"
 
-echo "== Перезапуск"
+echo "== Перезапуск (restart: unless-stopped)"
 ssh "$HOST" "cd '$DIR' && docker compose up -d && docker compose ps"
 
-echo "Готово: https://mrpushkin.duckdns.org$NEXT_BASE_PATH/"
+echo "Готово: https://pairly.space$NEXT_BASE_PATH/"

@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Award, CalendarDays, MapPin, Trophy, UserPlus } from "lucide-react";
+import { ArrowLeft, Award, MapPin, Trophy, UserPlus } from "lucide-react";
 import { getPlayerProfile } from "@/lib/data";
 import { CATEGORY_BY_SLUG } from "@/lib/domain";
-import { cn, formatDate, formatNumber, winRate } from "@/lib/utils";
+import { cn, formatDate, formatNumber, publicCity, winRate } from "@/lib/utils";
 import { Avatar } from "@/components/ui/Avatar";
 import { CategoryBadge } from "@/components/ui/Badges";
 import { FormDots, RatingChart, WinRateRing } from "@/components/charts";
@@ -21,7 +21,7 @@ export async function generateMetadata({
   if (!profile) return { title: "Игрок не найден" };
   return {
     title: `${profile.player.firstName} ${profile.player.lastName}`,
-    description: `Профиль игрока лиги Mr. Pushkin: ${profile.player.category}, рейтинг ${profile.player.rating}.`,
+    description: `Профиль игрока Pairly: ${profile.player.category}, рейтинг ${profile.player.rating}.`,
   };
 }
 
@@ -52,19 +52,21 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <CategoryBadge category={player.category} />
-                <span className="badge badge-neutral">В лиге с {new Date(player.memberSince).getFullYear()}</span>
+                {player.memberSince ? (
+                  <span className="badge badge-neutral">
+                    На платформе с {new Date(player.memberSince).getFullYear()}
+                  </span>
+                ) : null}
               </div>
               <h1 className="mt-3">{player.firstName} {player.lastName}</h1>
               <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-muted">
-                <span className="inline-flex items-center gap-1.5">
-                  <MapPin className="size-3.5" aria-hidden="true" />
-                  {player.city}
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <CalendarDays className="size-3.5" aria-hidden="true" />
-                  {player.birthYear} год рождения
-                </span>
-                <span>{category.name} · {category.note}</span>
+                {publicCity(player.city) ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <MapPin className="size-3.5" aria-hidden="true" />
+                    {player.city}
+                  </span>
+                ) : null}
+                <span>{category?.name ?? player.category} · {category?.note ?? ""}</span>
               </p>
             </div>
             <div className="flex gap-8 border-t border-line pt-5 sm:border-l sm:border-t-0 sm:pl-8 sm:pt-0">
@@ -113,7 +115,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
               <div className="mb-3 flex items-end justify-between gap-4">
                 <div>
                   <h2 className="text-xl">История матчей</h2>
-                  <p className="mt-1 text-xs text-ink-muted">{matches.length} матчей в лиге · {totalMatches} по статистике профиля</p>
+                  <p className="mt-1 text-xs text-ink-muted">{matches.length} матчей на платформе · {totalMatches} по статистике профиля</p>
                 </div>
               </div>
               <PlayerMatches matches={matches} />
@@ -132,7 +134,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
                   <p className="mt-1.5 text-sm font-medium">{player.titlesCount}</p>
                 </div>
                 <div>
-                  <p className="stat-label">В лиге с</p>
+                  <p className="stat-label">На платформе с</p>
                   <p className="mt-1.5 text-sm font-medium">{formatDate(player.memberSince)}</p>
                 </div>
               </div>
@@ -186,7 +188,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
                 </ul>
               ) : (
                 <p className="mt-3 text-xs leading-relaxed text-ink-muted">
-                  Пока без титулов. Всё впереди — следите за турнирами клуба.
+                  Пока без титулов. Всё впереди — следите за турнирами платформы.
                 </p>
               )}
             </div>

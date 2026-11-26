@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Manrope, Prata } from "next/font/google";
+import { CLUB } from "@/lib/domain";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -16,17 +17,39 @@ const prata = Prata({
   weight: "400",
 });
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+  process.env.PUBLIC_URL?.trim() ||
+  "https://pairly.space";
+
+/** Explicit icons must include basePath — Next does not prefix metadata.icons. */
+const iconBase = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/$/, "");
+
 export const metadata: Metadata = {
   title: {
-    default: "Лига Mr. Pushkin — теннисные турниры и рейтинг клуба",
-    template: "%s · Лига Mr. Pushkin",
+    default: `${CLUB.leagueName} — платформа для организации турниров`,
+    template: `%s · ${CLUB.leagueName}`,
   },
   description:
-    "Любительская теннисная лига клуба Mr. Pushkin: расписание турниров, рейтинг игроков, результаты матчей и запись на соревнования.",
-  metadataBase: new URL("https://league.mrpushkin.com"),
+    "Pairly — платформа для создания и проведения турниров: заявки, сетки, расписание, счёт, рейтинг и кабинет организатора.",
+  metadataBase: new URL(siteUrl),
+  icons: {
+    icon: [
+      { url: `${iconBase}/favicon.ico`, sizes: "48x48" },
+      { url: `${iconBase}/icon.svg`, type: "image/svg+xml" },
+    ],
+    apple: [
+      {
+        url: `${iconBase}/apple-icon.png`,
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
+  },
   openGraph: {
-    title: "Лига Mr. Pushkin",
-    description: "Турниры, рейтинг и игровое сообщество теннисного клуба Mr. Pushkin.",
+    title: CLUB.leagueName,
+    description:
+      "Заявки, сетки, матчи, рейтинг и контент турнира в одном рабочем контуре.",
     type: "website",
     locale: "ru_RU",
   },

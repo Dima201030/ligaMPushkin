@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Check,
   CheckCircle2,
   Clock,
+  Loader2,
   Plus,
   Search,
   UserCheck,
@@ -14,11 +16,26 @@ import {
   X,
 } from "lucide-react";
 import type { CategorySlug, RegistrationStatus, TournamentStatus } from "@/lib/types";
+import {
+  addOrganizerRegistration,
+  updateOrganizerRegistrationStatus,
+  updateOrganizerTournament,
+} from "@/lib/api/tournaments";
+import { fetchOrganizerPlayersList } from "@/lib/api/organizer-ratings";
 import { REGISTRATION_STATUS_LABEL, FORMAT_LABEL, STATUS_BY_VALUE } from "@/lib/domain";
 import { cn, formatDateTime, formatMoney } from "@/lib/utils";
 import { CategoryBadge, StatusPill } from "@/components/ui/Badges";
 import { Avatar } from "@/components/ui/Avatar";
 import { DemoNote, MiniLabel, Panel } from "./OrganizerUI";
+
+type ClubPlayerOption = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  level: string;
+  isPlaceholder: boolean;
+  userStatus: string;
+};
 
 /* ───────────────────────────── status panel ──────────────────────────────── */
 
@@ -45,12 +62,23 @@ export function TournamentStatusPanel({
 }) {
   const [status, setStatus] = useState<TournamentStatus>(initialStatus);
   const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const action = NEXT_ACTION[status];
 
-  function advance() {
+  async function advance() {
     if (!action) return;
-    setStatus(action.next);
-    setNotice(`${action.label}. Новый статус: «${STATUS_BY_VALUE[action.next].label}».`);
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    const result = await updateOrganizerTournament(tournament.id, { status: action.next });
+    setBusy(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    setStatus(result.tournament.status);
+    setNotice(`${action.label}. Новый статус: «${STATUS_BY_VALUE[result.tournament.status].label}».`);
   }
 
   const checklist = [
@@ -99,8 +127,8 @@ export function TournamentStatusPanel({
 
       <div className="mt-4 space-y-2">
         {action && (
-          <button type="button" className="btn btn-primary w-full" onClick={advance}>
-            {action.label}
+          <button type="button" className="btn btn-primary w-full" onClick={advance} disabled={busy}>
+            {busy ? "Сохранение…" : action.label}
             <ArrowRight className="size-4" aria-hidden="true" />
           </button>
         )}
@@ -114,7 +142,16 @@ export function TournamentStatusPanel({
         </Link>
       </div>
 
-      {notice && <DemoNote className="mt-3">{notice} Демо-режим: статус не сохраняется.</DemoNote>}
+      {notice && (
+        <p role="status" className="mt-3 border border-accent-line bg-accent-soft px-3 py-2 text-[0.7rem] text-accent-strong">
+          {notice}
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="mt-3 border border-negative/40 px-3 py-2 text-[0.7rem] text-negative">
+          {error}
+        </p>
+      )}
     </Panel>
   );
 }
@@ -122,6 +159,7 @@ export function TournamentStatusPanel({
 /* ─────────────────────────── participants manager ───────────────────────── */
 
 export interface ManageParticipant {
+  registrationId: string;
   playerId: string;
   firstName: string;
   lastName: string;
@@ -164,19 +202,86 @@ export function ParticipantsManager({
   maxParticipants: number;
   entryFee: number;
 }) {
+  const router = useRouter();
   const [statuses, setStatuses] = useState<Record<string, RegistrationStatus>>({});
   const [tab, setTab] = useState<(typeof TABS)[number]["value"]>("all");
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [clubPlayers, setClubPlayers] = useState<ClubPlayerOption[]>([]);
+  const [playersLoading, setPlayersLoading] = useState(false);
+  const [playersError, setPlayersError] = useState<string | null>(null);
+  const [selectedPlayerId, setSelectedPlayerId] = useState("");
+  const [playerFilter, setPlayerFilter] = useState("");
+  const [adding, setAdding] = useState(false);
 
   const rows = useMemo(
     () =>
       participants.map((participant) => ({
         ...participant,
-        status: statuses[participant.playerId] ?? participant.status,
+        status: statuses[participant.registrationId] ?? participant.status,
       })),
     [participants, statuses],
   );
+
+  const activePlayerIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const row of rows) {
+      if (row.status === "confirmed" || row.status === "pending" || row.status === "waitlist") {
+        ids.add(row.playerId);
+      }
+    }
+    return ids;
+  }, [rows]);
+
+  const availablePlayers = useMemo(() => {
+    const needle = playerFilter.trim().toLowerCase();
+    return clubPlayers
+      .filter((player) => player.userStatus === "approved" && !activePlayerIds.has(player.id))
+      .filter((player) =>
+        needle
+          ? `${player.lastName} ${player.firstName}`.toLowerCase().includes(needle)
+          : true,
+      )
+      .sort((a, b) => {
+        if (a.isPlaceholder !== b.isPlaceholder) return a.isPlaceholder ? -1 : 1;
+        return `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`, "ru");
+      });
+  }, [activePlayerIds, clubPlayers, playerFilter]);
+
+  useEffect(() => {
+    // Do not put playersLoading in deps: setPlayersLoading(true) would re-run
+    // this effect, cancel the in-flight fetch, and leave "Загрузка…" forever.
+    if (!addOpen || clubPlayers.length > 0) return;
+    let cancelled = false;
+    setPlayersLoading(true);
+    setPlayersError(null);
+    void fetchOrganizerPlayersList()
+      .then((rows) => {
+        if (cancelled) return;
+        setClubPlayers(
+          rows.map((row) => ({
+            id: row.id,
+            firstName: row.first_name,
+            lastName: row.last_name,
+            level: row.level,
+            isPlaceholder: Boolean(row.is_placeholder),
+            userStatus: row.user_status ?? "approved",
+          })),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setPlayersError("Не удалось загрузить игроков");
+      })
+      .finally(() => {
+        if (!cancelled) setPlayersLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [addOpen, clubPlayers.length]);
 
   const filtered = rows.filter((row) => {
     const needle = query.trim().toLowerCase();
@@ -191,16 +296,40 @@ export function ParticipantsManager({
   const waitlist = rows.filter((row) => row.status === "waitlist").length;
   const full = confirmed >= maxParticipants;
 
-  function setStatus(row: ManageParticipant, status: RegistrationStatus) {
-    setStatuses((current) => ({ ...current, [row.playerId]: status }));
-    const messages: Record<RegistrationStatus, string> = {
-      confirmed: `${row.firstName} ${row.lastName} переведён в основной состав.`,
-      pending: `${row.firstName} ${row.lastName} возвращён на подтверждение.`,
-      waitlist: `${row.firstName} ${row.lastName} переведён в лист ожидания.`,
-      rejected: `${row.firstName} ${row.lastName} — заявка отклонена, место освобождено.`,
-      cancelled: `Заявка ${row.firstName} ${row.lastName} отменена.`,
-    };
-    setNotice(messages[status]);
+  async function setStatus(row: ManageParticipant, status: RegistrationStatus) {
+    if (busyId) return;
+    setBusyId(row.registrationId);
+    setNotice(null);
+    setError(null);
+    const result = await updateOrganizerRegistrationStatus(tournamentId, row.registrationId, status);
+    setBusyId(null);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    setStatuses((prev) => ({ ...prev, [row.registrationId]: result.status }));
+    setNotice(`${row.firstName} ${row.lastName}: ${REGISTRATION_STATUS_LABEL[result.status]}`);
+    router.refresh();
+  }
+
+  async function addPlayer(event: React.FormEvent) {
+    event.preventDefault();
+    if (!selectedPlayerId || adding) return;
+    setAdding(true);
+    setNotice(null);
+    setError(null);
+    const selected = clubPlayers.find((player) => player.id === selectedPlayerId);
+    const result = await addOrganizerRegistration(tournamentId, { playerId: selectedPlayerId });
+    setAdding(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    const name = selected ? `${selected.firstName} ${selected.lastName}` : "Игрок";
+    setNotice(`${name}: добавлен · ${REGISTRATION_STATUS_LABEL[result.status]}`);
+    setSelectedPlayerId("");
+    setAddOpen(false);
+    router.refresh();
   }
 
   return (
@@ -239,13 +368,67 @@ export function ParticipantsManager({
         </label>
         <button
           type="button"
-          className="btn btn-secondary btn-sm"
-          onClick={() => setNotice("Добавление игрока вручную появится после подключения базы данных.")}
+          className={cn("btn btn-sm", addOpen ? "btn-primary" : "btn-secondary")}
+          onClick={() => {
+            setAddOpen((open) => !open);
+            setError(null);
+            setNotice(null);
+          }}
         >
           <Plus className="size-3.5" aria-hidden="true" />
-          Добавить
+          Добавить в турнир
         </button>
       </div>
+
+      {addOpen && (
+        <form onSubmit={addPlayer} className="space-y-3 border-b border-line px-1 py-4 sm:px-2">
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="block min-w-[12rem] flex-1">
+              <span className="field-label">Игрок платформы / заготовка</span>
+              <input
+                className="field mb-2 min-h-[36px] text-xs"
+                placeholder="Фильтр по ФИО"
+                value={playerFilter}
+                onChange={(event) => setPlayerFilter(event.target.value)}
+                disabled={playersLoading || adding}
+              />
+              <select
+                className="field min-h-[40px] text-sm"
+                value={selectedPlayerId}
+                onChange={(event) => setSelectedPlayerId(event.target.value)}
+                disabled={playersLoading || adding || availablePlayers.length === 0}
+                required
+              >
+                <option value="">
+                  {playersLoading
+                    ? "Загрузка…"
+                    : availablePlayers.length === 0
+                      ? "Нет доступных игроков"
+                      : "Выберите игрока"}
+                </option>
+                {availablePlayers.map((player) => (
+                  <option key={player.id} value={player.id}>
+                    {player.lastName} {player.firstName}
+                    {player.isPlaceholder ? " · заготовка" : ""} · {player.level}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button type="submit" className="btn btn-primary" disabled={!selectedPlayerId || adding || playersLoading}>
+              {adding ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Plus className="size-4" aria-hidden="true" />}
+              {adding ? "Добавление…" : "Добавить"}
+            </button>
+          </div>
+          <p className="text-[0.64rem] leading-relaxed text-ink-muted">
+            Участник попадёт в основной состав (или лист ожидания, если мест нет). Саморегистрация не нужна.
+          </p>
+          {playersError && (
+            <p role="alert" className="text-[0.7rem] text-negative">
+              {playersError}
+            </p>
+          )}
+        </form>
+      )}
 
       <div className="flex flex-wrap gap-x-5 gap-y-1 border-b border-line py-2.5 text-[0.64rem] text-ink-muted">
         <span>
@@ -300,10 +483,11 @@ export function ParticipantsManager({
                     {row.status !== "confirmed" && (
                       <button
                         type="button"
-                        className="grid size-7 place-items-center border border-line text-positive transition-colors hover:border-positive"
+                        disabled={busyId === row.registrationId}
+                        className="grid size-7 place-items-center border border-line text-positive transition-colors hover:border-positive disabled:opacity-40"
                         title="Подтвердить"
                         aria-label={`Подтвердить ${row.firstName} ${row.lastName}`}
-                        onClick={() => setStatus(row, "confirmed")}
+                        onClick={() => void setStatus(row, "confirmed")}
                       >
                         <UserCheck className="size-3.5" />
                       </button>
@@ -311,10 +495,11 @@ export function ParticipantsManager({
                     {row.status === "confirmed" && (
                       <button
                         type="button"
-                        className="grid size-7 place-items-center border border-line text-ink-muted transition-colors hover:border-line-strong hover:text-ink"
+                        disabled={busyId === row.registrationId}
+                        className="grid size-7 place-items-center border border-line text-ink-muted transition-colors hover:border-line-strong hover:text-ink disabled:opacity-40"
                         title="Перевести в лист ожидания"
                         aria-label={`Перевести ${row.firstName} ${row.lastName} в лист ожидания`}
-                        onClick={() => setStatus(row, "waitlist")}
+                        onClick={() => void setStatus(row, "waitlist")}
                       >
                         <Clock className="size-3.5" />
                       </button>
@@ -322,20 +507,22 @@ export function ParticipantsManager({
                     {row.status !== "rejected" && row.status !== "cancelled" ? (
                       <button
                         type="button"
-                        className="grid size-7 place-items-center border border-line text-negative transition-colors hover:border-negative"
+                        disabled={busyId === row.registrationId}
+                        className="grid size-7 place-items-center border border-line text-negative transition-colors hover:border-negative disabled:opacity-40"
                         title="Отклонить заявку"
                         aria-label={`Отклонить заявку ${row.firstName} ${row.lastName}`}
-                        onClick={() => setStatus(row, "rejected")}
+                        onClick={() => void setStatus(row, "rejected")}
                       >
                         <UserX className="size-3.5" />
                       </button>
                     ) : (
                       <button
                         type="button"
-                        className="grid size-7 place-items-center border border-line text-ink-muted transition-colors hover:border-ink hover:text-ink"
+                        disabled={busyId === row.registrationId}
+                        className="grid size-7 place-items-center border border-line text-ink-muted transition-colors hover:border-ink hover:text-ink disabled:opacity-40"
                         title="Вернуть заявку"
                         aria-label={`Вернуть заявку ${row.firstName} ${row.lastName}`}
-                        onClick={() => setStatus(row, "pending")}
+                        onClick={() => void setStatus(row, "pending")}
                       >
                         <X className="size-3.5" />
                       </button>
@@ -365,12 +552,12 @@ export function ParticipantsManager({
         </Link>
       </div>
 
-      {notice && (
+      {(notice || error) && (
         <div className="pb-2 pt-2">
           <DemoNote>
             <span className="inline-flex items-start gap-1.5">
               <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-              <span>{notice} Демо-режим: данные не сохраняются.</span>
+              <span>{error ?? notice}</span>
             </span>
           </DemoNote>
         </div>
