@@ -117,3 +117,21 @@ export async function patchClubMember(
   }
   return { ok: false, error: data?.message ?? "Не удалось обновить участника" };
 }
+
+/** Soft-remove membership (status=left). API may return last_owner / forbidden. */
+export async function deleteClubMember(
+  id: string,
+): Promise<{ ok: true; member: ClubMember } | { ok: false; error: string; code?: string }> {
+  const { response, data } = await apiRequest<{ member: ApiMember } & ApiErrorBody>(
+    `/organizer/members/${encodeURIComponent(id)}`,
+    { method: "DELETE" },
+  );
+  if (response.ok && data?.member) {
+    return { ok: true, member: mapMember(data.member) };
+  }
+  return {
+    ok: false,
+    error: data?.message ?? "Не удалось удалить участника",
+    code: data?.code,
+  };
+}
