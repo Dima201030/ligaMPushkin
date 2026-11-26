@@ -162,6 +162,11 @@ export function OrganizerTournamentTable({ tournaments }: { tournaments: Tournam
                       <div className="mt-1 flex flex-wrap items-center gap-1.5">
                         <CategoryBadge category={tournament.category} withName={false} />
                         <span className="text-[0.64rem] text-ink-muted">{TYPE_BY_VALUE[tournament.type].label}</span>
+                        {tournament.clubName || tournament.clubSlug ? (
+                          <span className="text-[0.64rem] text-ink-soft">
+                            · {tournament.clubName || tournament.clubSlug}
+                          </span>
+                        ) : null}
                         <span className="text-[0.64rem] text-ink-faint">· {tournament.slug}</span>
                       </div>
                     </td>

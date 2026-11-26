@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   AlertCircle,
   ArrowRight,
+  Building2,
   CalendarDays,
   Check,
   CheckCircle2,
@@ -27,6 +28,12 @@ import { cn, formatDate, formatMoney, formatTime } from "@/lib/utils";
 import { CategoryBadge } from "@/components/ui/Badges";
 import { MiniLabel, Panel } from "./OrganizerUI";
 
+export type WizardClubOption = {
+  id: string;
+  slug: string;
+  name: string;
+};
+
 interface FormState {
   title: string;
   description: string;
@@ -41,6 +48,7 @@ interface FormState {
   maxParticipants: string;
   regulations: string;
   publish: "draft" | "registration_soon" | "registration_open";
+  clubSlug: string;
 }
 
 function toLocalInput(date: Date) {
@@ -69,8 +77,27 @@ const REGULATION_PRESETS: Record<TournamentFormat, string> = {
     "Двойное выбывание: после первого поражения игрок переходит в нижнюю сетку. Финал верхней и нижней сетки, гранд-финал до двух побед.",
 };
 
-export function TournamentWizard({ venues }: { venues: Venue[] }) {
+export function TournamentWizard({
+  venues,
+  clubs = [],
+  ownedClubs = [],
+}: {
+  venues: Venue[];
+  clubs?: WizardClubOption[];
+  ownedClubs?: WizardClubOption[];
+}) {
   const dates = defaultDates();
+  const clubOptions = useMemo(() => {
+    const bySlug = new Map<string, WizardClubOption>();
+    for (const club of [...ownedClubs, ...clubs]) {
+      if (!club.slug) continue;
+      bySlug.set(club.slug, club);
+    }
+    return Array.from(bySlug.values()).sort((a, b) => a.name.localeCompare(b.name, "ru"));
+  }, [clubs, ownedClubs]);
+  const defaultClubSlug = ownedClubs[0]?.slug ?? clubOptions[0]?.slug ?? "";
+  const isOwnerPrefill = ownedClubs.length > 0;
+
   const [form, setForm] = useState<FormState>({
     title: "",
     description: "",
@@ -85,6 +112,7 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
     maxParticipants: "16",
     regulations: REGULATION_PRESETS.olympic,
     publish: "registration_soon",
+    clubSlug: defaultClubSlug,
   });
   const [submitted, setSubmitted] = useState(false);
   const [attempted, setAttempted] = useState(false);
@@ -92,6 +120,7 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [createdId, setCreatedId] = useState<string | null>(null);
   const [createdSlug, setCreatedSlug] = useState<string | null>(null);
+  const selectedClub = clubOptions.find((item) => item.slug === form.clubSlug);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -108,24 +137,27 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
     }));
   }
 
-  const errors = useMemo(
-    () =>
-      validateTournamentFields({
-        title: form.title,
-        description: form.description,
-        regulations: form.regulations,
-        startsAt: form.startsAt,
-        registrationClosesAt: form.registrationClosesAt,
-        maxParticipants: form.maxParticipants,
-        entryFee: form.entryFee,
-        requireRegulations: true,
-      }) as Partial<Record<keyof FormState, string>>,
-    [form],
-  );
+  const errors = useMemo(() => {
+    const fieldErrors = validateTournamentFields({
+      title: form.title,
+      description: form.description,
+      regulations: form.regulations,
+      startsAt: form.startsAt,
+      registrationClosesAt: form.registrationClosesAt,
+      maxParticipants: form.maxParticipants,
+      entryFee: form.entryFee,
+      requireRegulations: true,
+    }) as Partial<Record<keyof FormState, string>>;
+    if (!form.clubSlug.trim()) {
+      fieldErrors.clubSlug = "Выберите клуб для карточки турнира";
+    }
+    return fieldErrors;
+  }, [form]);
 
   const isValid = Object.keys(errors).length === 0;
   const venue = venues.find((item) => item.id === form.venueId);
   const checklist = [
+    { label: "Клуб на карточке", done: Boolean(form.clubSlug) },
     { label: "Название и описание", done: form.title.trim().length >= 3 },
     { label: "Даты и дедлайн", done: Boolean(form.startsAt && form.registrationClosesAt) },
     { label: "Формат и вместимость", done: Number(form.maxParticipants) >= 4 },
@@ -140,6 +172,7 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
     setSubmitError(null);
     if (!isValid) return;
     const venue = venues.find((item) => item.id === form.venueId);
+    const club = clubOptions.find((item) => item.slug === form.clubSlug);
     setBusy(true);
     const result = await createOrganizerTournament({
       title: form.title.trim(),
@@ -158,6 +191,8 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
       entryFee: Number(form.entryFee) || 0,
       maxParticipants: Number(form.maxParticipants) || 16,
       regulations: form.regulations.trim(),
+      clubId: club?.id,
+      clubSlug: form.clubSlug,
     });
     setBusy(false);
     if (!result.ok) {
@@ -189,6 +224,10 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
           </p>
 
           <dl className="mt-6 grid gap-4 border-t border-line pt-5 sm:grid-cols-2">
+            <div>
+              <dt className="stat-label">Клуб</dt>
+              <dd className="mt-1 text-sm">{selectedClub?.name ?? "—"}</dd>
+            </div>
             <div>
               <dt className="stat-label">Формат</dt>
               <dd className="mt-1 text-sm">{FORMAT_LABEL[form.format]}</dd>
@@ -231,7 +270,14 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
               </Link>
             )}
             {createdSlug && (
-              <Link href={`/tournaments/${createdSlug}`} className="btn btn-secondary">
+              <Link
+                href={
+                  selectedClub?.slug
+                    ? `/c/${selectedClub.slug}/tournaments/${createdSlug}`
+                    : `/tournaments/${createdSlug}`
+                }
+                className="btn btn-secondary"
+              >
                 Публичная страница
               </Link>
             )}
@@ -291,9 +337,40 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
       <div className="min-w-0 space-y-8">
         <Panel
           title="01 · Основное"
-          description="Название, тип и категория определяют, где турнир появится на сайте."
+          description="Клуб — поле карточки турнира. Глобальный переключатель «текущий клуб» не используется."
         >
           <div className="grid gap-4">
+            <label className="block">
+              <span className="field-label">Клуб</span>
+              {clubOptions.length === 0 ? (
+                <p className="mt-1 text-[0.72rem] text-negative">
+                  Нет доступных клубов для публикации. Создайте клуб или попросите доступ.
+                </p>
+              ) : (
+                <select
+                  className={cn("field", attempted && errors.clubSlug && "border-negative")}
+                  value={form.clubSlug}
+                  onChange={(event) => update("clubSlug", event.target.value)}
+                >
+                  {!form.clubSlug ? <option value="">Выберите клуб</option> : null}
+                  {clubOptions.map((club) => (
+                    <option key={club.slug} value={club.slug}>
+                      {club.name}
+                      {ownedClubs.some((owned) => owned.slug === club.slug) ? " · ваш клуб" : ""}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <span className="mt-1 block text-[0.62rem] text-ink-faint">
+                {isOwnerPrefill
+                  ? "Владелец: свой клуб подставлен; можно провести турнир под другим клубом."
+                  : "Организатор турниров: выберите клуб на карточке — постоянное членство в клубе не требуется."}
+              </span>
+              {attempted && errors.clubSlug && (
+                <span className="mt-1 block text-[0.68rem] text-negative">{errors.clubSlug}</span>
+              )}
+            </label>
+
             <label className="block">
               <span className="field-label">Название турнира</span>
               <input
@@ -560,6 +637,10 @@ export function TournamentWizard({ venues }: { venues: Venue[] }) {
               {form.description || "Описание появится здесь. Расскажите игрокам о формате и атмосфере турнира."}
             </p>
             <div className="mt-4 space-y-2 border-t border-line pt-4 text-[0.7rem] text-ink-muted">
+              <p className="flex items-center gap-2">
+                <Building2 className="size-3.5 text-ink-faint" aria-hidden="true" />
+                {selectedClub?.name ?? "Клуб не выбран"}
+              </p>
               <p className="flex items-center gap-2">
                 <CalendarDays className="size-3.5 text-ink-faint" aria-hidden="true" />
                 {form.startsAt ? `${formatDate(form.startsAt)}, ${formatTime(form.startsAt)}` : "Дата не выбрана"}

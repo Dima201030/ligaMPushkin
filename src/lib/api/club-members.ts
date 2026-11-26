@@ -59,6 +59,7 @@ async function serverCookieHeader(): Promise<string | undefined> {
 
 export async function fetchClubMembers(opts?: {
   status?: string;
+  clubSlug?: string;
 }): Promise<ClubMember[]> {
   const cookieHeader = await serverCookieHeader();
   const query = opts?.status ? `?status=${encodeURIComponent(opts.status)}` : "";
@@ -66,6 +67,7 @@ export async function fetchClubMembers(opts?: {
     `/organizer/members${query}`,
     {
       absolute: typeof window === "undefined",
+      clubSlug: opts?.clubSlug,
       headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
     },
   );
@@ -79,9 +81,11 @@ export async function addClubMember(input: {
   email: string;
   role: ClubMemberRole;
   status?: ClubMemberStatus;
+  clubSlug?: string;
 }): Promise<{ ok: true; member: ClubMember; created: boolean } | { ok: false; error: string; code?: string }> {
   const { response, data } = await apiRequest<{ member: ApiMember } & ApiErrorBody>("/organizer/members", {
     method: "POST",
+    clubSlug: input.clubSlug,
     body: JSON.stringify({
       email: input.email,
       role: input.role,
@@ -100,7 +104,7 @@ export async function addClubMember(input: {
 
 export async function patchClubMember(
   id: string,
-  input: { role?: ClubMemberRole; status?: ClubMemberStatus },
+  input: { role?: ClubMemberRole; status?: ClubMemberStatus; clubSlug?: string },
 ): Promise<{ ok: true; member: ClubMember } | { ok: false; error: string }> {
   const body: Record<string, string> = {};
   if (input.role) body.role = input.role;
@@ -109,6 +113,7 @@ export async function patchClubMember(
     `/organizer/members/${encodeURIComponent(id)}`,
     {
       method: "PATCH",
+      clubSlug: input.clubSlug,
       body: JSON.stringify(body),
     },
   );
@@ -121,10 +126,11 @@ export async function patchClubMember(
 /** Soft-remove membership (status=left). API may return last_owner / forbidden. */
 export async function deleteClubMember(
   id: string,
+  opts?: { clubSlug?: string },
 ): Promise<{ ok: true; member: ClubMember } | { ok: false; error: string; code?: string }> {
   const { response, data } = await apiRequest<{ member: ApiMember } & ApiErrorBody>(
     `/organizer/members/${encodeURIComponent(id)}`,
-    { method: "DELETE" },
+    { method: "DELETE", clubSlug: opts?.clubSlug },
   );
   if (response.ok && data?.member) {
     return { ok: true, member: mapMember(data.member) };

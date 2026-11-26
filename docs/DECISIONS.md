@@ -219,8 +219,18 @@
 **Контекст:** админ назначает роли в клубе; «организатор турниров» должен видеть ограниченный кабинет, без полного доступа владельца. У разных клубов свои организаторы.
 **Варианты:** отдельная таблица `tournament_roles`; расширить `users.role`; опираться на `club_memberships.role`.
 **Решение:** MVP на `club_memberships.role`. `organizer` = ограниченный доступ (турниры, сетки, матчи, игроки); `owner` = полный кабинет (участники, настройки, заявки на аккаунт, контент, рейтинг). Глобальные `owner`/`superadmin` без membership считаются владельцем клуба; глобальный `organizer` без membership — ограниченным. `/auth/me` отдаёт `club_role` и `organizer_access` (`tournament` | `full` | `none`). Назначение ролей — только владелец клуба (`POST/PATCH /organizer/members`) с audit.
-**Следствия:** UI прячет owner-only пункты навигации; сервер режет owner-only маршруты. Per-tournament роли — позже.
-**Связано:** MP-104, D-020.
+**Следствия:** UI прячет owner-only пункты навигации; сервер режет owner-only маршруты. Per-tournament роли — позже. Уточнено **D-022** (клуб на карточке турнира, без current-club для organizers).
+**Связано:** MP-104, D-020, D-022.
+
+---
+
+## D-022. Клуб на карточке турнира (без current-club switcher)
+
+**Дата:** 26.11.2026.
+**Контекст:** UI заставлял мыслить «текущим клубом»; организаторы турниров не должны быть навсегда привязаны к клубу, чтобы публиковать.
+**Решение:** клуб — поле карточки при create (и read-only на edit). Owner: prefills свой клуб, можно другой. Platform/tournament organizer (`users.role=organizer+` или owner membership где-либо): выбирает любой активный клуб; permanent club membership для публикации не требуется. Owners по-прежнему управляют members/settings своего клуба. API: `club_id` / `club_slug` на `POST /organizer/tournaments`; список организатора — multi-club; lookup турнира по id без жёсткого header tenant.
+**Следствия:** нет organizer ClubSwitcher / cookie «открой текущий»; публичные URL остаются club-scoped (`/c/{slug}/tournaments/...`).
+**Связано:** MP-115, D-020, D-021.
 
 ---
 

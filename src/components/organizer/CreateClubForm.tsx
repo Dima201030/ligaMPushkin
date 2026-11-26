@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AlertCircle, Building2, Loader2 } from "lucide-react";
 import { createOrganizerClub } from "@/lib/api/clubs";
 import { CLUB_LIMITS, validateClubFields } from "@/lib/club-limits";
-import { clubPath, normalizeClubSlug } from "@/lib/club/tenant";
+import { normalizeClubSlug } from "@/lib/club/tenant";
 import { cn } from "@/lib/utils";
 import { MiniLabel, Panel } from "./OrganizerUI";
 
@@ -66,15 +66,15 @@ export function CreateClubForm() {
       return;
     }
 
-    // Switch tenant via /c/:slug → cookie pairly_club + redirect to organizer.
-    router.push(clubPath(result.club.slug, "/organizer"));
+    // No current-club cookie switch — club is chosen on the tournament card.
+    router.push("/organizer/clubs");
     router.refresh();
   }
 
   return (
     <Panel
       title="Новый клуб"
-      description="Создаёт tenant: страницы клуба, рейтинг сезона и вашу роль owner. После создания откроется кабинет в контексте этого клуба."
+      description="Создаёт клуб, рейтинг сезона и вашу роль owner. Турниры публикуются с выбором клуба на карточке — без глобального switcher."
     >
       <form onSubmit={submit} className="max-w-xl space-y-5 py-2" noValidate>
         <label className="block">
