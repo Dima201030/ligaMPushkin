@@ -11,7 +11,7 @@ import {
   EyeOff,
   UserCheck,
 } from "lucide-react";
-import { isOrganizerRole, loginAccount, registerAccount } from "@/lib/api/auth";
+import { canAccessOrganizer, fetchSession, loginAccount, registerAccount } from "@/lib/api/auth";
 import { CATEGORIES } from "@/lib/domain";
 
 type LoginState =
@@ -45,7 +45,9 @@ export function LoginForm() {
       setChecking(false);
 
       if (result.ok) {
-        router.push(isOrganizerRole(result.user.role) ? "/organizer" : "/cabinet");
+        const session = await fetchSession();
+        const toOrganizer = session ? canAccessOrganizer(session) : false;
+        router.push(toOrganizer ? "/organizer" : "/cabinet");
         router.refresh();
         return;
       }

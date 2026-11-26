@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { OrganizerHeader } from "@/components/organizer/OrganizerUI";
 import { AccountApprovals } from "@/components/organizer/AccountApprovals";
+import { requireFullOrganizerSession } from "@/lib/organizer-access";
 
 export const metadata: Metadata = { title: "Заявки игроков" };
 
-export default function OrganizerApplicationsPage() {
+export default async function OrganizerApplicationsPage() {
+  await requireFullOrganizerSession();
   return (
     <>
       <OrganizerHeader

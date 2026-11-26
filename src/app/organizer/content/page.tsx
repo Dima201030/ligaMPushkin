@@ -5,7 +5,10 @@ import { formatDateShort } from "@/lib/utils";
 import { OrganizerHeader, OrgStat, Panel } from "@/components/organizer/OrganizerUI";
 import { ContentManager } from "@/components/organizer/ContentManager";
 
+import { requireFullOrganizerSession } from "@/lib/organizer-access";
+
 export default async function OrganizerContentPage() {
+  await requireFullOrganizerSession();
   const { news, events } = await getContentDesk();
   const nextEvent = [...events].sort((a, b) => +new Date(a.startsAt) - +new Date(b.startsAt))[0];
   const totalReading = news.reduce((sum, post) => sum + post.readingTime, 0);

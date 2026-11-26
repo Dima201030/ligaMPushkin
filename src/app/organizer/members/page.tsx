@@ -3,6 +3,7 @@ import { InviteMemberForm, MembersTable } from "@/components/organizer/ClubMembe
 import { OrganizerHeader } from "@/components/organizer/OrganizerUI";
 import { fetchClubMembers } from "@/lib/api/club-members";
 import { CLUB } from "@/lib/domain";
+import { requireFullOrganizerSession } from "@/lib/organizer-access";
 
 export const metadata: Metadata = {
   title: "Участники",
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function OrganizerMembersPage() {
+  await requireFullOrganizerSession();
   const members = await fetchClubMembers().catch(() => []);
 
   return (
@@ -17,7 +19,7 @@ export default async function OrganizerMembersPage() {
       <OrganizerHeader
         eyebrow={CLUB.productName}
         title="Участники клуба"
-        description="Список memberships текущего клуба. Добавление по email — для уже зарегистрированных пользователей."
+        description="Назначайте роли: организатор турниров (ограниченный кабинет) или владелец клуба (полный доступ)."
       />
 
       <div className="space-y-10 px-4 py-7 md:px-8 lg:px-10">

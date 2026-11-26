@@ -13,7 +13,10 @@ import {
   RecalculateRating,
 } from "@/components/organizer/RatingTools";
 
+import { requireFullOrganizerSession } from "@/lib/organizer-access";
+
 export default async function OrganizerRatingsPage() {
+  await requireFullOrganizerSession();
   const { ranking, history, audit, players } = await getRatingDesk();
   const averageRating = ranking.length
     ? Math.round(ranking.reduce((sum, row) => sum + row.rating, 0) / ranking.length)

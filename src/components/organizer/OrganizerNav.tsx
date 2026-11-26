@@ -22,13 +22,22 @@ import {
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/layout/Logo";
 import { Avatar } from "@/components/ui/Avatar";
+import type { OrganizerAccess } from "@/lib/api/auth";
 
-const GROUPS = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  exact?: boolean;
+  scope?: "full";
+};
+
+const GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: "Управление",
     items: [
       { href: "/organizer", label: "Обзор", icon: LayoutDashboard, exact: true },
-      { href: "/organizer/applications", label: "Заявки игроков", icon: UserCheck },
+      { href: "/organizer/applications", label: "Заявки игроков", icon: UserCheck, scope: "full" },
       { href: "/organizer/tournaments", label: "Турниры", icon: Trophy },
       { href: "/organizer/matches", label: "Матчи и счёт", icon: CalendarDays },
       { href: "/organizer/bracket", label: "Генератор сеток", icon: Network },
@@ -37,12 +46,12 @@ const GROUPS = [
   {
     label: "База",
     items: [
-      { href: "/organizer/clubs", label: "Клубы", icon: Building2 },
-      { href: "/organizer/members", label: "Участники", icon: UserPlus },
-      { href: "/organizer/settings", label: "Настройки", icon: Settings },
+      { href: "/organizer/clubs", label: "Клубы", icon: Building2, scope: "full" },
+      { href: "/organizer/members", label: "Участники", icon: UserPlus, scope: "full" },
+      { href: "/organizer/settings", label: "Настройки", icon: Settings, scope: "full" },
       { href: "/organizer/players", label: "Игроки", icon: Users },
-      { href: "/organizer/ratings", label: "Рейтинг", icon: BarChart3 },
-      { href: "/organizer/content", label: "Контент", icon: Newspaper },
+      { href: "/organizer/ratings", label: "Рейтинг", icon: BarChart3, scope: "full" },
+      { href: "/organizer/content", label: "Контент", icon: Newspaper, scope: "full" },
     ],
   },
 ];
@@ -60,17 +69,29 @@ function isActive(pathname: string, href: string, exact?: boolean) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function filterGroups(access: OrganizerAccess) {
+  const full = access === "full";
+  return GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => full || item.scope !== "full"),
+  })).filter((group) => group.items.length > 0);
+}
+
 function SidebarContent({
   onNavigate,
   organizerName,
   organizerEmail,
+  access,
 }: {
   onNavigate?: () => void;
   organizerName: string;
   organizerEmail: string;
+  access: OrganizerAccess;
 }) {
   const pathname = usePathname();
   const [firstName = "Орг", lastName = ""] = organizerName.split(" ");
+  const groups = filterGroups(access);
+  const roleLabel = access === "full" ? "Владелец клуба" : "Организатор турниров";
 
   return (
     <div className="flex h-full flex-col">
@@ -79,12 +100,12 @@ function SidebarContent({
       </div>
 
       <div className="mb-6 mt-6 border-t border-white/12 px-5 pt-5">
-        <p className="text-[0.56rem] uppercase tracking-[0.16em] text-sky/80">Организатор</p>
+        <p className="text-[0.56rem] uppercase tracking-[0.16em] text-sky/80">{roleLabel}</p>
         <p className="mt-2 text-xs text-white/70">Сезон 2026 · платформа</p>
       </div>
 
       <nav className="flex-1 space-y-7 overflow-y-auto px-5 pb-6" aria-label="Навигация организатора">
-        {GROUPS.map((group) => (
+        {groups.map((group) => (
           <div key={group.label}>
             <p className="mb-2 text-[0.56rem] uppercase tracking-[0.16em] text-white/35">
               {group.label}
@@ -145,9 +166,11 @@ function SidebarContent({
 export function OrganizerNav({
   organizerName,
   organizerEmail,
+  access,
 }: {
   organizerName: string;
   organizerEmail: string;
+  access: OrganizerAccess;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -167,7 +190,11 @@ export function OrganizerNav({
       </div>
 
       <aside className="sticky top-0 hidden h-screen bg-navy lg:block print:hidden">
-        <SidebarContent organizerName={organizerName} organizerEmail={organizerEmail} />
+        <SidebarContent
+          organizerName={organizerName}
+          organizerEmail={organizerEmail}
+          access={access}
+        />
       </aside>
 
       {open && (
@@ -191,6 +218,7 @@ export function OrganizerNav({
               onNavigate={() => setOpen(false)}
               organizerName={organizerName}
               organizerEmail={organizerEmail}
+              access={access}
             />
           </div>
         </div>

@@ -49,10 +49,15 @@ export interface NotificationPrefs {
   news: boolean;
 }
 
+export type ClubMemberRoleName = "owner" | "organizer" | "player";
+export type OrganizerAccess = "none" | "tournament" | "full";
+
 export interface MeSession {
   user: LeagueUser;
   profile: LeagueProfile | null;
   notifications: NotificationPrefs | null;
+  clubRole: ClubMemberRoleName | null;
+  organizerAccess: OrganizerAccess;
 }
 
 export type UpdateMyProfileInput = {
@@ -361,7 +366,29 @@ type MePayload = {
   user: ApiUser;
   profile?: ApiProfile;
   notifications?: ApiNotifications;
+  club_role?: string;
+  organizer_access?: string;
 };
+
+function mapOrganizerAccess(raw: string | undefined): OrganizerAccess {
+  if (raw === "full" || raw === "tournament" || raw === "none") return raw;
+  return "none";
+}
+
+function mapClubRole(raw: string | undefined): ClubMemberRoleName | null {
+  if (raw === "owner" || raw === "organizer" || raw === "player") return raw;
+  return null;
+}
+
+function mapMeSession(data: MePayload): MeSession {
+  return {
+    user: mapUser(data.user),
+    profile: data.profile ? mapProfile(data.profile) : null,
+    notifications: data.profile ? mapNotifications(data.notifications) : null,
+    clubRole: mapClubRole(data.club_role),
+    organizerAccess: mapOrganizerAccess(data.organizer_access),
+  };
+}
 
 export async function fetchSession(): Promise<MeSession | null> {
   if (typeof window === "undefined") {
@@ -382,22 +409,14 @@ export async function fetchSession(): Promise<MeSession | null> {
       });
       const data = await parseJson<MePayload>(response);
       if (!response.ok || !data?.user) return null;
-      return {
-        user: mapUser(data.user),
-        profile: data.profile ? mapProfile(data.profile) : null,
-        notifications: data.profile ? mapNotifications(data.notifications) : null,
-      };
+      return mapMeSession(data);
     } catch {
       return null;
     }
   }
   const { response, data } = await request<MePayload>("/auth/me");
   if (!response.ok || !data?.user) return null;
-  return {
-    user: mapUser(data.user),
-    profile: data.profile ? mapProfile(data.profile) : null,
-    notifications: data.profile ? mapNotifications(data.notifications) : null,
-  };
+  return mapMeSession(data);
 }
 
 export async function updateMyProfile(
@@ -513,6 +532,20 @@ async function serverCookieHeader(): Promise<string | undefined> {
 
 export function isOrganizerRole(role: string): boolean {
   return role === "organizer" || role === "owner" || role === "superadmin";
+}
+
+/** Club-scoped or global access to the organizer cabinet. */
+export function canAccessOrganizer(session: MeSession): boolean {
+  if (session.user.status !== "approved") return false;
+  if (session.organizerAccess === "tournament" || session.organizerAccess === "full") return true;
+  return isOrganizerRole(session.user.role);
+}
+
+/** Full club admin (members, settings, applications, content). */
+export function hasFullOrganizerAccess(session: MeSession): boolean {
+  if (session.user.status !== "approved") return false;
+  if (session.organizerAccess === "full") return true;
+  return session.user.role === "owner" || session.user.role === "superadmin";
 }
 
 export async function listOrganizerApplications(): Promise<LeagueApplication[]> {
