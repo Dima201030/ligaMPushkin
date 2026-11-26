@@ -42,10 +42,34 @@ export interface LeagueProfile {
   memberSince?: string;
 }
 
+export interface NotificationPrefs {
+  tournaments: boolean;
+  reminders: boolean;
+  results: boolean;
+  news: boolean;
+}
+
 export interface MeSession {
   user: LeagueUser;
   profile: LeagueProfile | null;
+  notifications: NotificationPrefs | null;
 }
+
+export type UpdateMyProfileInput = {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  city?: string;
+  bio?: string;
+  level?: CategorySlug;
+};
+
+export const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {
+  tournaments: true,
+  reminders: true,
+  results: true,
+  news: false,
+};
 
 export interface MyRegistration {
   id: string;
@@ -317,6 +341,28 @@ function mapProfile(raw: ApiProfile): LeagueProfile {
   };
 }
 
+interface ApiNotifications {
+  tournaments?: boolean;
+  reminders?: boolean;
+  results?: boolean;
+  news?: boolean;
+}
+
+function mapNotifications(raw?: ApiNotifications | null): NotificationPrefs {
+  return {
+    tournaments: raw?.tournaments ?? DEFAULT_NOTIFICATION_PREFS.tournaments,
+    reminders: raw?.reminders ?? DEFAULT_NOTIFICATION_PREFS.reminders,
+    results: raw?.results ?? DEFAULT_NOTIFICATION_PREFS.results,
+    news: raw?.news ?? DEFAULT_NOTIFICATION_PREFS.news,
+  };
+}
+
+type MePayload = {
+  user: ApiUser;
+  profile?: ApiProfile;
+  notifications?: ApiNotifications;
+};
+
 export async function fetchSession(): Promise<MeSession | null> {
   if (typeof window === "undefined") {
     try {
@@ -334,22 +380,77 @@ export async function fetchSession(): Promise<MeSession | null> {
         },
         cache: "no-store",
       });
-      const data = await parseJson<{ user: ApiUser; profile?: ApiProfile }>(response);
+      const data = await parseJson<MePayload>(response);
       if (!response.ok || !data?.user) return null;
       return {
         user: mapUser(data.user),
         profile: data.profile ? mapProfile(data.profile) : null,
+        notifications: data.profile ? mapNotifications(data.notifications) : null,
       };
     } catch {
       return null;
     }
   }
-  const { response, data } = await request<{ user: ApiUser; profile?: ApiProfile }>("/auth/me");
+  const { response, data } = await request<MePayload>("/auth/me");
   if (!response.ok || !data?.user) return null;
   return {
     user: mapUser(data.user),
     profile: data.profile ? mapProfile(data.profile) : null,
+    notifications: data.profile ? mapNotifications(data.notifications) : null,
   };
+}
+
+export async function updateMyProfile(
+  input: UpdateMyProfileInput,
+): Promise<
+  | { ok: true; user: LeagueUser; profile: LeagueProfile | null; notifications: NotificationPrefs }
+  | { ok: false; error: string }
+> {
+  const body: Record<string, string> = {};
+  if (input.firstName !== undefined) body.first_name = input.firstName.trim();
+  if (input.lastName !== undefined) body.last_name = input.lastName.trim();
+  if (input.phone !== undefined) body.phone = input.phone.trim();
+  if (input.city !== undefined) body.city = input.city.trim();
+  if (input.bio !== undefined) body.bio = input.bio.trim();
+  if (input.level !== undefined) body.level = input.level;
+
+  try {
+    const { response, data } = await request<MePayload & ApiErrorBody>("/auth/me", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
+    if (!response.ok || !data?.user) {
+      return { ok: false, error: data?.message ?? "Не удалось сохранить профиль" };
+    }
+    return {
+      ok: true,
+      user: mapUser(data.user),
+      profile: data.profile ? mapProfile(data.profile) : null,
+      notifications: mapNotifications(data.notifications),
+    };
+  } catch {
+    return { ok: false, error: "Не удалось сохранить профиль. Проверьте соединение." };
+  }
+}
+
+export async function updateMyNotifications(
+  patch: Partial<NotificationPrefs>,
+): Promise<{ ok: true; notifications: NotificationPrefs } | { ok: false; error: string }> {
+  try {
+    const { response, data } = await request<{ notifications?: ApiNotifications } & ApiErrorBody>(
+      "/auth/me/notifications",
+      {
+        method: "PATCH",
+        body: JSON.stringify(patch),
+      },
+    );
+    if (!response.ok || !data?.notifications) {
+      return { ok: false, error: data?.message ?? "Не удалось сохранить уведомления" };
+    }
+    return { ok: true, notifications: mapNotifications(data.notifications) };
+  } catch {
+    return { ok: false, error: "Не удалось сохранить уведомления. Проверьте соединение." };
+  }
 }
 
 export async function fetchCurrentUser(): Promise<LeagueUser | null> {

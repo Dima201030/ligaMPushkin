@@ -1,12 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition, type FormEvent } from "react";
 import { Bell, Check } from "lucide-react";
 import { cn, formatDate, formatDateShort, formatDayMonth } from "@/lib/utils";
-import { REGISTRATION_STATUS_LABEL } from "@/lib/domain";
-import type { RegistrationStatus } from "@/lib/types";
+import { CATEGORIES, REGISTRATION_STATUS_LABEL } from "@/lib/domain";
+import type { CategorySlug, RegistrationStatus } from "@/lib/types";
 import { cancelRegistration } from "@/lib/api/tournaments";
+import {
+  type NotificationPrefs,
+  updateMyNotifications,
+  updateMyProfile,
+} from "@/lib/api/auth";
 
 export interface CabinetRegistration {
   id: string;
@@ -113,20 +119,157 @@ export function MyRegistrations({ items }: { items: CabinetRegistration[] }) {
   );
 }
 
-const NOTIFICATIONS = [
+const NOTIFICATIONS: { id: keyof NotificationPrefs; label: string; hint: string }[] = [
   { id: "tournaments", label: "Новые турниры", hint: "Когда открывается регистрация" },
   { id: "reminders", label: "Напоминания о матчах", hint: "За 24 часа до игры" },
   { id: "results", label: "Результаты и рейтинг", hint: "После публикации результатов" },
   { id: "news", label: "Дайджест платформы", hint: "Раз в две недели" },
 ];
 
-export function NotificationSettings() {
-  const [enabled, setEnabled] = useState<Record<string, boolean>>({
-    tournaments: true,
-    reminders: true,
-    results: true,
-    news: false,
-  });
+export function ProfileSettingsForm({
+  email,
+  firstName,
+  lastName,
+  phone,
+  city,
+  bio,
+  category,
+}: {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  city: string;
+  bio: string;
+  category: CategorySlug;
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    setError(null);
+    setNotice(null);
+    const result = await updateMyProfile({
+      firstName: String(form.get("firstName") ?? ""),
+      lastName: String(form.get("lastName") ?? ""),
+      phone: String(form.get("phone") ?? ""),
+      city: String(form.get("city") ?? ""),
+      bio: String(form.get("bio") ?? ""),
+      level: String(form.get("category") ?? category) as CategorySlug,
+    });
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    setNotice("Профиль сохранён.");
+    startTransition(() => router.refresh());
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="space-y-4">
+      <h2 className="text-xl">Профиль</h2>
+      <p className="text-sm text-ink-muted">
+        Имя, телефон, город и категория. Email меняется через организатора.
+      </p>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block text-sm">
+          <span className="mb-1.5 block text-[0.62rem] uppercase tracking-[0.12em] text-ink-muted">Имя</span>
+          <input className="field" name="firstName" defaultValue={firstName} required autoComplete="given-name" />
+        </label>
+        <label className="block text-sm">
+          <span className="mb-1.5 block text-[0.62rem] uppercase tracking-[0.12em] text-ink-muted">Фамилия</span>
+          <input className="field" name="lastName" defaultValue={lastName} required autoComplete="family-name" />
+        </label>
+      </div>
+
+      <label className="block text-sm">
+        <span className="mb-1.5 block text-[0.62rem] uppercase tracking-[0.12em] text-ink-muted">Email</span>
+        <input className="field" value={email} disabled readOnly />
+      </label>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block text-sm">
+          <span className="mb-1.5 block text-[0.62rem] uppercase tracking-[0.12em] text-ink-muted">Телефон</span>
+          <input className="field" name="phone" defaultValue={phone} autoComplete="tel" placeholder="+7…" />
+        </label>
+        <label className="block text-sm">
+          <span className="mb-1.5 block text-[0.62rem] uppercase tracking-[0.12em] text-ink-muted">Город</span>
+          <input className="field" name="city" defaultValue={city} autoComplete="address-level2" />
+        </label>
+      </div>
+
+      <label className="block text-sm">
+        <span className="mb-1.5 block text-[0.62rem] uppercase tracking-[0.12em] text-ink-muted">Категория</span>
+        <select className="field" name="category" defaultValue={category}>
+          {CATEGORIES.map((item) => (
+            <option key={item.slug} value={item.slug}>
+              {item.name}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="block text-sm">
+        <span className="mb-1.5 block text-[0.62rem] uppercase tracking-[0.12em] text-ink-muted">О себе</span>
+        <textarea className="field min-h-24" name="bio" defaultValue={bio} maxLength={500} />
+      </label>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="submit" className="btn btn-primary" disabled={pending}>
+          {pending ? "Сохраняем…" : "Сохранить профиль"}
+        </button>
+        {notice ? (
+          <p role="status" className="flex items-center gap-1.5 text-[0.72rem] text-positive">
+            <Check className="size-3.5" aria-hidden="true" />
+            {notice}
+          </p>
+        ) : null}
+      </div>
+      {error ? (
+        <p role="alert" className="text-[0.72rem] text-negative">
+          {error}
+        </p>
+      ) : null}
+      <p className="text-xs text-ink-muted">
+        Документы:{" "}
+        <Link href="/privacy" className="text-accent hover:underline">
+          политика ПДн
+        </Link>
+        ,{" "}
+        <Link href="/consent" className="text-accent hover:underline">
+          согласия
+        </Link>
+        .
+      </p>
+    </form>
+  );
+}
+
+export function NotificationSettings({ initial }: { initial: NotificationPrefs }) {
+  const [enabled, setEnabled] = useState<NotificationPrefs>(initial);
+  const [busyKey, setBusyKey] = useState<keyof NotificationPrefs | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  async function toggle(id: keyof NotificationPrefs) {
+    const next = !enabled[id];
+    setBusyKey(id);
+    setError(null);
+    setNotice(null);
+    const result = await updateMyNotifications({ [id]: next });
+    setBusyKey(null);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    setEnabled(result.notifications);
+    setNotice("Настройки уведомлений сохранены.");
+  }
 
   return (
     <div>
@@ -146,9 +289,10 @@ export function NotificationSettings() {
               role="switch"
               aria-checked={enabled[item.id]}
               aria-label={item.label}
-              onClick={() => setEnabled((current) => ({ ...current, [item.id]: !current[item.id] }))}
+              disabled={busyKey === item.id}
+              onClick={() => void toggle(item.id)}
               className={cn(
-                "relative h-5 w-9 shrink-0 rounded-full transition-colors",
+                "relative h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-60",
                 enabled[item.id] ? "bg-accent" : "bg-line-strong",
               )}
             >
@@ -162,9 +306,21 @@ export function NotificationSettings() {
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-[0.62rem] leading-relaxed text-ink-faint">
-        Предпочтения хранятся локально в браузере до появления профиля уведомлений на сервере.
-      </p>
+      {error ? (
+        <p role="alert" className="mt-2 text-[0.62rem] text-negative">
+          {error}
+        </p>
+      ) : null}
+      {notice ? (
+        <p role="status" className="mt-2 flex items-start gap-2 text-[0.62rem] leading-relaxed text-positive">
+          <Check className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+          <span>{notice}</span>
+        </p>
+      ) : (
+        <p className="mt-2 text-[0.62rem] leading-relaxed text-ink-faint">
+          Предпочтения сохраняются в профиле на сервере и действуют на всех устройствах.
+        </p>
+      )}
     </div>
   );
 }
