@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Install nginx vhost for tournaments.pairly.space → same club UI (:3010)
-# and API (:3020) as duckdns, with the same Basic Auth htpasswd.
+# Install nginx vhost for tournaments.pairly.space → club UI (:3010)
+# and API (:3020). Club UI is served at domain root (empty NEXT_BASE_PATH).
+# Legacy /mp-* paths get a permanent redirect to the same path without prefix.
 # Does NOT modify the mrpushkin.duckdns.org site.
 #
 # Usage (on Pi as root):
@@ -8,10 +9,9 @@
 #
 # Prerequisites:
 #   - DNS A: tournaments.pairly.space → 91.223.89.199
-#   - /etc/nginx/mrpushkin.htpasswd already installed
+#   - /etc/nginx/mrpushkin.htpasswd already installed (optional; BA commented out)
 set -euo pipefail
 
-BASE_PATH="${NEXT_BASE_PATH:-/mp-7f3a9c2e5b8d4106}"
 DOMAIN="tournaments.pairly.space"
 PROJECT_DIR="${PROJECT_DIR:-/home/dima/mr-pushkin-league}"
 NGINX_AVAILABLE="/etc/nginx/sites-available/tournaments-pairly-space"
@@ -29,13 +29,13 @@ if [[ ! -f "$HTTP_CONF" || ! -f "$HTTPS_TMPL" ]]; then
   exit 1
 fi
 
-echo "== 1/4 HTTP vhost (ACME) for $DOMAIN"
+echo "== 1/5 HTTP vhost (ACME) for $DOMAIN"
 install -m 644 "$HTTP_CONF" "$NGINX_AVAILABLE"
 ln -sfn "$NGINX_AVAILABLE" "$NGINX_ENABLED"
 nginx -t
 systemctl reload nginx
 
-echo "== 2/4 Let's Encrypt for $DOMAIN"
+echo "== 2/5 Let's Encrypt for $DOMAIN"
 if [[ ! -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]]; then
   if ! certbot certonly --webroot -w /var/www/html -d "$DOMAIN" \
     --non-interactive --agree-tos --register-unsafely-without-email; then
@@ -50,11 +50,20 @@ if [[ ! -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]]; then
   exit 2
 fi
 
-echo "== 3/4 HTTPS vhost (same Basic Auth + :3010/:3020)"
-sed "s#__BASE_PATH__#${BASE_PATH}#g" "$HTTPS_TMPL" > "$NGINX_AVAILABLE"
+echo "== 3/5 Sync public images for /images/ alias"
+IMAGES_DIR="/var/www/mrpushkin/images"
+install -d -m 755 /var/www/mrpushkin
+rm -rf "$IMAGES_DIR"
+cp -R "$PROJECT_DIR/public/images" "$IMAGES_DIR"
+find "$IMAGES_DIR" -type d -exec chmod 755 {} +
+find "$IMAGES_DIR" -type f -exec chmod 644 {} +
+
+echo "== 4/5 HTTPS vhost (club UI at /, API at /api, legacy /mp-* → 301)"
+install -m 644 "$HTTPS_TMPL" "$NGINX_AVAILABLE"
 nginx -t
 systemctl reload nginx
 
-echo "== 4/4 Done"
-echo "Club UI: https://$DOMAIN$BASE_PATH/"
+echo "== 5/5 Done"
+echo "Club UI: https://$DOMAIN/"
+echo "Legacy redirect: https://$DOMAIN/mp-7f3a9c2e5b8d4106/ → https://$DOMAIN/"
 echo "DuckDNS left unchanged (parallel)."

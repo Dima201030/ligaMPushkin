@@ -249,7 +249,12 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
                     <td className="text-[0.64rem] tabular-nums text-ink-faint">{index + 1}</td>
                     <td className="min-w-[200px]">
                       <Link href={`/players/${player.slug}`} className="group flex items-center gap-2.5">
-                        <Avatar firstName={player.firstName} lastName={player.lastName} size="sm" />
+                        <Avatar
+                          firstName={player.firstName}
+                          lastName={player.lastName}
+                          src={player.avatarUrl}
+                          size="sm"
+                        />
                         <span>
                           <span className="block text-[0.78rem] font-medium text-ink transition-opacity group-hover:opacity-60">
                             {player.lastName} {player.firstName}

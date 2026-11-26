@@ -97,7 +97,13 @@ export default async function CabinetPage() {
           </div>
 
           <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-center">
-            <Avatar firstName={player.firstName} lastName={player.lastName} size="hero" tone="navy" />
+            <Avatar
+              firstName={player.firstName}
+              lastName={player.lastName}
+              src={player.avatarUrl}
+              size="hero"
+              tone="navy"
+            />
             <div className="min-w-0 flex-1">
               <h1 className="text-[clamp(2.4rem,4.4vw,4.2rem)] leading-[1.04] text-white">
                 {player.firstName} {player.lastName}

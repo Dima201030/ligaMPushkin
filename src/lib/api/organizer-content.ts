@@ -36,7 +36,7 @@ function mapNews(raw: ApiNews): NewsPost & { status: string } {
     title: raw.title,
     excerpt: raw.excerpt,
     body: raw.body ?? [],
-    coverUrl: resolveCoverUrl(raw.cover_url),
+    coverUrl: resolveCoverUrl(raw.cover_url || "/images/hero.jpg"),
     publishedAt: raw.published_at || "",
     tag: raw.tag || "Pairly",
     author: raw.author || "",

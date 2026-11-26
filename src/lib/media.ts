@@ -8,9 +8,10 @@ const COVER_PLACEHOLDER_PATH = "/images/cover-placeholder.svg";
 export const COVER_PLACEHOLDER = `${BASE_PATH}${COVER_PLACEHOLDER_PATH}`;
 
 /**
- * Legacy club photos are no longer shipped. Any cover that still points to a
- * local photo falls back to the neutral platform placeholder. API file URLs get
- * the current base path so they resolve both in the browser and on the server.
+ * Resolve a cover URL for the browser/SSR.
+ * - missing → neutral placeholder
+ * - `/images/…` and `/api/…` get the current base path
+ * - absolute/external URLs pass through
  */
 export function resolveCoverUrl(url?: string | null): string {
   if (!url) return COVER_PLACEHOLDER;
@@ -20,10 +21,8 @@ export function resolveCoverUrl(url?: string | null): string {
   ) {
     return COVER_PLACEHOLDER;
   }
-  if (url.startsWith("/images/")) {
-    return COVER_PLACEHOLDER;
-  }
-  if (url.startsWith("/api/")) {
+  if (url.startsWith("/images/") || url.startsWith("/api/")) {
+    if (BASE_PATH && url.startsWith(`${BASE_PATH}/`)) return url;
     return `${BASE_PATH}${url}`;
   }
   return url;

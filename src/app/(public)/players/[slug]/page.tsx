@@ -48,7 +48,12 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
           />
 
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-            <Avatar firstName={player.firstName} lastName={player.lastName} size="hero" />
+            <Avatar
+              firstName={player.firstName}
+              lastName={player.lastName}
+              src={player.avatarUrl}
+              size="hero"
+            />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <CategoryBadge category={player.category} />
