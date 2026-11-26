@@ -6,6 +6,7 @@ import { useState } from "react";
 import {
   ArrowUpRight,
   BarChart3,
+  Building2,
   CalendarDays,
   LayoutDashboard,
   Menu,
@@ -36,6 +37,7 @@ const GROUPS = [
   {
     label: "База",
     items: [
+      { href: "/organizer/clubs", label: "Клубы", icon: Building2 },
       { href: "/organizer/members", label: "Участники", icon: UserPlus },
       { href: "/organizer/settings", label: "Настройки", icon: Settings },
       { href: "/organizer/players", label: "Игроки", icon: Users },
@@ -47,6 +49,7 @@ const GROUPS = [
 
 const BADGES: Record<string, string> = {
   "/organizer/applications": "new",
+  "/organizer/clubs": "new",
   "/organizer/members": "new",
   "/organizer/settings": "new",
   "/organizer/bracket": "new",
