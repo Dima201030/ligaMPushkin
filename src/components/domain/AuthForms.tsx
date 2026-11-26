@@ -211,9 +211,9 @@ export function LoginForm() {
               <input type="checkbox" name="remember" className="size-4 accent-[var(--color-accent)]" />
               Запомнить меня
             </label>
-            <button type="button" className="text-xs font-semibold text-accent hover:underline">
+            <Link href="/forgot-password" className="text-xs font-semibold text-accent hover:underline">
               Забыли пароль?
-            </button>
+            </Link>
           </div>
 
           {state.kind === "error" && (
