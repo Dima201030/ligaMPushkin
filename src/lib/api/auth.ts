@@ -288,6 +288,49 @@ export async function logoutAccount(): Promise<void> {
   await request("/auth/logout", { method: "POST" });
 }
 
+/** Confirm email via token from the letter link. */
+export async function confirmEmailToken(
+  token: string,
+): Promise<{ ok: true; email?: string } | { ok: false; error: string }> {
+  const { response, data } = await request<{ ok?: boolean; email?: string } & ApiErrorBody>(
+    "/auth/confirm-email",
+    {
+      method: "POST",
+      body: JSON.stringify({ token: token.trim() }),
+    },
+  );
+  if (response.ok && data?.ok) {
+    return { ok: true, email: data.email };
+  }
+  return {
+    ok: false,
+    error: data?.message ?? "Ссылка подтверждения недействительна или устарела",
+  };
+}
+
+/** Resend confirm letter (anti-enumeration; always ok unless rate-limited). */
+export async function resendConfirmEmail(
+  email: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { response, data } = await request<{ ok?: boolean } & ApiErrorBody>("/auth/resend-confirm", {
+    method: "POST",
+    body: JSON.stringify({ email: email.trim().toLowerCase() }),
+  });
+  if (response.status === 202 || (response.ok && data?.ok)) {
+    return { ok: true };
+  }
+  if (response.status === 429) {
+    return {
+      ok: false,
+      error: data?.message ?? "Слишком много попыток. Подождите несколько минут.",
+    };
+  }
+  return {
+    ok: false,
+    error: data?.message ?? "Не удалось отправить письмо",
+  };
+}
+
 /** Right-to-erasure: anonymize account and clear session. */
 export async function deleteMyAccount(): Promise<{ ok: true } | { ok: false; error: string }> {
   const { response, data } = await request<{ ok?: boolean; message?: string } & ApiErrorBody>("/auth/me", {

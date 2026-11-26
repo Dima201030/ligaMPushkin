@@ -9,22 +9,32 @@ import {
   Clock3,
   Eye,
   EyeOff,
+  Mail,
   UserCheck,
 } from "lucide-react";
-import { canAccessOrganizer, fetchSession, loginAccount, registerAccount } from "@/lib/api/auth";
+import {
+  canAccessOrganizer,
+  fetchSession,
+  loginAccount,
+  registerAccount,
+  resendConfirmEmail,
+} from "@/lib/api/auth";
 import { CATEGORIES } from "@/lib/domain";
 
 type LoginState =
   | { kind: "idle" }
   | { kind: "error"; message: string }
   | { kind: "pending"; name: string }
-  | { kind: "rejected"; name: string };
+  | { kind: "rejected"; name: string }
+  | { kind: "email_unverified"; email: string; message: string };
 
 export function LoginForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [state, setState] = useState<LoginState>({ kind: "idle" });
   const [checking, setChecking] = useState(false);
+  const [resendBusy, setResendBusy] = useState(false);
+  const [resendNotice, setResendNotice] = useState<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -39,6 +49,7 @@ export function LoginForm() {
 
     setChecking(true);
     setState({ kind: "idle" });
+    setResendNotice(null);
 
     try {
       const result = await loginAccount(email, password);
@@ -62,6 +73,15 @@ export function LoginForm() {
         return;
       }
 
+      if (result.kind === "email_unverified") {
+        setState({
+          kind: "email_unverified",
+          email,
+          message: result.message || "Подтвердите email по ссылке из письма",
+        });
+        return;
+      }
+
       setState({
         kind: "error",
         message: result.message || "Неверный email или пароль",
@@ -80,7 +100,51 @@ export function LoginForm() {
         Следите за регистрацией, рейтингом и историей матчей.
       </p>
 
-      {state.kind === "pending" ? (
+      {state.kind === "email_unverified" ? (
+        <div className="mt-7 border border-line bg-surface-muted p-5" role="status">
+          <span className="grid size-11 place-items-center rounded-full bg-warning-soft text-warning">
+            <Mail className="size-5" aria-hidden="true" />
+          </span>
+          <h2 className="mt-4 text-xl text-navy">Подтвердите email</h2>
+          <p className="mt-2 text-sm leading-relaxed text-ink-muted">{state.message}</p>
+          <p className="mt-3 text-xs leading-relaxed text-ink-muted">
+            Письмо со ссылкой отправлено на {state.email}. Проверьте почту и папку «Спам».
+          </p>
+          {resendNotice && (
+            <p className="mt-3 text-xs font-medium text-positive">{resendNotice}</p>
+          )}
+          <div className="mt-5 flex flex-col gap-2">
+            <button
+              type="button"
+              className="btn btn-primary w-full"
+              disabled={resendBusy}
+              onClick={async () => {
+                setResendBusy(true);
+                setResendNotice(null);
+                const result = await resendConfirmEmail(state.email);
+                setResendBusy(false);
+                setResendNotice(
+                  result.ok
+                    ? "Письмо отправлено. Проверьте почту."
+                    : result.error,
+                );
+              }}
+            >
+              {resendBusy ? "Отправка…" : "Отправить письмо ещё раз"}
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary w-full"
+              onClick={() => {
+                setResendNotice(null);
+                setState({ kind: "idle" });
+              }}
+            >
+              Войти другим аккаунтом
+            </button>
+          </div>
+        </div>
+      ) : state.kind === "pending" ? (
         <div className="mt-7 border border-line bg-surface-muted p-5" role="status">
           <span className="grid size-11 place-items-center rounded-full bg-warning-soft text-warning">
             <Clock3 className="size-5" aria-hidden="true" />
@@ -270,8 +334,8 @@ export function RegisterForm() {
         </span>
         <h1 className="mt-5 text-center text-2xl text-navy">Заявка отправлена</h1>
         <p className="mt-3 text-center text-sm leading-relaxed text-ink-muted">
-          {applicantName}, аккаунт создан и ждёт подтверждения. Администратор проверит имя,
-          фамилию и уровень — после этого вход станет доступен.
+          {applicantName}, аккаунт создан. Подтвердите email по ссылке из письма — затем
+          администратор проверит имя, фамилию и уровень.
         </p>
 
         <ol className="mt-6 space-y-3 border-y border-line py-5 text-sm text-ink-soft">
@@ -279,7 +343,7 @@ export function RegisterForm() {
             <span className="grid size-5 shrink-0 place-items-center rounded-full bg-positive-soft text-positive">
               <Check className="size-3" aria-hidden="true" />
             </span>
-            Регистрация завершена — заявка в базе платформы.
+            Регистрация завершена — письмо с подтверждением email отправлено.
           </li>
           <li className="flex gap-3">
             <span className="grid size-5 shrink-0 place-items-center rounded-full bg-warning-soft text-warning">
@@ -291,7 +355,7 @@ export function RegisterForm() {
             <span className="grid size-5 shrink-0 place-items-center rounded-full bg-canvas text-ink-faint">
               <UserCheck className="size-3" aria-hidden="true" />
             </span>
-            После подтверждения вы входите с тем же email и паролем.
+            После одобрения входите с тем же email и паролем.
           </li>
         </ol>
 
