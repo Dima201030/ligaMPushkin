@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { deleteTournamentCover, uploadTournamentCover } from "@/lib/api/tournaments";
+import { COVER_LIMITS, validateCoverFile } from "@/lib/club-limits";
 
 export function TournamentCover({
   tournamentId,
@@ -25,6 +26,12 @@ export function TournamentCover({
     if (!file || busy) return;
     setError(null);
     setNotice(null);
+    const localError = validateCoverFile(file);
+    if (localError) {
+      setError(localError);
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
     setBusy(true);
     const result = await uploadTournamentCover(tournamentId, file);
     if (result.ok) {
@@ -106,14 +113,14 @@ export function TournamentCover({
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
+        accept={COVER_LIMITS.accept}
         className="sr-only"
         onChange={(event) => handleFile(event.target.files)}
       />
 
       <p className="mt-3 text-[0.64rem] leading-relaxed text-ink-muted">
         Фото профиля турнира для списка и публичной страницы. Отдельно от галереи.
-        JPEG, PNG, WebP или GIF.
+        JPEG, PNG или WebP, до 5 МБ.
       </p>
       {notice && (
         <p role="status" className="mt-2 border border-accent-line bg-accent-soft px-3 py-2 text-[0.68rem] text-accent-strong">

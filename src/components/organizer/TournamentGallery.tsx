@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 import type { TournamentImage } from "@/lib/types";
+import { COVER_LIMITS, validateCoverFile } from "@/lib/club-limits";
 import { deleteTournamentImage, uploadTournamentImage } from "@/lib/api/tournaments";
 
 const MAX_IMAGES = 12;
@@ -35,6 +36,11 @@ export function TournamentGallery({
     for (const file of Array.from(files)) {
       if (items.length + uploaded.length >= MAX_IMAGES) {
         failed = `В галерее может быть не больше ${MAX_IMAGES} изображений`;
+        break;
+      }
+      const localError = validateCoverFile(file);
+      if (localError) {
+        failed = localError;
         break;
       }
       const result = await uploadTournamentImage(tournamentId, file);
@@ -124,14 +130,14 @@ export function TournamentGallery({
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
+        accept={COVER_LIMITS.accept}
         multiple
         className="sr-only"
         onChange={(event) => handleFiles(event.target.files)}
       />
 
       <p className="mt-3 text-[0.64rem] leading-relaxed text-ink-muted">
-        JPEG, PNG, WebP или GIF. Изображения передаются по защищённому соединению и
+        JPEG, PNG или WebP, до 5 МБ. Изображения передаются по защищённому соединению и
         хранятся на сервере в зашифрованном виде. {items.length} из {MAX_IMAGES}.
       </p>
       {notice && (
