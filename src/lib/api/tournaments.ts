@@ -547,6 +547,35 @@ export async function addOrganizerRegistration(
   };
 }
 
+export async function uploadTournamentCover(
+  tournamentId: string,
+  file: File,
+): Promise<{ ok: true; coverUrl: string } | { ok: false; error: string }> {
+  const body = new FormData();
+  body.append("file", file);
+  const { response, data } = await apiRequest<{ cover_url?: string | null } & ApiErrorBody>(
+    `/organizer/tournaments/${encodeURIComponent(tournamentId)}/cover`,
+    { method: "POST", body },
+  );
+  if (!response.ok || !data?.cover_url) {
+    return { ok: false, error: data?.message ?? "Не удалось загрузить обложку" };
+  }
+  return { ok: true, coverUrl: resolveCoverUrl(data.cover_url) };
+}
+
+export async function deleteTournamentCover(
+  tournamentId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { response, data } = await apiRequest<ApiErrorBody>(
+    `/organizer/tournaments/${encodeURIComponent(tournamentId)}/cover`,
+    { method: "DELETE" },
+  );
+  if (!response.ok) {
+    return { ok: false, error: data?.message ?? "Не удалось удалить обложку" };
+  }
+  return { ok: true };
+}
+
 export async function uploadTournamentImage(
   tournamentId: string,
   file: File,
