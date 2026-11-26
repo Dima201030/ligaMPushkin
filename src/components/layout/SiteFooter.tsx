@@ -82,6 +82,9 @@ export function SiteFooter() {
           <div className="flex flex-col gap-2 text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted md:items-end">
             <div className="flex flex-wrap gap-x-5 gap-y-2">
               <Link href="/rules" className="transition-colors hover:text-ink">Регламент</Link>
+              <Link href="/privacy" className="transition-colors hover:text-ink">Политика ПДн</Link>
+              <Link href="/consent" className="transition-colors hover:text-ink">Согласия</Link>
+              <Link href="/terms" className="transition-colors hover:text-ink">Соглашение</Link>
               <Link href="/contacts" className="transition-colors hover:text-ink">Контакты</Link>
             </div>
             <p>© 2026 {CLUB.productName} · Платформа для организации турниров</p>

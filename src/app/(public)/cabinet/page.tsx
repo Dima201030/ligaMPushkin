@@ -20,6 +20,7 @@ import {
   NotificationSettings,
   RatingHistoryTable,
 } from "@/components/domain/CabinetPanels";
+import { DeleteAccountPanel } from "@/components/domain/DeleteAccountPanel";
 import { PageHeader } from "@/components/ui/Section";
 
 export const metadata: Metadata = {
@@ -259,8 +260,23 @@ export default async function CabinetPage() {
                 <dd>{category?.name ?? player.category}</dd>
               </div>
             </dl>
+            <p className="mt-4 text-xs text-ink-muted">
+              Документы:{" "}
+              <Link href="/privacy" className="text-accent hover:underline">
+                политика ПДн
+              </Link>
+              ,{" "}
+              <Link href="/consent" className="text-accent hover:underline">
+                согласия
+              </Link>
+              .
+            </p>
           </div>
           <NotificationSettings />
+        </section>
+
+        <section className="mt-10 border-t border-line pt-10">
+          <DeleteAccountPanel />
         </section>
       </div>
     </>

@@ -191,6 +191,9 @@ export function LoginForm() {
 export function RegisterForm() {
   const [step, setStep] = useState<"form" | "done">("form");
   const [level, setLevel] = useState("rookies");
+  const [consentPdn, setConsentPdn] = useState(false);
+  const [consentPublic, setConsentPublic] = useState(false);
+  const [consentMarketing, setConsentMarketing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [applicantName, setApplicantName] = useState("");
@@ -217,6 +220,14 @@ export function RegisterForm() {
       setError("Пароли не совпадают");
       return;
     }
+    if (!consentPdn) {
+      setError("Нужно согласие на обработку персональных данных");
+      return;
+    }
+    if (!consentPublic) {
+      setError("Нужно согласие на публикацию профиля и результатов");
+      return;
+    }
 
     setSubmitting(true);
     setError(null);
@@ -229,6 +240,9 @@ export function RegisterForm() {
         phone,
         password,
         level: level as (typeof CATEGORIES)[number]["slug"],
+        consentPdn,
+        consentPublicProfile: consentPublic,
+        consentMarketing,
       });
 
       setSubmitting(false);
@@ -357,10 +371,64 @@ export function RegisterForm() {
         <p className="text-[0.68rem] leading-relaxed text-ink-faint">
           Уровень — предварительный: администратор проверит его при подтверждении аккаунта.
         </p>
-        <label className="flex items-start gap-2 text-[0.68rem] leading-relaxed text-ink-muted">
-          <input type="checkbox" required className="mt-0.5 size-4 accent-[var(--color-accent)]" />
-          Согласен с правилами платформы и обработкой персональных данных
-        </label>
+        <div className="space-y-3 border-t border-line pt-4">
+          <label className="flex items-start gap-2 text-[0.72rem] leading-relaxed text-ink-soft">
+            <input
+              type="checkbox"
+              className="mt-0.5 size-4 shrink-0 accent-[var(--color-accent)]"
+              checked={consentPdn}
+              onChange={(event) => setConsentPdn(event.target.checked)}
+              required
+            />
+            <span>
+              Согласен на{" "}
+              <Link href="/consent" className="font-semibold text-accent hover:underline" target="_blank">
+                обработку персональных данных
+              </Link>{" "}
+              и принимаю{" "}
+              <Link href="/privacy" className="font-semibold text-accent hover:underline" target="_blank">
+                политику ПДн
+              </Link>
+              .
+            </span>
+          </label>
+          <label className="flex items-start gap-2 text-[0.72rem] leading-relaxed text-ink-soft">
+            <input
+              type="checkbox"
+              className="mt-0.5 size-4 shrink-0 accent-[var(--color-accent)]"
+              checked={consentPublic}
+              onChange={(event) => setConsentPublic(event.target.checked)}
+              required
+            />
+            <span>
+              Согласен на{" "}
+              <Link href="/consent#public" className="font-semibold text-accent hover:underline" target="_blank">
+                публикацию ФИО, рейтинга и результатов
+              </Link>{" "}
+              на сайте.
+            </span>
+          </label>
+          <label className="flex items-start gap-2 text-[0.72rem] leading-relaxed text-ink-muted">
+            <input
+              type="checkbox"
+              className="mt-0.5 size-4 shrink-0 accent-[var(--color-accent)]"
+              checked={consentMarketing}
+              onChange={(event) => setConsentMarketing(event.target.checked)}
+            />
+            <span>
+              Хочу получать новости платформы (необязательно).{" "}
+              <Link href="/consent#marketing" className="text-accent hover:underline" target="_blank">
+                Текст согласия
+              </Link>
+            </span>
+          </label>
+          <p className="text-[0.66rem] text-ink-faint">
+            Пользовательское соглашение:{" "}
+            <Link href="/terms" className="text-accent hover:underline" target="_blank">
+              /terms
+            </Link>
+          </p>
+        </div>
 
         {error && (
           <p role="alert" className="rounded-md bg-negative-soft px-3 py-2 text-xs font-medium text-negative">

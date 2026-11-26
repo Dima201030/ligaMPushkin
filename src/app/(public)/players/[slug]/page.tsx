@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Award, CalendarDays, MapPin, Trophy, UserPlus } from "lucide-react";
+import { ArrowLeft, Award, MapPin, Trophy, UserPlus } from "lucide-react";
 import { getPlayerProfile } from "@/lib/data";
 import { CATEGORY_BY_SLUG } from "@/lib/domain";
 import { cn, formatDate, formatNumber, publicCity, winRate } from "@/lib/utils";
@@ -64,12 +64,6 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
                   <span className="inline-flex items-center gap-1.5">
                     <MapPin className="size-3.5" aria-hidden="true" />
                     {player.city}
-                  </span>
-                ) : null}
-                {player.birthYear > 1900 ? (
-                  <span className="inline-flex items-center gap-1.5">
-                    <CalendarDays className="size-3.5" aria-hidden="true" />
-                    {player.birthYear} год рождения
                   </span>
                 ) : null}
                 <span>{category?.name ?? player.category} · {category?.note ?? ""}</span>

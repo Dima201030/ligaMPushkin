@@ -165,6 +165,9 @@ export type RegisterInput = {
   password: string;
   phone?: string;
   level: CategorySlug;
+  consentPdn: boolean;
+  consentPublicProfile: boolean;
+  consentMarketing?: boolean;
 };
 
 export async function registerAccount(
@@ -179,6 +182,9 @@ export async function registerAccount(
       password: input.password,
       phone: input.phone?.trim() || undefined,
       level: input.level,
+      consent_pdn: input.consentPdn,
+      consent_public_profile: input.consentPublicProfile,
+      consent_marketing: Boolean(input.consentMarketing),
     }),
   });
 
@@ -251,6 +257,20 @@ export async function loginAccount(email: string, password: string): Promise<Log
 
 export async function logoutAccount(): Promise<void> {
   await request("/auth/logout", { method: "POST" });
+}
+
+/** Right-to-erasure: anonymize account and clear session. */
+export async function deleteMyAccount(): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { response, data } = await request<{ ok?: boolean; message?: string } & ApiErrorBody>("/auth/me", {
+    method: "DELETE",
+  });
+  if (response.status === 200 && data?.ok) {
+    return { ok: true };
+  }
+  return {
+    ok: false,
+    error: data?.message || "Не удалось удалить аккаунт",
+  };
 }
 
 interface ApiProfile {
