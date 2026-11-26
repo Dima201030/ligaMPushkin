@@ -54,7 +54,9 @@ export function OrganizerTournamentTable({ tournaments }: { tournaments: Tournam
         matchesFilter(tournament, filter) &&
         (category === "all" || tournament.category === category) &&
         (needle
-          ? `${tournament.title} ${tournament.slug} ${tournament.description} ${formatTournamentCreatorLabel(tournament.createdBy)}`.toLowerCase().includes(needle)
+          ? `${tournament.title} ${tournament.slug} ${tournament.description.slice(0, 240)} ${formatTournamentCreatorLabel(tournament.createdBy)}`
+              .toLowerCase()
+              .includes(needle)
           : true)
       );
     });

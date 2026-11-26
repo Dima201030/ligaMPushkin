@@ -24,6 +24,7 @@ import {
   updateEventStatus,
   updateNewsStatus,
 } from "@/lib/api/organizer-content";
+import { CONTENT_LIMITS, validateEventFields, validateNewsFields } from "@/lib/tournament-limits";
 import { DemoNote } from "./OrganizerUI";
 
 interface NewsRow {
@@ -111,10 +112,16 @@ export function ContentManager({ news, events }: { news: NewsRow[]; events: Even
   async function submitComposer(event: React.FormEvent) {
     event.preventDefault();
     if (!title.trim()) return;
-    setBusy(true);
     setError(null);
     setNotice(null);
     if (tab === "news") {
+      const fieldErrors = validateNewsFields({ title, excerpt, body });
+      const first = Object.values(fieldErrors)[0];
+      if (first) {
+        setError(first);
+        return;
+      }
+      setBusy(true);
       const result = await createNews({
         title: title.trim(),
         excerpt: excerpt.trim() || title.trim(),
@@ -131,6 +138,18 @@ export function ContentManager({ news, events }: { news: NewsRow[]; events: Even
       }
       setNotice(`Новость «${result.news.title}» опубликована.`);
     } else {
+      const fieldErrors = validateEventFields({
+        title,
+        description: body,
+        location,
+        startsAt,
+      });
+      const first = Object.values(fieldErrors)[0];
+      if (first) {
+        setError(first);
+        return;
+      }
+      setBusy(true);
       const iso = startsAt ? new Date(startsAt).toISOString() : new Date().toISOString();
       const result = await createEvent({
         title: title.trim(),
@@ -201,17 +220,36 @@ export function ContentManager({ news, events }: { news: NewsRow[]; events: Even
         <form onSubmit={submitComposer} className="space-y-3 border-y border-line py-4">
           <label className="block">
             <span className="field-label">Заголовок</span>
-            <input className="field" value={title} onChange={(e) => setTitle(e.target.value)} required />
+            <input
+              className="field"
+              value={title}
+              maxLength={CONTENT_LIMITS.titleMax}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
           </label>
           {tab === "news" ? (
             <>
               <label className="block">
                 <span className="field-label">Лид</span>
-                <input className="field" value={excerpt} onChange={(e) => setExcerpt(e.target.value)} />
+                <input
+                  className="field"
+                  value={excerpt}
+                  maxLength={CONTENT_LIMITS.excerptMax}
+                  onChange={(e) => setExcerpt(e.target.value)}
+                />
               </label>
               <label className="block">
                 <span className="field-label">Текст (абзацы через пустую строку)</span>
-                <textarea className="field min-h-[120px]" value={body} onChange={(e) => setBody(e.target.value)} />
+                <textarea
+                  className="field min-h-[120px]"
+                  value={body}
+                  maxLength={CONTENT_LIMITS.newsBodyMax}
+                  onChange={(e) => setBody(e.target.value)}
+                />
+                <span className="mt-1 block text-[0.62rem] tabular-nums text-ink-faint">
+                  {body.trim().length}/{CONTENT_LIMITS.newsBodyMax}
+                </span>
               </label>
             </>
           ) : (
@@ -237,12 +275,26 @@ export function ContentManager({ news, events }: { news: NewsRow[]; events: Even
                 </label>
                 <label className="block">
                   <span className="field-label">Место</span>
-                  <input className="field" value={location} placeholder="Площадка и город" onChange={(e) => setLocation(e.target.value)} />
+                  <input
+                    className="field"
+                    value={location}
+                    maxLength={CONTENT_LIMITS.eventLocationMax}
+                    placeholder="Площадка и город"
+                    onChange={(e) => setLocation(e.target.value)}
+                  />
                 </label>
               </div>
               <label className="block">
                 <span className="field-label">Описание</span>
-                <textarea className="field min-h-[96px]" value={body} onChange={(e) => setBody(e.target.value)} />
+                <textarea
+                  className="field min-h-[96px]"
+                  value={body}
+                  maxLength={CONTENT_LIMITS.eventDescriptionMax}
+                  onChange={(e) => setBody(e.target.value)}
+                />
+                <span className="mt-1 block text-[0.62rem] tabular-nums text-ink-faint">
+                  {body.trim().length}/{CONTENT_LIMITS.eventDescriptionMax}
+                </span>
               </label>
             </>
           )}
