@@ -11,6 +11,7 @@ import {
   Menu,
   Network,
   Newspaper,
+  Settings,
   Trophy,
   UserCheck,
   UserPlus,
@@ -36,6 +37,7 @@ const GROUPS = [
     label: "База",
     items: [
       { href: "/organizer/members", label: "Участники", icon: UserPlus },
+      { href: "/organizer/settings", label: "Настройки", icon: Settings },
       { href: "/organizer/players", label: "Игроки", icon: Users },
       { href: "/organizer/ratings", label: "Рейтинг", icon: BarChart3 },
       { href: "/organizer/content", label: "Контент", icon: Newspaper },
@@ -46,6 +48,7 @@ const GROUPS = [
 const BADGES: Record<string, string> = {
   "/organizer/applications": "new",
   "/organizer/members": "new",
+  "/organizer/settings": "new",
   "/organizer/bracket": "new",
 };
 
