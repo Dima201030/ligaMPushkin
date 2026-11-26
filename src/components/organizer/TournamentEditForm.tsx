@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Save } from "lucide-react";
+import { AutosaveIndicator } from "@/components/motion/AutosaveIndicator";
 import type {
   CategorySlug,
   Surface,
@@ -64,6 +65,7 @@ export function TournamentEditForm({ tournament }: { tournament: Tournament }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [attempted, setAttempted] = useState(false);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -98,6 +100,7 @@ export function TournamentEditForm({ tournament }: { tournament: Tournament }) {
       return;
     }
     setBusy(true);
+    setSaveState("saving");
     setError(null);
     const result = await updateOrganizerTournament(tournament.id, {
       title: form.title.trim(),
@@ -122,9 +125,11 @@ export function TournamentEditForm({ tournament }: { tournament: Tournament }) {
     });
     setBusy(false);
     if (!result.ok) {
+      setSaveState("error");
       setError(result.error);
       return;
     }
+    setSaveState("saved");
     router.push(`/organizer/tournaments/${tournament.id}`);
     router.refresh();
   }
@@ -402,6 +407,7 @@ export function TournamentEditForm({ tournament }: { tournament: Tournament }) {
           )}
 
           <div className="mt-4 space-y-2 border-t border-line pt-4">
+            <AutosaveIndicator state={saveState} className="mb-2" />
             <button type="submit" className={cn("btn btn-primary w-full")} disabled={busy}>
               {busy ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Save className="size-4" aria-hidden="true" />}
               {busy ? "Сохранение…" : "Сохранить изменения"}

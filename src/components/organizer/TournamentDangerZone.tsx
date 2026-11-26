@@ -9,6 +9,7 @@ import {
 } from "@/lib/api/tournaments";
 import { cn } from "@/lib/utils";
 import { MiniLabel, Panel } from "./OrganizerUI";
+import { Modal } from "@/components/motion/Modal";
 
 export function TournamentDangerZone({
   id,
@@ -25,6 +26,7 @@ export function TournamentDangerZone({
   const [isHidden, setIsHidden] = useState(hidden);
   const [busy, setBusy] = useState<"visibility" | "delete" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   async function toggleVisibility() {
     if (busy) return;
@@ -42,15 +44,12 @@ export function TournamentDangerZone({
 
   async function remove() {
     if (busy) return;
-    const confirmed = window.confirm(
-      `Удалить турнир «${title}»?\n\nВместе с турниром удалятся заявки, матчи, сетка и галерея. Действие необратимо.`,
-    );
-    if (!confirmed) return;
     setBusy("delete");
     setError(null);
     const result = await deleteOrganizerTournament(id);
     if (!result.ok) {
       setBusy(null);
+      setConfirmOpen(false);
       setError(result.error);
       return;
     }
@@ -91,14 +90,10 @@ export function TournamentDangerZone({
         <button
           type="button"
           className="btn btn-ghost w-full text-negative hover:border-negative"
-          onClick={() => void remove()}
+          onClick={() => setConfirmOpen(true)}
           disabled={busy !== null}
         >
-          {busy === "delete" ? (
-            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-          ) : (
-            <Trash2 className="size-4" aria-hidden="true" />
-          )}
+          <Trash2 className="size-4" aria-hidden="true" />
           Удалить турнир
         </button>
       </div>
@@ -112,6 +107,18 @@ export function TournamentDangerZone({
           {error}
         </p>
       )}
+
+      <Modal
+        open={confirmOpen}
+        title={`Удалить «${title}»?`}
+        onClose={() => setConfirmOpen(false)}
+        confirmLabel="Удалить"
+        cancelLabel="Отмена"
+        onConfirm={() => void remove()}
+        busy={busy === "delete"}
+      >
+        Вместе с турниром удалятся заявки, матчи, сетка и галерея. Действие необратимо.
+      </Modal>
     </Panel>
   );
 }

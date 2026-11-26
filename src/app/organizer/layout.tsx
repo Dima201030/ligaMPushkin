@@ -4,6 +4,8 @@ import { OrganizerNav } from "@/components/organizer/OrganizerNav";
 import { CLUB } from "@/lib/domain";
 import { hasFullOrganizerAccess } from "@/lib/api/auth";
 import { requireOrganizerSession } from "@/lib/organizer-access";
+import { ToastProvider } from "@/components/motion/Toast";
+import { SmoothScroll } from "@/components/motion/SmoothScroll";
 
 export const metadata: Metadata = {
   title: {
@@ -18,16 +20,19 @@ export default async function OrganizerLayout({ children }: { children: React.Re
   const fullAccess = hasFullOrganizerAccess(session);
 
   return (
-    <div className="min-h-screen bg-canvas lg:grid lg:grid-cols-[264px_minmax(0,1fr)] print:block print:bg-white">
-      <OrganizerNav
-        organizerName={`${session.user.firstName} ${session.user.lastName}`}
-        organizerEmail={session.user.email}
-        access={fullAccess ? "full" : "tournament"}
-      />
-      <div className="min-w-0">
-        <EmailConfirmBanner />
-        {children}
+    <ToastProvider>
+      <div className="page-shell-transition min-h-screen bg-canvas lg:grid lg:grid-cols-[264px_minmax(0,1fr)] print:block print:bg-white">
+        <OrganizerNav
+          organizerName={`${session.user.firstName} ${session.user.lastName}`}
+          organizerEmail={session.user.email}
+          access={fullAccess ? "full" : "tournament"}
+        />
+        <div className="min-w-0">
+          <EmailConfirmBanner />
+          {children}
+        </div>
       </div>
-    </div>
+      <SmoothScroll />
+    </ToastProvider>
   );
 }

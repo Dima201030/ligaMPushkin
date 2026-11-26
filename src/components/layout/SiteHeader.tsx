@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CLUB } from "@/lib/domain";
 import { cn } from "@/lib/utils";
-import { Logo } from "./Logo";
+import { LogoEgg } from "@/components/polish/LogoEgg";
 import { SessionLinks } from "./SessionLinks";
 
 const NAV = [
@@ -40,7 +40,7 @@ export function SiteHeader() {
   return (
     <header className="relative z-40">
       <div className="page-shell flex items-start justify-between gap-8 py-6 md:py-7">
-        <Logo />
+        <LogoEgg />
 
         <nav className="hidden items-center gap-7 pt-1 lg:flex" aria-label="Основная навигация">
           {NAV.map((item) => {
@@ -90,7 +90,7 @@ export function SiteHeader() {
           className="fixed inset-0 z-50 flex flex-col bg-canvas px-5 pb-8 pt-6"
         >
           <div className="flex items-start justify-between">
-            <Logo />
+            <LogoEgg />
             <button
               type="button"
               onClick={() => setOpen(false)}

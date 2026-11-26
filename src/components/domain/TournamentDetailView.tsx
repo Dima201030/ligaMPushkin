@@ -219,7 +219,7 @@ export async function TournamentDetailView({
                   if (!player) return null;
                   const partner = registration.partner;
                   return (
-                    <div key={`${registration.playerId}-${registration.partnerId ?? ""}`} className="flex items-center gap-3 px-5 py-3 md:px-6">
+                    <div key={`${registration.playerId}-${registration.partnerId ?? ""}`} className="registrant-join flex items-center gap-3 px-5 py-3 md:px-6">
                       <span className="w-6 text-xs font-bold tabular-nums text-ink-faint">{registration.seed ?? "—"}</span>
                       <Avatar firstName={player.firstName} lastName={player.lastName} size="sm" />
                       <div className="min-w-0 flex-1">

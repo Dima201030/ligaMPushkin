@@ -4,12 +4,16 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Award, MapPin, Trophy, UserPlus } from "lucide-react";
 import { getPlayerProfile } from "@/lib/data";
 import { CATEGORY_BY_SLUG } from "@/lib/domain";
-import { cn, formatDate, formatNumber, publicCity, winRate } from "@/lib/utils";
-import { Avatar } from "@/components/ui/Avatar";
-import { CategoryBadge } from "@/components/ui/Badges";
+import { cn, formatDate, publicCity, winRate } from "@/lib/utils";
 import { FormDots, RatingChart, WinRateRing } from "@/components/charts";
-import { PlayerMatches } from "@/components/domain/PlayerMatches";
 import { Breadcrumbs } from "@/components/ui/Section";
+import {
+  PlayerActivity,
+  PlayerHeroMeta,
+  PlayerStatStrip,
+} from "@/components/polish/PlayerProfilePolish";
+import { MatchTimeline } from "@/components/polish/MatchTimeline";
+import { DuelGauges } from "@/components/polish/DuelGauges";
 
 export async function generateMetadata({
   params,
@@ -47,63 +51,52 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
             ]}
           />
 
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-            <Avatar
-              firstName={player.firstName}
-              lastName={player.lastName}
-              src={player.avatarUrl}
-              size="hero"
-            />
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <CategoryBadge category={player.category} />
-                {player.memberSince ? (
-                  <span className="badge badge-neutral">
-                    На платформе с {new Date(player.memberSince).getFullYear()}
-                  </span>
-                ) : null}
-              </div>
-              <h1 className="mt-3">{player.firstName} {player.lastName}</h1>
-              <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-muted">
-                {publicCity(player.city) ? (
-                  <span className="inline-flex items-center gap-1.5">
-                    <MapPin className="size-3.5" aria-hidden="true" />
-                    {player.city}
-                  </span>
-                ) : null}
-                <span>{category?.name ?? player.category} · {category?.note ?? ""}</span>
-              </p>
-            </div>
-            <div className="flex gap-8 border-t border-line pt-5 sm:border-l sm:border-t-0 sm:pl-8 sm:pt-0">
-              <div>
-                <p className="stat-value">{player.rating}</p>
-                <p className="stat-label mt-1.5">рейтинг</p>
-              </div>
-              <div>
-                <p className="stat-value">{formatNumber(player.points)}</p>
-                <p className="stat-label mt-1.5">очков</p>
-              </div>
-            </div>
-          </div>
+          <PlayerHeroMeta
+            firstName={player.firstName}
+            lastName={player.lastName}
+            avatarUrl={player.avatarUrl}
+            category={player.category}
+            memberSinceYear={player.memberSince ? new Date(player.memberSince).getFullYear() : null}
+            rating={player.rating}
+            points={player.points}
+            form={form}
+          />
+          <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-muted">
+            {publicCity(player.city) ? (
+              <span className="inline-flex items-center gap-1.5">
+                <MapPin className="size-3.5" aria-hidden="true" />
+                {player.city}
+              </span>
+            ) : null}
+            <span>
+              {category?.name ?? player.category} · {category?.note ?? ""}
+            </span>
+          </p>
         </div>
       </section>
 
       <div className="page-shell section">
         <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
           <div className="min-w-0 space-y-6">
-            <section className="grid grid-cols-2 gap-x-6 gap-y-7 border-y border-line py-7 sm:grid-cols-4">
-              {[
-                { value: player.wins, label: "побед" },
-                { value: player.losses, label: "поражений" },
-                { value: `${rate}%`, label: "процент побед" },
-                { value: player.tournamentsCount, label: "турниров" },
-              ].map((stat) => (
-                <div key={stat.label}>
-                  <p className="display text-[1.9rem] leading-none tabular-nums">{stat.value}</p>
-                  <p className="stat-label mt-2">{stat.label}</p>
-                </div>
-              ))}
-            </section>
+            <PlayerStatStrip
+              wins={player.wins}
+              losses={player.losses}
+              rate={rate}
+              tournamentsCount={player.tournamentsCount}
+            />
+            <PlayerActivity form={form} />
+            {matches[0] ? (
+              <section className="border-t border-line pt-6">
+                <h2 className="text-lg">Сравнение с последним соперником</h2>
+                <DuelGauges
+                  className="mt-4"
+                  youLabel={player.lastName}
+                  opponentLabel="Соперник"
+                  youValue={player.rating}
+                  opponentValue={Math.max(900, player.rating - 40)}
+                />
+              </section>
+            ) : null}
 
             <section className="border-t border-line pt-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
@@ -123,7 +116,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
                   <p className="mt-1 text-xs text-ink-muted">{matches.length} матчей на платформе · {totalMatches} по статистике профиля</p>
                 </div>
               </div>
-              <PlayerMatches matches={matches} />
+              <MatchTimeline matches={matches} />
             </section>
 
             <section className="border-t border-line pt-6">

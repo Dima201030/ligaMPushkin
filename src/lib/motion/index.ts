@@ -5,3 +5,5 @@ export {
   gaugeRatio,
   ringStroke,
 } from "./gauge-fill";
+
+export { prefersReducedMotion } from "./reduced-motion";

@@ -173,7 +173,7 @@ function SlotRow({
   return (
     <div
       className={cn(
-        "flex min-h-[30px] items-center gap-1.5 px-2 py-1 text-[0.7rem] transition-colors",
+        "slot-drag-spring flex min-h-[30px] items-center gap-1.5 px-2 py-1 text-[0.7rem] transition-colors",
         winner ? "bg-canvas-deep" : "",
         canDrag && "cursor-grab active:cursor-grabbing",
         over && droppable && "bg-accent/10 outline outline-1 outline-accent",
@@ -288,7 +288,7 @@ function BracketTree({
   onSwap?: (from: BracketSlotRef, to: BracketSlotRef) => void;
 }) {
   return (
-    <div className="flex gap-3 overflow-x-auto pb-2">
+    <div className="bracket-soft-scroll flex gap-3 overflow-x-auto pb-2">
       {rounds.map((round) => (
         <div key={round.index} className={cn("flex shrink-0 flex-col", compact ? "w-[190px]" : "w-[212px]")}>
           <div className="mb-2 flex items-baseline justify-between gap-2 border-b border-line pb-1">
@@ -722,7 +722,14 @@ export function BracketStudio({
       <div className="min-w-0 space-y-6">
         {loadingBracket ? (
           <div className="border-y border-line px-6 py-20 text-center">
-            <p className="text-sm text-ink-muted">Загружаем сохранённую сетку…</p>
+            <div className="flex justify-center py-6">
+              {/* jelly loader via CSS class + image */}
+              <div className="jelly-loader">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/images/jelly-tennis-ball.webp" alt="" width={36} height={36} className="jelly-loader-ball" />
+                <span className="text-[0.66rem] uppercase tracking-[0.14em] text-ink-muted">Загружаем сохранённую сетку…</span>
+              </div>
+            </div>
           </div>
         ) : !hasContent ? (
           <div className="border-y border-line px-6 py-20 text-center">
