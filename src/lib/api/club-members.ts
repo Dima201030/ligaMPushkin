@@ -123,7 +123,7 @@ export async function patchClubMember(
   return { ok: false, error: data?.message ?? "Не удалось обновить участника" };
 }
 
-/** Soft-remove membership (status=left). API may return last_owner / forbidden. */
+/** Soft-remove club membership (status=left). Does not delete the Pairly account. */
 export async function deleteClubMember(
   id: string,
   opts?: { clubSlug?: string },

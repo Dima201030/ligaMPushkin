@@ -7,6 +7,8 @@ import { normalizeClubSlug } from "@/lib/club/tenant";
 import { CLUB } from "@/lib/domain";
 import { requireFullOrganizerSession } from "@/lib/organizer-access";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Участники",
   description: `Участники клуба и роли на платформе ${CLUB.productName}.`,
@@ -38,8 +40,8 @@ export default async function OrganizerMembersPage({
         title="Участники клуба"
         description={
           clubName
-            ? `Клуб «${clubName}». Назначайте роли без глобального переключателя текущего клуба.`
-            : "Назначайте роли: организатор турниров (ограниченный кабинет) или владелец клуба (полный доступ)."
+            ? `Клуб «${clubName}». Удаление убирает из клуба, рейтинга и публичных игроков — аккаунт Pairly остаётся.`
+            : "Управление членством и ролями. Удаление убирает из клуба, рейтинга и публичных игроков — аккаунт Pairly остаётся."
         }
       />
 
