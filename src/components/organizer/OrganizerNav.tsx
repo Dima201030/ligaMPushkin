@@ -8,6 +8,7 @@ import {
   BarChart3,
   Building2,
   CalendarDays,
+  Info,
   LayoutDashboard,
   Menu,
   Network,
@@ -52,6 +53,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
       { href: "/organizer/players", label: "Игроки", icon: Users },
       { href: "/organizer/ratings", label: "Рейтинг", icon: BarChart3, scope: "full" },
       { href: "/organizer/content", label: "Контент", icon: Newspaper, scope: "full" },
+      { href: "/organizer/about", label: "О проекте", icon: Info },
     ],
   },
 ];
