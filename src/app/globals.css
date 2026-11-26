@@ -1020,6 +1020,67 @@
     100% { transform: none; opacity: 1; }
   }
 
+  /* Fixed-width casino digit reels for CountUp — no layout shift while spinning. */
+  .digit-reel {
+    display: inline-flex;
+    align-items: baseline;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    vertical-align: baseline;
+  }
+
+  .digit-reel-slot {
+    display: inline-block;
+    overflow: hidden;
+    width: 1ch;
+    height: 1em;
+    text-align: center;
+    vertical-align: baseline;
+  }
+
+  .digit-reel-static {
+    line-height: 1;
+  }
+
+  .digit-reel-strip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    will-change: transform;
+    transform: translateY(0);
+  }
+
+  .digit-reel-strip-spin {
+    animation: digit-reel-spin var(--reel-duration, 900ms) var(--ease-out) both;
+    animation-delay: var(--reel-delay, 0ms);
+  }
+
+  .digit-reel-face {
+    display: block;
+    height: 1em;
+    line-height: 1;
+  }
+
+  .digit-reel-sep {
+    display: inline-block;
+    width: 0.35ch;
+    text-align: center;
+    line-height: 1;
+  }
+
+  .digit-reel-suffix {
+    margin-left: 0.05em;
+  }
+
+  @keyframes digit-reel-spin {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(calc(var(--reel-offset, 0) * 1em));
+    }
+  }
+
   .countdown-digits {
     font-family: var(--font-prata), serif;
     font-size: 1.35rem;
@@ -1479,6 +1540,12 @@
 
   .hero-wordmark .hero-ball-slot {
     width: 0.88em !important;
+  }
+
+  .digit-reel-strip,
+  .digit-reel-strip-spin {
+    animation: none !important;
+    transform: none !important;
   }
 
   .cover-kenburns,

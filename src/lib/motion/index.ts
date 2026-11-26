@@ -6,4 +6,13 @@ export {
   ringStroke,
 } from "./gauge-fill";
 
+export {
+  reelCyclesForIndex,
+  reelDelayMs,
+  reelFaces,
+  reelOffsetEm,
+  tokenizeFormatted,
+  type ReelToken,
+} from "./digit-reel";
+
 export { prefersReducedMotion } from "./reduced-motion";
