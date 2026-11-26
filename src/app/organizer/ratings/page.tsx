@@ -4,7 +4,6 @@ import { getRatingDesk } from "@/lib/data";
 import { CATEGORIES, RATING_RULES } from "@/lib/domain";
 import { cn, formatDateShort, formatNumber, timeAgo } from "@/lib/utils";
 import { Avatar } from "@/components/ui/Avatar";
-import { CategoryBadge } from "@/components/ui/Badges";
 import { OrganizerHeader, OrgStat, Panel, MiniLabel } from "@/components/organizer/OrganizerUI";
 import {
   ManualAdjustment,
@@ -70,8 +69,7 @@ export default async function OrganizerRatingsPage() {
                       <th className="w-12">#</th>
                       <th className="w-16">Δ</th>
                       <th>Игрок</th>
-                      <th>Категория</th>
-                      <th className="text-right">Очки</th>
+                        <th className="text-right">Очки</th>
                       <th className="text-right">Рейтинг</th>
                       <th />
                     </tr>
@@ -115,7 +113,6 @@ export default async function OrganizerRatingsPage() {
                               </span>
                             </Link>
                           </td>
-                          <td><CategoryBadge category={row.category} withName={false} /></td>
                           <td className="text-right text-[0.72rem] tabular-nums text-ink-soft">
                             {formatNumber(row.points)}
                           </td>

@@ -19,7 +19,8 @@ export interface PlaceholderPlayer {
 export async function createPlaceholderPlayer(input: {
   firstName: string;
   lastName: string;
-  level: CategorySlug;
+  /** Deprecated: BE defaults when omitted. */
+  level?: CategorySlug;
   phone?: string;
 }): Promise<{ ok: true; player: Record<string, unknown> } | { ok: false; error: string }> {
   const { response, data } = await apiRequest<{ player: Record<string, unknown> } & ApiErrorBody>(
@@ -29,7 +30,7 @@ export async function createPlaceholderPlayer(input: {
       body: JSON.stringify({
         first_name: input.firstName,
         last_name: input.lastName,
-        level: input.level,
+        ...(input.level ? { level: input.level } : {}),
         phone: input.phone || undefined,
       }),
     },

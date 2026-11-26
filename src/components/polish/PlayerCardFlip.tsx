@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import type { Player } from "@/lib/types";
 import { Avatar } from "@/components/ui/Avatar";
-import { CategoryBadge } from "@/components/ui/Badges";
 import { cn, winRate } from "@/lib/utils";
 
 /** Face / stats flip card for player grids. */
@@ -26,9 +25,7 @@ export function PlayerCardFlip({ player, className }: { player: Player; classNam
           <p className="mt-3 text-sm font-medium leading-snug">
             {player.firstName} {player.lastName}
           </p>
-          <div className="mt-2">
-            <CategoryBadge category={player.category} />
-          </div>
+          <p className="mt-2 text-xs tabular-nums text-ink-muted">Рейтинг {player.rating}</p>
         </div>
         <div className="player-flip-back" aria-hidden={!flipped}>
           <p className="stat-label">Рейтинг</p>

@@ -184,7 +184,7 @@ export function RegistrationPanel({
           </div>
         ) : !isProfileVerified ? (
           <div className="border border-warning/40 px-4 py-3 text-sm text-ink-soft">
-            Запись откроется после того, как организатор подтвердит ваши ФИО, дату рождения и уровень.
+            Запись откроется после того, как организатор подтвердит ваши ФИО и дату рождения.
           </div>
         ) : (
           <div className="space-y-3">

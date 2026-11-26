@@ -3,11 +3,10 @@
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, CheckCircle2, Plus, Search, ShieldCheck, Trophy } from "lucide-react";
-import type { CategorySlug, Player, ProfileVerificationStatus } from "@/lib/types";
-import { CATEGORIES, CATEGORY_BY_SLUG } from "@/lib/domain";
+import type { Player, ProfileVerificationStatus } from "@/lib/types";
 import { cn, formatDateShort, winRate } from "@/lib/utils";
 import { Avatar } from "@/components/ui/Avatar";
-import { confirmPlayerVerification, updateOrganizerPlayer } from "@/lib/api/organizer-ratings";
+import { confirmPlayerVerification } from "@/lib/api/organizer-ratings";
 import { validateBirthAge } from "@/lib/club-limits";
 import { DemoNote } from "./OrganizerUI";
 
@@ -37,9 +36,7 @@ function resolveBirthDate(
 
 export function OrganizerPlayersTable({ players }: { players: Player[] }) {
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<string>("all");
   const [sort, setSort] = useState<Sort>("rating");
-  const [categories, setCategories] = useState<Record<string, CategorySlug>>({});
   const [verification, setVerification] = useState<Record<string, ProfileVerificationStatus>>({});
   const [birthDates, setBirthDates] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState<string | null>(null);
@@ -54,7 +51,6 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
     return players
       .map((player) => ({
         ...player,
-        category: categories[player.id] ?? player.category,
         verificationStatus: verification[player.id] ?? player.verificationStatus ?? "pending",
         birthDate: birthDates[player.id] ?? player.birthDate,
         birthYear: (() => {
@@ -64,12 +60,9 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
         })(),
       }))
       .filter((player) => {
-        return (
-          (category === "all" || player.category === category) &&
-          (needle
-            ? `${player.firstName} ${player.lastName} ${player.slug} ${player.city}`.toLowerCase().includes(needle)
-            : true)
-        );
+        return needle
+          ? `${player.firstName} ${player.lastName} ${player.slug} ${player.city}`.toLowerCase().includes(needle)
+          : true;
       })
       .sort((a, b) => {
         if (sort === "name") return a.lastName.localeCompare(b.lastName, "ru");
@@ -77,7 +70,7 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
         if (sort === "matches") return b.wins + b.losses - (a.wins + a.losses);
         return b.rating - a.rating;
       });
-  }, [players, categories, verification, birthDates, query, category, sort]);
+  }, [players, verification, birthDates, query, sort]);
 
   function showFeedback(message: string, kind: "error" | "notice", playerId?: string) {
     if (kind === "error") {
@@ -92,25 +85,6 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
     requestAnimationFrame(() => {
       feedbackRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     });
-  }
-
-  async function changeCategory(player: Player, next: CategorySlug) {
-    setError(null);
-    setErrorPlayerId(null);
-    try {
-      const result = await updateOrganizerPlayer(player.id, { level: next });
-      if (!result.ok) {
-        showFeedback(result.error, "error", player.id);
-        return;
-      }
-      setCategories((current) => ({ ...current, [player.id]: next }));
-      showFeedback(
-        `${player.firstName} ${player.lastName} переведён в категорию ${CATEGORY_BY_SLUG[next].name}.`,
-        "notice",
-      );
-    } catch {
-      showFeedback("Не удалось сменить категорию. Проверьте соединение и сессию организатора.", "error", player.id);
-    }
   }
 
   async function verifyPlayer(player: Player, status: "approved" | "rejected") {
@@ -133,7 +107,6 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
         firstName: player.firstName,
         lastName: player.lastName,
         birthDate: birthDate || "1970-01-01",
-        level: categories[player.id] ?? player.category,
         phone: player.phone,
         status,
       });
@@ -191,17 +164,6 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
         </label>
         <select
           className="field min-h-[36px] w-auto border-0 border-b border-line bg-transparent text-xs focus:border-ink"
-          value={category}
-          onChange={(event) => setCategory(event.target.value)}
-          aria-label="Категория"
-        >
-          <option value="all">Все категории</option>
-          {CATEGORIES.map((item) => (
-            <option key={item.slug} value={item.slug}>{item.name}</option>
-          ))}
-        </select>
-        <select
-          className="field min-h-[36px] w-auto border-0 border-b border-line bg-transparent text-xs focus:border-ink"
           value={sort}
           onChange={(event) => setSort(event.target.value as Sort)}
           aria-label="Сортировка"
@@ -228,7 +190,6 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
               <tr>
                 <th className="w-10">#</th>
                 <th>Игрок</th>
-                <th>Категория</th>
                 <th>Дата рождения</th>
                 <th>Верификация</th>
                 <th className="text-right">Рейтинг</th>
@@ -268,20 +229,6 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
                           </span>
                         </span>
                       </Link>
-                    </td>
-                    <td>
-                      <label className="block">
-                        <span className="sr-only">Категория {player.firstName} {player.lastName}</span>
-                        <select
-                          className="field min-h-[28px] w-[124px] border-0 border-b border-line bg-transparent px-1 py-0.5 text-[0.66rem] focus:border-ink"
-                          value={player.category}
-                          onChange={(event) => changeCategory(player, event.target.value as CategorySlug)}
-                        >
-                          {CATEGORIES.map((item) => (
-                            <option key={item.slug} value={item.slug}>{item.name}</option>
-                          ))}
-                        </select>
-                      </label>
                     </td>
                     <td>
                       <label className="block">
@@ -387,23 +334,9 @@ export function OrganizerPlayersTable({ players }: { players: Player[] }) {
         {rows.length === 0 && (
           <div className="px-6 py-12 text-center">
             <p className="text-sm font-medium">Игроки не найдены</p>
-            <p className="mt-1 text-xs text-ink-muted">Измените запрос или категорию.</p>
+            <p className="mt-1 text-xs text-ink-muted">Измените поисковый запрос.</p>
           </div>
         )}
-      </div>
-
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-        {CATEGORIES.map((item) => {
-          const count = players.filter((player) => (categories[player.id] ?? player.category) === item.slug).length;
-          if (!count) return null;
-          return (
-            <span key={item.slug} className="inline-flex items-baseline gap-1.5 text-[0.62rem] uppercase tracking-[0.12em] text-ink-muted">
-              <span className="size-1.5 self-center" style={{ backgroundColor: item.color }} aria-hidden="true" />
-              {item.name}
-              <span className="tabular-nums text-ink">{count}</span>
-            </span>
-          );
-        })}
       </div>
 
     </div>

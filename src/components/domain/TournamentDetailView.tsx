@@ -236,7 +236,7 @@ export async function TournamentDetailView({
                             </>
                           ) : null}
                         </p>
-                        <p className="mt-0.5 text-[0.66rem] text-ink-muted">{player.category} · {player.rating}</p>
+                        <p className="mt-0.5 text-[0.66rem] text-ink-muted">рейтинг {player.rating}</p>
                       </div>
                       <span
                         className={cn(

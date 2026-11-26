@@ -3,11 +3,9 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
-import type { CategorySlug, Player } from "@/lib/types";
-import { CATEGORIES } from "@/lib/domain";
-import { cn, formatNumber, publicCity, winRate } from "@/lib/utils";
+import type { Player } from "@/lib/types";
+import { formatNumber, publicCity, winRate } from "@/lib/utils";
 import { Avatar } from "@/components/ui/Avatar";
-import { CategoryBadge } from "@/components/ui/Badges";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { PlayerCardFlip } from "@/components/polish/PlayerCardFlip";
 import { VirtualList } from "@/components/motion/VirtualList";
@@ -18,17 +16,14 @@ type Sort = "rank" | "rating" | "name" | "winrate" | "tournaments";
 export function PlayersExplorer({ rows }: { rows: { player: Player; rank: number }[] }) {
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query, 160);
-  const [category, setCategory] = useState<CategorySlug | "all">("all");
   const [sort, setSort] = useState<Sort>("rank");
 
   const filtered = useMemo(() => {
     const needle = debouncedQuery.trim().toLowerCase();
     const result = rows.filter(({ player }) => {
-      const matchesQuery = needle
+      return needle
         ? `${player.firstName} ${player.lastName}`.toLowerCase().includes(needle)
         : true;
-      const matchesCategory = category === "all" || player.category === category;
-      return matchesQuery && matchesCategory;
     });
 
     return result.sort((a, b) => {
@@ -40,7 +35,7 @@ export function PlayersExplorer({ rows }: { rows: { player: Player; rank: number
       if (sort === "rating") return b.player.rating - a.player.rating;
       return a.rank - b.rank;
     });
-  }, [rows, debouncedQuery, category, sort]);
+  }, [rows, debouncedQuery, sort]);
 
   return (
     <div>
@@ -65,7 +60,7 @@ export function PlayersExplorer({ rows }: { rows: { player: Player; rank: number
               onChange={(event) => setSort(event.target.value as Sort)}
             >
               <option value="rank">По месту в рейтинге</option>
-              <option value="rating">По рейтингу мастерства</option>
+              <option value="rating">По рейтингу</option>
               <option value="winrate">По проценту побед</option>
               <option value="tournaments">По числу турниров</option>
               <option value="name">По фамилии</option>
@@ -74,36 +69,6 @@ export function PlayersExplorer({ rows }: { rows: { player: Player; rank: number
           <p className="text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted lg:pb-3.5 lg:text-right">
             Найдено: <span className="text-ink">{filtered.length}</span>
           </p>
-        </div>
-
-        <div className="mt-4 flex flex-wrap gap-1.5">
-          <button
-            type="button"
-            onClick={() => setCategory("all")}
-            className={cn(
-              "rounded-full border px-3.5 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] transition-colors",
-              category === "all"
-                ? "border-ink bg-ink text-canvas"
-                : "border-line text-ink-muted hover:border-ink hover:text-ink",
-            )}
-          >
-            Все категории
-          </button>
-          {CATEGORIES.map((item) => (
-            <button
-              key={item.slug}
-              type="button"
-              onClick={() => setCategory(item.slug)}
-              className={cn(
-                "rounded-full border px-3.5 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] transition-colors",
-                category === item.slug
-                  ? "border-ink bg-ink text-canvas"
-                  : "border-line text-ink-muted hover:border-ink hover:text-ink",
-              )}
-            >
-              {item.name}
-            </button>
-          ))}
         </div>
       </div>
 
@@ -123,7 +88,6 @@ export function PlayersExplorer({ rows }: { rows: { player: Player; rank: number
                   <Link href={`/players/${player.slug}`} className="min-w-0 flex-1 font-semibold text-ink hover:text-accent">
                     {player.firstName} {player.lastName}
                   </Link>
-                  <CategoryBadge category={player.category} />
                   <span className="w-14 text-right font-bold tabular-nums text-navy">{player.rating}</span>
                   <span className="w-12 text-right text-xs tabular-nums text-ink-muted">{rate}%</span>
                 </div>
@@ -136,7 +100,6 @@ export function PlayersExplorer({ rows }: { rows: { player: Player; rank: number
               <tr>
                 <th className="w-12">#</th>
                 <th>Игрок</th>
-                <th>Категория</th>
                 <th className="text-right">Рейтинг</th>
                 <th className="text-right">Очки</th>
                 <th className="text-right">Побед / пор.</th>
@@ -174,7 +137,6 @@ export function PlayersExplorer({ rows }: { rows: { player: Player; rank: number
                         </div>
                       </div>
                     </td>
-                    <td><CategoryBadge category={player.category} /></td>
                     <td className="text-right font-bold tabular-nums text-navy">{player.rating}</td>
                     <td className="text-right tabular-nums text-ink-soft">{formatNumber(player.points)}</td>
                     <td className="text-right text-xs tabular-nums text-ink-muted">
@@ -196,7 +158,7 @@ export function PlayersExplorer({ rows }: { rows: { player: Player; rank: number
           </table>
         )}
         {filtered.length === 0 && (
-          <EmptyState title="Игроки не найдены" description="Попробуйте изменить запрос или категорию." />
+          <EmptyState title="Игроки не найдены" description="Попробуйте изменить запрос поиска." />
         )}
       </div>
 

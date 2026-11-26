@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
 import { Bell, Check } from "lucide-react";
 import { cn, formatDate, formatDateShort, formatDayMonth } from "@/lib/utils";
-import { CATEGORIES, REGISTRATION_STATUS_LABEL } from "@/lib/domain";
-import type { CategorySlug, RegistrationStatus } from "@/lib/types";
+import { REGISTRATION_STATUS_LABEL } from "@/lib/domain";
+import type { RegistrationStatus } from "@/lib/types";
 import { cancelRegistration } from "@/lib/api/tournaments";
 import {
   type NotificationPrefs,
@@ -133,7 +133,6 @@ export function ProfileSettingsForm({
   phone,
   city,
   bio,
-  category,
 }: {
   email: string;
   firstName: string;
@@ -141,7 +140,6 @@ export function ProfileSettingsForm({
   phone: string;
   city: string;
   bio: string;
-  category: CategorySlug;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -159,7 +157,6 @@ export function ProfileSettingsForm({
       phone: String(form.get("phone") ?? ""),
       city: String(form.get("city") ?? ""),
       bio: String(form.get("bio") ?? ""),
-      level: String(form.get("category") ?? category) as CategorySlug,
     });
     if (!result.ok) {
       setError(result.error);
@@ -173,7 +170,7 @@ export function ProfileSettingsForm({
     <form onSubmit={onSubmit} className="space-y-4">
       <h2 className="text-xl">Профиль</h2>
       <p className="text-sm text-ink-muted">
-        Имя, телефон, город и категория. Email меняется через организатора.
+        Имя, телефон и город. Email меняется через организатора.
       </p>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -202,17 +199,6 @@ export function ProfileSettingsForm({
           <input className="field" name="city" defaultValue={city} autoComplete="address-level2" />
         </label>
       </div>
-
-      <label className="block text-sm">
-        <span className="mb-1.5 block text-[0.62rem] uppercase tracking-[0.12em] text-ink-muted">Категория</span>
-        <select className="field" name="category" defaultValue={category}>
-          {CATEGORIES.map((item) => (
-            <option key={item.slug} value={item.slug}>
-              {item.name}
-            </option>
-          ))}
-        </select>
-      </label>
 
       <label className="block text-sm">
         <span className="mb-1.5 block text-[0.62rem] uppercase tracking-[0.12em] text-ink-muted">О себе</span>

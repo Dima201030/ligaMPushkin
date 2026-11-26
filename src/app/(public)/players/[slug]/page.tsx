@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Award, MapPin, Trophy, UserPlus } from "lucide-react";
 import { getPlayerProfile } from "@/lib/data";
-import { CATEGORY_BY_SLUG } from "@/lib/domain";
 import { cn, formatDate, publicCity, winRate } from "@/lib/utils";
 import { FormDots, RatingChart, WinRateRing } from "@/components/charts";
 import { Breadcrumbs } from "@/components/ui/Section";
@@ -25,7 +24,7 @@ export async function generateMetadata({
   if (!profile) return { title: "Игрок не найден" };
   return {
     title: `${profile.player.firstName} ${profile.player.lastName}`,
-    description: `Профиль игрока Pairly: ${profile.player.category}, рейтинг ${profile.player.rating}.`,
+    description: `Профиль игрока Pairly: рейтинг ${profile.player.rating}.`,
   };
 }
 
@@ -34,11 +33,9 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
   const profile = await getPlayerProfile(slug);
   if (!profile) notFound();
 
-  const { player, matches, titles, rank, categoryRank, form } = profile;
+  const { player, matches, titles, rank, form } = profile;
   const rate = winRate(player.wins, player.losses);
   const totalMatches = player.wins + player.losses;
-  const category = CATEGORY_BY_SLUG[player.category];
-
   return (
     <>
       <section className="border-b border-line">
@@ -55,7 +52,6 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
             firstName={player.firstName}
             lastName={player.lastName}
             avatarUrl={player.avatarUrl}
-            category={player.category}
             memberSinceYear={player.memberSince ? new Date(player.memberSince).getFullYear() : null}
             rating={player.rating}
             points={player.points}
@@ -68,9 +64,6 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
                 {player.city}
               </span>
             ) : null}
-            <span>
-              {category?.name ?? player.category} · {category?.note ?? ""}
-            </span>
           </p>
         </div>
       </section>
@@ -142,15 +135,9 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
           <aside className="space-y-8">
             <div className="border-t border-line pt-6">
               <p className="text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted">Позиция в рейтинге</p>
-              <div className="mt-4 flex items-end justify-between">
-                <div>
-                  <p className="display text-[2.6rem] leading-none tabular-nums">#{rank}</p>
-                  <p className="mt-2 text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted">из {profile.categoriesCount} игроков</p>
-                </div>
-                <div className="text-right">
-                  <p className="display text-xl tabular-nums">#{categoryRank}</p>
-                  <p className="mt-1.5 text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted">в {category.name}</p>
-                </div>
+              <div className="mt-4">
+                <p className="display text-[2.6rem] leading-none tabular-nums">#{rank}</p>
+                <p className="mt-2 text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted">из {profile.categoriesCount} игроков</p>
               </div>
               <div className="mt-6 flex justify-center border-t border-divider pt-6">
                 <WinRateRing value={rate} size={104} />
@@ -195,7 +182,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
               <Award className="size-6 text-sky" aria-hidden="true" />
               <p className="display mt-4 text-[1.25rem] leading-snug">Хотите сыграть с {player.firstName}?</p>
               <p className="mt-2 text-xs leading-relaxed text-white/60">
-                Запишитесь на ближайший турнир категории {category.name} — соперники определяются жеребьёвкой.
+                Запишитесь на ближайший турнир — соперники определяются жеребьёвкой.
               </p>
               <Link href="/tournaments" className="btn btn-light mt-5 w-full">
                 Ближайшие турниры

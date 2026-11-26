@@ -5,9 +5,6 @@ import { AvatarRing } from "@/components/polish/AvatarRing";
 import { XpBar } from "@/components/polish/XpBar";
 import { StreakFlame } from "@/components/polish/StreakFlame";
 import { ActivityHeatmap } from "@/components/polish/ActivityHeatmap";
-import { BadgeUnlock } from "@/components/polish/BadgeUnlock";
-import { CategoryBadge } from "@/components/ui/Badges";
-import type { CategorySlug } from "@/lib/types";
 
 function streakFromForm(form: number[]) {
   let streak = 0;
@@ -29,7 +26,6 @@ export function PlayerHeroMeta({
   firstName,
   lastName,
   avatarUrl,
-  category,
   memberSinceYear,
   rating,
   points,
@@ -38,7 +34,6 @@ export function PlayerHeroMeta({
   firstName: string;
   lastName: string;
   avatarUrl?: string | null;
-  category: CategorySlug;
   memberSinceYear?: number | null;
   rating: number;
   points: number;
@@ -52,9 +47,6 @@ export function PlayerHeroMeta({
       <AvatarRing firstName={firstName} lastName={lastName} src={avatarUrl} progress={progress} size={112} />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <BadgeUnlock unlockKey={category}>
-            <CategoryBadge category={category} />
-          </BadgeUnlock>
           {memberSinceYear ? (
             <span className="badge badge-neutral">На платформе с {memberSinceYear}</span>
           ) : null}
@@ -64,7 +56,7 @@ export function PlayerHeroMeta({
           {firstName} {lastName}
         </h1>
         <div className="mt-4 max-w-sm">
-          <XpBar value={progress} label="Уровень мастерства" />
+          <XpBar value={progress} label="Прогресс рейтинга" />
         </div>
       </div>
       <div className="flex gap-8 border-t border-line pt-5 sm:border-l sm:border-t-0 sm:pl-8 sm:pt-0">

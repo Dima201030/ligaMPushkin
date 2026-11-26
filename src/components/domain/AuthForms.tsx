@@ -19,7 +19,6 @@ import {
   registerAccount,
   resendConfirmEmail,
 } from "@/lib/api/auth";
-import { CATEGORIES } from "@/lib/domain";
 
 type LoginState =
   | { kind: "idle" }
@@ -151,8 +150,8 @@ export function LoginForm() {
           </span>
           <h2 className="mt-4 text-xl text-navy">Заявка на подтверждении</h2>
           <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-            {state.name}, аккаунт ещё не подтверждён администратором платформы. Проверяем имя,
-            фамилию и уровень — обычно это занимает несколько часов.
+            {state.name}, аккаунт ещё не подтверждён администратором платформы. Проверяем имя
+            и фамилию — обычно это занимает несколько часов.
           </p>
           <p className="mt-3 text-xs leading-relaxed text-ink-muted">
             Вход откроется, когда заявку одобрят. Если данные указаны с ошибкой, администратор
@@ -248,7 +247,7 @@ export function LoginForm() {
         </Link>
       </p>
       <p className="mt-3 text-center text-xs text-ink-faint">
-        Вход открывается после подтверждения имени, фамилии и уровня администратором.
+        Вход открывается после подтверждения имени и фамилии администратором.
       </p>
     </div>
   );
@@ -256,7 +255,6 @@ export function LoginForm() {
 
 export function RegisterForm() {
   const [step, setStep] = useState<"form" | "done">("form");
-  const [level, setLevel] = useState("rookies");
   const [consentPdn, setConsentPdn] = useState(false);
   const [consentPublic, setConsentPublic] = useState(false);
   const [consentMarketing, setConsentMarketing] = useState(false);
@@ -312,7 +310,6 @@ export function RegisterForm() {
         email,
         phone,
         password,
-        level: level as (typeof CATEGORIES)[number]["slug"],
         consentPdn,
         consentPublicProfile: consentPublic,
         consentMarketing,
@@ -342,7 +339,7 @@ export function RegisterForm() {
         <h1 className="mt-5 text-center text-2xl text-navy">Заявка отправлена</h1>
         <p className="mt-3 text-center text-sm leading-relaxed text-ink-muted">
           {applicantName}, аккаунт создан. Подтвердите email по ссылке из письма — затем
-          администратор проверит имя, фамилию и уровень.
+          администратор проверит имя и фамилию.
         </p>
 
         <ol className="mt-6 space-y-3 border-y border-line py-5 text-sm text-ink-soft">
@@ -356,7 +353,7 @@ export function RegisterForm() {
             <span className="grid size-5 shrink-0 place-items-center rounded-full bg-warning-soft text-warning">
               <Clock3 className="size-3" aria-hidden="true" />
             </span>
-            Администратор проверяет имя, фамилию и уровень.
+            Администратор проверяет имя и фамилию.
           </li>
           <li className="flex gap-3 text-ink-muted">
             <span className="grid size-5 shrink-0 place-items-center rounded-full bg-canvas text-ink-faint">
@@ -379,7 +376,7 @@ export function RegisterForm() {
       <p className="eyebrow">Новый игрок</p>
       <h1 className="mt-3 text-3xl text-navy">Регистрация на платформе</h1>
       <p className="mt-3 text-sm leading-relaxed text-ink-muted">
-        Создайте аккаунт. Администратор подтвердит имя, фамилию и уровень — только после
+        Создайте аккаунт. Администратор подтвердит имя и фамилию — только после
         этого вход в личный кабинет станет доступен.
       </p>
 
@@ -428,22 +425,6 @@ export function RegisterForm() {
             />
           </label>
         </div>
-        <label>
-          <span className="field-label">Уровень игры</span>
-          <select
-            className="field"
-            value={level}
-            onChange={(event) => setLevel(event.target.value)}
-            name="level"
-          >
-            {CATEGORIES.map((item) => (
-              <option key={item.slug} value={item.slug}>{item.name} — {item.note}</option>
-            ))}
-          </select>
-        </label>
-        <p className="text-[0.68rem] leading-relaxed text-ink-faint">
-          Уровень — предварительный: администратор проверит его при подтверждении аккаунта.
-        </p>
         <div className="space-y-3 border-t border-line pt-4">
           <label className="flex items-start gap-2 text-[0.72rem] leading-relaxed text-ink-soft">
             <input

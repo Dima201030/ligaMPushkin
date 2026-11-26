@@ -193,7 +193,8 @@ export type RegisterInput = {
   email: string;
   password: string;
   phone?: string;
-  level: CategorySlug;
+  /** Deprecated: BE defaults when omitted. */
+  level?: CategorySlug;
   consentPdn: boolean;
   consentPublicProfile: boolean;
   consentMarketing?: boolean;
@@ -210,7 +211,7 @@ export async function registerAccount(
       email: input.email.trim().toLowerCase(),
       password: input.password,
       phone: input.phone?.trim() || undefined,
-      level: input.level,
+      ...(input.level ? { level: input.level } : {}),
       consent_pdn: input.consentPdn,
       consent_public_profile: input.consentPublicProfile,
       consent_marketing: Boolean(input.consentMarketing),
@@ -667,7 +668,7 @@ export async function listOrganizerApplications(): Promise<LeagueApplication[]> 
 
 export async function approveOrganizerApplication(
   id: string,
-  body: { firstName: string; lastName: string; level: CategorySlug },
+  body: { firstName: string; lastName: string; level?: CategorySlug },
 ): Promise<void> {
   const { response, data } = await request<ApiErrorBody>(
     `/organizer/applications/${encodeURIComponent(id)}/approve`,
@@ -676,7 +677,7 @@ export async function approveOrganizerApplication(
       body: JSON.stringify({
         first_name: body.firstName.trim(),
         last_name: body.lastName.trim(),
-        level: body.level,
+        ...(body.level ? { level: body.level } : {}),
       }),
     },
   );

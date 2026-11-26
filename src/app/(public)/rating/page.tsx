@@ -2,36 +2,25 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowDown, ArrowUp, ArrowUpRight, Info, Minus } from "lucide-react";
 import { getRankingPage } from "@/lib/data";
-import { CATEGORIES, CATEGORY_BY_SLUG, RATING_RULES } from "@/lib/domain";
-import type { CategorySlug } from "@/lib/types";
+import { RATING_RULES } from "@/lib/domain";
 import { cn, formatNumber } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/Section";
-import { CategoryBadge } from "@/components/ui/Badges";
 import { Avatar } from "@/components/ui/Avatar";
 
 export const metadata: Metadata = {
   title: "Рейтинг",
-  description: "Общий и категорийный рейтинг игроков Pairly. Очки, позиции и динамика сезона 2026.",
+  description: "Рейтинг игроков Pairly. Очки, позиции и динамика сезона 2026.",
 };
 
-export default async function RatingPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ category?: string }>;
-}) {
-  const { category: categoryParam } = await searchParams;
-  const category =
-    categoryParam && categoryParam in CATEGORY_BY_SLUG
-      ? (categoryParam as CategorySlug)
-      : undefined;
-  const page = await getRankingPage(category);
+export default async function RatingPage() {
+  const page = await getRankingPage();
   const top = page.rows.slice(0, 3);
 
   return (
     <>
       <PageHeader
         eyebrow="Сезон 2026"
-        title={category ? `Рейтинг ${CATEGORY_BY_SLUG[category].name}` : "Общий рейтинг"}
+        title="Общий рейтинг"
         description="Очки начисляются за результаты турниров и действуют 52 недели. Рейтинг определяет посев в сетке и приглашение на итоговые турниры."
         actions={
           <Link href="/players" className="btn btn-on-dark">
@@ -41,41 +30,12 @@ export default async function RatingPage({
       >
         <div className="mt-8 flex flex-wrap gap-x-8 gap-y-3 border-t border-white/15 pt-5 text-xs text-white/55">
           <span><span className="font-bold text-white">{page.totalPlayers}</span> игроков в общем зачёте</span>
-          <span><span className="font-bold text-white">{CATEGORIES.length}</span> категорий мастерства</span>
           <span>Обновлено после последнего турнира</span>
         </div>
       </PageHeader>
 
       <div className="page-shell section">
-        <div className="flex flex-wrap gap-1.5">
-          <Link
-            href="/rating"
-            className={cn(
-              "rounded-full border px-3.5 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] transition-colors",
-              !category
-                ? "border-ink bg-ink text-canvas"
-                : "border-line text-ink-muted hover:border-ink hover:text-ink",
-            )}
-          >
-            Общий
-          </Link>
-          {CATEGORIES.map((item) => (
-            <Link
-              key={item.slug}
-              href={`/rating?category=${item.slug}`}
-              className={cn(
-                "rounded-full border px-3.5 py-1.5 text-[0.6rem] uppercase tracking-[0.14em] transition-colors",
-                category === item.slug
-                  ? "border-ink bg-ink text-canvas"
-                  : "border-line text-ink-muted hover:border-ink hover:text-ink",
-              )}
-            >
-              {item.name}
-            </Link>
-          ))}
-        </div>
-
-        <div className="mt-8 grid gap-px border-y border-line bg-line md:grid-cols-3">
+        <div className="grid gap-px border-y border-line bg-line md:grid-cols-3">
           {top.map((row) => (
             <Link
               key={row.playerId}
@@ -101,7 +61,7 @@ export default async function RatingPage({
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{row.player.firstName} {row.player.lastName}</p>
                   <p className="mt-1 text-[0.58rem] uppercase tracking-[0.12em] text-ink-muted">
-                    {CATEGORY_BY_SLUG[row.category].name}
+                    {formatNumber(row.points)} очков
                   </p>
                 </div>
               </div>
@@ -119,7 +79,7 @@ export default async function RatingPage({
 
         <div className="mt-10 border-y border-line">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line py-4">
-            <h2 className="text-lg">{category ? CATEGORY_BY_SLUG[category].name : "Все категории"}</h2>
+            <h2 className="text-lg">Таблица рейтинга</h2>
             <span className="text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted">{page.rows.length} игроков</span>
           </div>
           <div className="overflow-x-auto">
@@ -129,8 +89,7 @@ export default async function RatingPage({
                   <th className="w-12 text-center">#</th>
                   <th className="w-12 text-center">Δ</th>
                   <th>Игрок</th>
-                  <th>Категория</th>
-                  <th className="text-right">Рейтинг</th>
+                    <th className="text-right">Рейтинг</th>
                   <th className="text-right">Очки</th>
                 </tr>
               </thead>
@@ -164,7 +123,6 @@ export default async function RatingPage({
                           </Link>
                         </div>
                       </td>
-                      <td><CategoryBadge category={row.category} /></td>
                       <td className="text-right font-medium tabular-nums text-ink-soft">{row.rating}</td>
                       <td className="text-right text-sm font-bold tabular-nums text-navy">{formatNumber(row.points)}</td>
                     </tr>

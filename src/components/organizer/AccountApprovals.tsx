@@ -13,8 +13,6 @@ import {
   mergePlaceholderPlayer,
   type PlaceholderPlayer,
 } from "@/lib/api/organizer-players";
-import type { CategorySlug } from "@/lib/types";
-import { CATEGORIES, CATEGORY_BY_SLUG } from "@/lib/domain";
 import { cn, timeAgo } from "@/lib/utils";
 import { Avatar } from "@/components/ui/Avatar";
 import { DemoNote } from "./OrganizerUI";
@@ -22,7 +20,6 @@ import { DemoNote } from "./OrganizerUI";
 interface Draft {
   firstName: string;
   lastName: string;
-  level: CategorySlug;
 }
 
 const STATUS_BADGE: Record<LeagueApplication["status"], string> = {
@@ -81,7 +78,6 @@ export function AccountApprovals() {
       drafts[account.id] ?? {
         firstName: account.firstName,
         lastName: account.lastName,
-        level: account.level,
       }
     );
   }
@@ -215,7 +211,7 @@ export function AccountApprovals() {
             <span className="ml-2 text-ink-faint">{pending.length}</span>
           </h2>
           <p className="text-[0.68rem] text-ink-muted">
-            Сверьте имя, фамилию и уровень — эти данные увидит организатор.
+            Сверьте имя и фамилию — эти данные увидит организатор.
           </p>
         </div>
 
@@ -251,9 +247,6 @@ export function AccountApprovals() {
                         {account.email}
                         {account.phone && <span className="text-ink-faint">· {account.phone}</span>}
                       </p>
-                      <p className="mt-1 text-[0.66rem] text-ink-faint">
-                        Уровень при регистрации: {CATEGORY_BY_SLUG[account.level]?.name ?? account.level}
-                      </p>
                     </div>
                     <div className="flex shrink-0 flex-wrap gap-1.5">
                       <button
@@ -277,7 +270,7 @@ export function AccountApprovals() {
                     </div>
                   </div>
 
-                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <label>
                       <span className="field-label">Имя</span>
                       <input
@@ -295,22 +288,6 @@ export function AccountApprovals() {
                         onChange={(event) => updateDraft(account, { lastName: event.target.value })}
                         autoComplete="off"
                       />
-                    </label>
-                    <label>
-                      <span className="field-label">Уровень</span>
-                      <select
-                        className="field"
-                        value={draft.level}
-                        onChange={(event) =>
-                          updateDraft(account, { level: event.target.value as CategorySlug })
-                        }
-                      >
-                        {CATEGORIES.map((category) => (
-                          <option key={category.slug} value={category.slug}>
-                            {category.name} — {category.note}
-                          </option>
-                        ))}
-                      </select>
                     </label>
                   </div>
 
@@ -334,7 +311,6 @@ export function AccountApprovals() {
                             <option key={ph.id} value={ph.id}>
                               {ph.lastName} {ph.firstName}
                               {scoreNameMatch(account, ph) >= 2 ? " · похожее ФИО" : ""}
-                              {` · ${CATEGORY_BY_SLUG[ph.level]?.name ?? ph.level}`}
                             </option>
                           ))}
                         </select>
@@ -376,8 +352,6 @@ export function AccountApprovals() {
                   </p>
                   <p className="mt-0.5 truncate text-[0.65rem] text-ink-muted">
                     {account.email}
-                    <span className="mx-1.5 text-ink-faint">·</span>
-                    {CATEGORY_BY_SLUG[account.level]?.name ?? account.level}
                     {account.reviewedAt && (
                       <>
                         <span className="mx-1.5 text-ink-faint">·</span>

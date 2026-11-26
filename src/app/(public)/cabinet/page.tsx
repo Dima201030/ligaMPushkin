@@ -10,10 +10,9 @@ import {
 } from "lucide-react";
 import { getCabinetData } from "@/lib/data";
 import { isOrganizerRole } from "@/lib/api/auth";
-import { CATEGORY_BY_SLUG, CLUB } from "@/lib/domain";
+import { CLUB } from "@/lib/domain";
 import { formatDate, formatNumber, publicCity, publicPhone, winRate } from "@/lib/utils";
 import { Avatar } from "@/components/ui/Avatar";
-import { CategoryBadge } from "@/components/ui/Badges";
 import { MatchRow } from "@/components/domain/MatchRow";
 import {
   MyRegistrations,
@@ -61,7 +60,6 @@ export default async function CabinetPage() {
     );
   }
 
-  const category = CATEGORY_BY_SLUG[player.category];
   const rate = winRate(player.wins, player.losses);
   const results = matches.filter((match) => match.status === "completed" || match.status === "walkover").slice(0, 4);
   const cabinetRegs = registrations.map((item) => ({
@@ -109,7 +107,6 @@ export default async function CabinetPage() {
                 {player.firstName} {player.lastName}
               </h1>
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <CategoryBadge category={player.category} />
                 {publicCity(player.city) ? (
                   <span className="inline-flex items-center gap-1.5 text-xs text-white/55">
                     <MapPin className="size-3.5" aria-hidden="true" />
@@ -118,7 +115,7 @@ export default async function CabinetPage() {
                 ) : null}
               </div>
               <p className="mt-3 max-w-[48ch] text-sm text-white/60">
-                {player.bio || category?.note || `Профиль игрока на платформе ${CLUB.productName}.`}
+                {player.bio || `Профиль игрока на платформе ${CLUB.productName}.`}
               </p>
             </div>
             <div className="flex gap-8 border-t border-white/15 pt-5 sm:border-l sm:border-t-0 sm:pl-8 sm:pt-0">
@@ -259,7 +256,6 @@ export default async function CabinetPage() {
             phone={session.user.phone || ""}
             city={player.city}
             bio={player.bio}
-            category={player.category}
           />
           <NotificationSettings initial={session.notifications ?? DEFAULT_NOTIFICATION_PREFS} />
         </section>

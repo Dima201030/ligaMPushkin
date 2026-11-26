@@ -4,8 +4,6 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Loader2, UserPlus } from "lucide-react";
 import { createPlaceholderPlayer } from "@/lib/api/organizer-players";
-import type { CategorySlug } from "@/lib/types";
-import { CATEGORIES } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 import { Panel } from "./OrganizerUI";
 
@@ -13,7 +11,6 @@ export function AddPlaceholderPlayerForm() {
   const router = useRouter();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [level, setLevel] = useState<CategorySlug>("futures");
   const [phone, setPhone] = useState("");
   const [attempted, setAttempted] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -36,7 +33,6 @@ export function AddPlaceholderPlayerForm() {
     const result = await createPlaceholderPlayer({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
-      level,
       phone: phone.trim() || undefined,
     });
     setBusy(false);
@@ -87,35 +83,18 @@ export function AddPlaceholderPlayerForm() {
           </label>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block">
-            <span className="field-label">Уровень</span>
-            <select
-              className="field"
-              value={level}
-              onChange={(event) => setLevel(event.target.value as CategorySlug)}
-              disabled={busy}
-            >
-              {CATEGORIES.map((category) => (
-                <option key={category.slug} value={category.slug}>
-                  {category.name} — {category.note}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block">
-            <span className="field-label">Телефон (необязательно)</span>
-            <input
-              className="field"
-              value={phone}
-              onChange={(event) => setPhone(event.target.value)}
-              inputMode="tel"
-              autoComplete="tel"
-              disabled={busy}
-              placeholder="+7…"
-            />
-          </label>
-        </div>
+        <label className="block max-w-md">
+          <span className="field-label">Телефон (необязательно)</span>
+          <input
+            className="field"
+            value={phone}
+            onChange={(event) => setPhone(event.target.value)}
+            inputMode="tel"
+            autoComplete="tel"
+            disabled={busy}
+            placeholder="+7…"
+          />
+        </label>
 
         {attempted && nameError ? <p className="text-sm text-negative">{nameError}</p> : null}
 

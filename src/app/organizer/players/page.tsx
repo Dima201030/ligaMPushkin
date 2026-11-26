@@ -10,7 +10,6 @@ export default async function OrganizerPlayersPage() {
   const averageRating = players.length
     ? Math.round(players.reduce((sum, player) => sum + player.rating, 0) / players.length)
     : 0;
-  const newcomers = players.filter((player) => player.category === "newcomers").length;
   const placeholders = players.filter((player) => player.isPlaceholder).length;
   const titles = players.reduce((sum, player) => sum + player.titlesCount, 0);
   const totalMatches = players.reduce((sum, player) => sum + player.wins + player.losses, 0);
@@ -27,7 +26,7 @@ export default async function OrganizerPlayersPage() {
           <OrgStat label="Игроков в базе" value={players.length} hint="активные профили" icon={<Users className="size-4" />} tone="neutral" />
           <OrgStat label="Средний рейтинг" value={averageRating} hint={`${formatNumber(totalMatches)} матчей сыграно`} icon={<TrendingUp className="size-4" />} />
           <OrgStat label="Без аккаунта" value={placeholders} hint="ждут объединения с заявкой" icon={<UserPlus className="size-4" />} tone="positive" />
-          <OrgStat label="Титулы" value={titles || newcomers} hint={titles ? "за всё время на платформе" : "новички в базе"} icon={<Award className="size-4" />} tone="warning" />
+          <OrgStat label="Титулы" value={titles} hint="за всё время на платформе" icon={<Award className="size-4" />} tone="warning" />
         </div>
 
         <AddPlaceholderPlayerForm />

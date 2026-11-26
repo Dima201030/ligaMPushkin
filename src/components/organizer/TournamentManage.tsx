@@ -411,7 +411,7 @@ export function ParticipantsManager({
                 {availablePlayers.map((player) => (
                   <option key={player.id} value={player.id}>
                     {player.lastName} {player.firstName}
-                    {player.isPlaceholder ? " · заготовка" : ""} · {player.level}
+                    {player.isPlaceholder ? " · заготовка" : ""}
                   </option>
                 ))}
               </select>

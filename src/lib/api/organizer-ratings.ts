@@ -106,7 +106,7 @@ export async function confirmPlayerVerification(
           first_name: input.firstName,
           last_name: input.lastName,
           birth_date: input.birthDate,
-          level: input.level,
+          ...(input.level ? { level: input.level } : {}),
           phone: input.phone,
           status: input.status,
           note: input.note,
