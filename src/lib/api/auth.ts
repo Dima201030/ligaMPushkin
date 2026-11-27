@@ -60,15 +60,6 @@ export interface MeSession {
   organizerAccess: OrganizerAccess;
 }
 
-export type UpdateMyProfileInput = {
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-  city?: string;
-  bio?: string;
-  level?: CategorySlug;
-};
-
 export const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {
   tournaments: true,
   reminders: true,
@@ -518,39 +509,6 @@ export async function fetchSession(): Promise<MeSession | null> {
   const { response, data } = await request<MePayload>("/auth/me");
   if (!response.ok || !data?.user) return null;
   return mapMeSession(data);
-}
-
-export async function updateMyProfile(
-  input: UpdateMyProfileInput,
-): Promise<
-  | { ok: true; user: LeagueUser; profile: LeagueProfile | null; notifications: NotificationPrefs }
-  | { ok: false; error: string }
-> {
-  const body: Record<string, string> = {};
-  if (input.firstName !== undefined) body.first_name = input.firstName.trim();
-  if (input.lastName !== undefined) body.last_name = input.lastName.trim();
-  if (input.phone !== undefined) body.phone = input.phone.trim();
-  if (input.city !== undefined) body.city = input.city.trim();
-  if (input.bio !== undefined) body.bio = input.bio.trim();
-  if (input.level !== undefined) body.level = input.level;
-
-  try {
-    const { response, data } = await request<MePayload & ApiErrorBody>("/auth/me", {
-      method: "PATCH",
-      body: JSON.stringify(body),
-    });
-    if (!response.ok || !data?.user) {
-      return { ok: false, error: data?.message ?? "Не удалось сохранить профиль" };
-    }
-    return {
-      ok: true,
-      user: mapUser(data.user),
-      profile: data.profile ? mapProfile(data.profile) : null,
-      notifications: mapNotifications(data.notifications),
-    };
-  } catch {
-    return { ok: false, error: "Не удалось сохранить профиль. Проверьте соединение." };
-  }
 }
 
 export async function updateMyNotifications(
