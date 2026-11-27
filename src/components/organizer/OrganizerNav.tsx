@@ -10,6 +10,7 @@ import {
   CalendarDays,
   Info,
   LayoutDashboard,
+  LineChart,
   Menu,
   Network,
   Newspaper,
@@ -52,6 +53,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
       { href: "/organizer/settings", label: "Настройки", icon: Settings, scope: "full" },
       { href: "/organizer/players", label: "Игроки", icon: Users },
       { href: "/organizer/ratings", label: "Рейтинг", icon: BarChart3, scope: "full" },
+      { href: "/organizer/analytics", label: "Аналитика", icon: LineChart, scope: "full" },
       { href: "/organizer/content", label: "Контент", icon: Newspaper, scope: "full" },
       { href: "/organizer/about", label: "О проекте", icon: Info },
     ],
@@ -63,6 +65,7 @@ const BADGES: Record<string, string> = {
   "/organizer/clubs": "new",
   "/organizer/members": "new",
   "/organizer/settings": "new",
+  "/organizer/analytics": "new",
   "/organizer/bracket": "new",
 };
 

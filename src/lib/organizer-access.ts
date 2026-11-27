@@ -15,6 +15,7 @@ const FULL_ONLY_PREFIXES = [
   "/organizer/members",
   "/organizer/settings",
   "/organizer/ratings",
+  "/organizer/analytics",
   "/organizer/content",
 ];
 
