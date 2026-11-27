@@ -1,4 +1,4 @@
-/** Operator details for 152-FZ policy pages. Fill via env before public launch. */
+/** Operator details for 152-FZ policy pages. Empty address/RKN are omitted in UI. */
 
 export const CONSENT_VERSION = "2026-11-26";
 
@@ -8,10 +8,6 @@ export const OPERATOR = {
     "Оператор персональных данных (укажите юрлицо / ИП)",
   inn: process.env.NEXT_PUBLIC_OPERATOR_INN?.trim() || "ИНН не указан",
   email: process.env.NEXT_PUBLIC_OPERATOR_EMAIL?.trim() || "privacy@pairly.space",
-  address:
-    process.env.NEXT_PUBLIC_OPERATOR_ADDRESS?.trim() ||
-    "Адрес оператора не указан",
-  rknNotice:
-    process.env.NEXT_PUBLIC_OPERATOR_RKN_NOTICE?.trim() ||
-    "Статус уведомления в Роскомнадзор уточняется оператором перед открытым запуском.",
+  address: process.env.NEXT_PUBLIC_OPERATOR_ADDRESS?.trim() || "",
+  rknNotice: process.env.NEXT_PUBLIC_OPERATOR_RKN_NOTICE?.trim() || "",
 } as const;

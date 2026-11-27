@@ -32,14 +32,14 @@ export default function PrivacyPage() {
           <ul className="mt-2 list-disc space-y-1 pl-5">
             <li>{OPERATOR.name}</li>
             <li>ИНН: {OPERATOR.inn}</li>
-            <li>Адрес: {OPERATOR.address}</li>
+            {OPERATOR.address ? <li>Адрес: {OPERATOR.address}</li> : null}
             <li>
               Контакт по вопросам ПДн:{" "}
               <a className="text-accent" href={`mailto:${OPERATOR.email}`}>
                 {OPERATOR.email}
               </a>
             </li>
-            <li>{OPERATOR.rknNotice}</li>
+            {OPERATOR.rknNotice ? <li>{OPERATOR.rknNotice}</li> : null}
           </ul>
         </section>
 
