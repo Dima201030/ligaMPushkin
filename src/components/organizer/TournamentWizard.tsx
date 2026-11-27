@@ -24,6 +24,7 @@ import {
   TYPE_BY_VALUE,
 } from "@/lib/domain";
 import { TOURNAMENT_LIMITS, validateTournamentFields } from "@/lib/tournament-limits";
+import { REGULATION_PRESETS } from "@/lib/handbook";
 import { cn, formatDate, formatMoney, formatTime } from "@/lib/utils";
 import { CategoryBadge } from "@/components/ui/Badges";
 import { MiniLabel, Panel } from "./OrganizerUI";
@@ -65,17 +66,6 @@ function defaultDates() {
   deadline.setHours(20, 0, 0, 0);
   return { start: toLocalInput(start), deadline: toLocalInput(deadline) };
 }
-
-const REGULATION_PRESETS: Record<TournamentFormat, string> = {
-  olympic:
-    "Матчи до двух побед в сетах, тай-брейк до 7 очков. При счёте 1:1 в сетах играется решающий тай-брейк до 10 очков. Олимпийская система, матч за третье место проводится.",
-  round_robin:
-    "Круговой формат: каждый играет с каждым. Матчи до одного сета с тай-брейком при счёте 6:6. Победа — 2 очка, поражение — 1 очко, неявка — 0.",
-  groups_playoff:
-    "Групповой этап по 4 игрока, матчи до одного сета. В плей-офф выходят по два лучших игрока из каждой группы. Полуфиналы и финал — до двух побед.",
-  double_elimination:
-    "Двойное выбывание: после первого поражения игрок переходит в нижнюю сетку. Финал верхней и нижней сетки, гранд-финал до двух побед.",
-};
 
 export function TournamentWizard({
   venues,

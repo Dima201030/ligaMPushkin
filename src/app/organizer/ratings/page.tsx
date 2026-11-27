@@ -177,7 +177,7 @@ export default async function OrganizerRatingsPage() {
               </div>
             </Panel>
 
-            <Panel title="Правила начисления" description="Опубликованы в разделе «Регламент» на сайте">
+            <Panel title="Правила начисления" description="Опубликованы в разделе «Справочник» на сайте">
               <ol className="space-y-2.5">
                 {RATING_RULES.map((rule, index) => (
                   <li key={rule} className="flex gap-2.5 text-[0.78rem] leading-relaxed text-ink-soft">

@@ -265,7 +265,7 @@ export default async function HomePage() {
             href="/rules"
             className="text-[0.62rem] uppercase tracking-[0.16em] text-ink-muted transition-colors hover:text-ink"
           >
-            Регламент
+            Справочник
           </Link>
         </div>
 

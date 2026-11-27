@@ -36,7 +36,7 @@ export default async function TournamentsPage({
         description="Одиночные и парные соревнования, микст и кубки. Выберите формат и запишитесь прямо на странице турнира."
         actions={
           <Link href="/rules" className="btn btn-on-dark">
-            Регламент турниров
+            Справочник
           </Link>
         }
       >

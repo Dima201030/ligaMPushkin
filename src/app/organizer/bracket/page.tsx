@@ -26,7 +26,7 @@ export default async function OrganizerBracketPage({
           <>
             <Link href="/rules" className="btn btn-secondary btn-sm">
               <BookOpen className="size-3.5" aria-hidden="true" />
-              Регламент
+              Справочник
             </Link>
             <Link href="/organizer/tournaments/new" className="btn btn-primary btn-sm">
               <Plus className="size-3.5" aria-hidden="true" />
