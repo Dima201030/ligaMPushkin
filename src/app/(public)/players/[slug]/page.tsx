@@ -205,7 +205,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
             <div className="border-t border-line pt-6">
               <p className="text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted">Игроку</p>
               <p className="mt-2 text-xs leading-relaxed text-ink-muted">
-                Это ваш профиль? Проверьте данные и обновите фото в личном кабинете.
+                Это ваш профиль? Данные можно посмотреть в личном кабинете; изменения — через организатора.
               </p>
               <Link href="/cabinet" className="btn btn-secondary mt-4 w-full">
                 <UserPlus className="size-4" aria-hidden="true" />

@@ -1,17 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState, useTransition, type FormEvent } from "react";
+import { useState } from "react";
 import { Bell, Check } from "lucide-react";
 import { cn, formatDate, formatDateShort, formatDayMonth } from "@/lib/utils";
-import { CATEGORIES, REGISTRATION_STATUS_LABEL } from "@/lib/domain";
+import { CATEGORY_BY_SLUG, REGISTRATION_STATUS_LABEL } from "@/lib/domain";
 import type { CategorySlug, RegistrationStatus } from "@/lib/types";
 import { cancelRegistration } from "@/lib/api/tournaments";
 import {
   type NotificationPrefs,
   updateMyNotifications,
-  updateMyProfile,
 } from "@/lib/api/auth";
 
 export interface CabinetRegistration {
@@ -143,47 +141,23 @@ export function ProfileSettingsForm({
   bio: string;
   category: CategorySlug;
 }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    setError(null);
-    setNotice(null);
-    const result = await updateMyProfile({
-      firstName: String(form.get("firstName") ?? ""),
-      lastName: String(form.get("lastName") ?? ""),
-      phone: String(form.get("phone") ?? ""),
-      city: String(form.get("city") ?? ""),
-      bio: String(form.get("bio") ?? ""),
-      level: String(form.get("category") ?? category) as CategorySlug,
-    });
-    if (!result.ok) {
-      setError(result.error);
-      return;
-    }
-    setNotice("Профиль сохранён.");
-    startTransition(() => router.refresh());
-  }
+  const categoryLabel = CATEGORY_BY_SLUG[category]?.name ?? category;
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <div className="space-y-4">
       <h2 className="text-xl">Профиль</h2>
       <p className="text-sm text-ink-muted">
-        Имя, телефон, город и категория. Email меняется через организатора.
+        Данные только для просмотра. Имя, категорию, email и телефон меняет организатор.
       </p>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block text-sm">
           <span className="mb-1.5 block text-[0.62rem] uppercase tracking-[0.12em] text-ink-muted">Имя</span>
-          <input className="field" name="firstName" defaultValue={firstName} required autoComplete="given-name" />
+          <input className="field" value={firstName} disabled readOnly autoComplete="given-name" />
         </label>
         <label className="block text-sm">
           <span className="mb-1.5 block text-[0.62rem] uppercase tracking-[0.12em] text-ink-muted">Фамилия</span>
-          <input className="field" name="lastName" defaultValue={lastName} required autoComplete="family-name" />
+          <input className="field" value={lastName} disabled readOnly autoComplete="family-name" />
         </label>
       </div>
 
@@ -195,46 +169,24 @@ export function ProfileSettingsForm({
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block text-sm">
           <span className="mb-1.5 block text-[0.62rem] uppercase tracking-[0.12em] text-ink-muted">Телефон</span>
-          <input className="field" name="phone" defaultValue={phone} autoComplete="tel" placeholder="+7…" />
+          <input className="field" value={phone} disabled readOnly autoComplete="tel" />
         </label>
         <label className="block text-sm">
           <span className="mb-1.5 block text-[0.62rem] uppercase tracking-[0.12em] text-ink-muted">Город</span>
-          <input className="field" name="city" defaultValue={city} autoComplete="address-level2" />
+          <input className="field" value={city} disabled readOnly autoComplete="address-level2" />
         </label>
       </div>
 
       <label className="block text-sm">
         <span className="mb-1.5 block text-[0.62rem] uppercase tracking-[0.12em] text-ink-muted">Категория</span>
-        <select className="field" name="category" defaultValue={category}>
-          {CATEGORIES.map((item) => (
-            <option key={item.slug} value={item.slug}>
-              {item.name}
-            </option>
-          ))}
-        </select>
+        <input className="field" value={categoryLabel} disabled readOnly />
       </label>
 
       <label className="block text-sm">
         <span className="mb-1.5 block text-[0.62rem] uppercase tracking-[0.12em] text-ink-muted">О себе</span>
-        <textarea className="field min-h-24" name="bio" defaultValue={bio} maxLength={500} />
+        <textarea className="field min-h-24" value={bio} disabled readOnly />
       </label>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <button type="submit" className="btn btn-primary" disabled={pending}>
-          {pending ? "Сохраняем…" : "Сохранить профиль"}
-        </button>
-        {notice ? (
-          <p role="status" className="flex items-center gap-1.5 text-[0.72rem] text-positive">
-            <Check className="size-3.5" aria-hidden="true" />
-            {notice}
-          </p>
-        ) : null}
-      </div>
-      {error ? (
-        <p role="alert" className="text-[0.72rem] text-negative">
-          {error}
-        </p>
-      ) : null}
       <p className="text-xs text-ink-muted">
         Документы:{" "}
         <Link href="/privacy" className="text-accent hover:underline">
@@ -246,7 +198,7 @@ export function ProfileSettingsForm({
         </Link>
         .
       </p>
-    </form>
+    </div>
   );
 }
 
