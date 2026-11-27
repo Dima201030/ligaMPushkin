@@ -9,6 +9,12 @@ export const metadata: Metadata = {
   description: `Тексты согласий платформы ${CLUB.productName}.`,
 };
 
+function operatorLabel(): string {
+  const parts = [OPERATOR.name, `ИНН ${OPERATOR.inn}`];
+  if (OPERATOR.address) parts.push(OPERATOR.address);
+  return parts.join(", ");
+}
+
 export default function ConsentPage() {
   return (
     <div className="page-shell section max-w-3xl">
@@ -29,7 +35,7 @@ export default function ConsentPage() {
         <h2 className="text-lg text-ink">1. Согласие на обработку персональных данных</h2>
         <p>
           Я, субъект персональных данных, свободно, своей волей и в своём интересе даю
-          согласие оператору ({OPERATOR.name}, ИНН {OPERATOR.inn}, {OPERATOR.address}) на
+          согласие оператору ({operatorLabel()}) на
           обработку моих персональных данных: ФИО, email, телефон, дата рождения,
           сведения профиля и турнирной активности, технические данные сессии — в целях
           регистрации, организации турниров, связи по заявкам и исполнения функций
