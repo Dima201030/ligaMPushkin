@@ -9,7 +9,7 @@ const LINK_GROUPS = [
       { href: "/rating", label: "Рейтинг" },
       { href: "/players", label: "Игроки" },
       { href: "/archive", label: "Архив" },
-      { href: "/rules", label: "Регламент" },
+      { href: "/rules", label: "Справочник" },
     ],
   },
   {
@@ -81,7 +81,7 @@ export function SiteFooter() {
           </p>
           <div className="flex flex-col gap-2 text-[0.6rem] uppercase tracking-[0.14em] text-ink-muted md:items-end">
             <div className="flex flex-wrap gap-x-5 gap-y-2">
-              <Link href="/rules" className="transition-colors hover:text-ink">Регламент</Link>
+              <Link href="/rules" className="transition-colors hover:text-ink">Справочник</Link>
               <Link href="/privacy" className="transition-colors hover:text-ink">Политика ПДн</Link>
               <Link href="/consent" className="transition-colors hover:text-ink">Согласия</Link>
               <Link href="/terms" className="transition-colors hover:text-ink">Соглашение</Link>
